@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 
 # Copyright (C) 2012-2013 Brian Aker
 # All rights reserved.

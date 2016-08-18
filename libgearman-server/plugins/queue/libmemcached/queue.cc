@@ -243,7 +243,10 @@ gearmand_error_t LibmemcachedQueue::done(gearman_server_st*,
   memcached_return rc= memcached_delete(memc_, (const char *)key, key_length, 0);
   if (rc != MEMCACHED_SUCCESS)
   {
-    return gearmand_gerror(memcached_last_error_message(memc_), GEARMAND_QUEUE_ERROR);
+     if(rc != MEMCACHED_NOTFOUND)
+     {
+       return gearmand_gerror(memcached_strerror(memc_, rc), GEARMAND_QUEUE_ERROR);
+     }
   }
 
   return GEARMAND_SUCCESS;
@@ -313,7 +316,7 @@ static memcached_return callback_loader(const memcached_st*,
   size_t unique_size= strlen(unique);
 
   assert(unique);
-  assert(unique_size);
+  //assert(unique_size);
   assert(function);
   assert(function_len);
 
