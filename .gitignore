@@ -153,3 +153,4 @@ tests/vector
 tests/worker_test
 tmp_chroot
 valgrind*xml
+.idea/
