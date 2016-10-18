@@ -202,7 +202,7 @@ static gearmand_error_t _hiredis_add(gearman_server_st *, void *context,
   build_key(key, unique, unique_size, function_name, function_name_size);
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "hires key: %u", (uint32_t)key.size());
 
-  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "SET %b %b", &key[0], key.size(), data, data_size);
+  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "SET %s %b", &key[0], data, data_size);
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "got reply");
   if (reply == NULL)
   {
@@ -231,7 +231,7 @@ static gearmand_error_t _hiredis_done(gearman_server_st *, void *context,
   std::vector<char> key;
   build_key(key, unique, unique_size, function_name, function_name_size);
 
-  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "DEL %b", &key[0], key.size());
+  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "DEL %s", &key[0]);
   if (reply == NULL)
   {
     return GEARMAND_QUEUE_ERROR;
@@ -249,10 +249,10 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
                                                 void *add_context)
 {
   gearmand::plugins::queue::Hiredis *queue= (gearmand::plugins::queue::Hiredis *)context;
-   
+
   gearmand_info("hiredis replay start");
 
-  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "KEYS %s", GEARMAND_QUEUE_GEARMAND_DEFAULT_PREFIX);
+  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "KEYS %s*", GEARMAND_QUEUE_GEARMAND_DEFAULT_PREFIX);
   if (reply == NULL)
   {
     return gearmand_gerror("Failed to call KEYS during QUEUE replay", GEARMAND_QUEUE_ERROR);
@@ -264,8 +264,8 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
     char function_name[GEARMAN_FUNCTION_MAX_SIZE];
     char unique[GEARMAN_MAX_UNIQUE_SIZE];
 
-    char fmt_str[100] = "";    
-    int fmt_str_length= snprintf(fmt_str, sizeof(fmt_str), "%%%ds-%%%ds-%%%ds",
+    char fmt_str[100] = "";
+    int fmt_str_length= snprintf(fmt_str, sizeof(fmt_str), "%%%d[^-]-%%%d[^-]-%%%ds",
                                  int(GEARMAND_QUEUE_GEARMAND_DEFAULT_PREFIX_SIZE),
                                  int(GEARMAN_FUNCTION_MAX_SIZE),
                                  int(GEARMAN_MAX_UNIQUE_SIZE));
@@ -290,10 +290,18 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
       continue;
     }
 
+    /* need to make a copy here ... gearman_server_job_free will free it later */
+    char * data = (char*)malloc(get_reply->len);
+    if (data == NULL)
+    {
+      return gearmand_perror(errno, "malloc");
+    }
+    memcpy(data, get_reply->str, get_reply->len);
+
     (void)(add_fn)(server, add_context,
                    unique, strlen(unique),
                    function_name, strlen(function_name),
-                   get_reply->str, get_reply->len,
+                   data, get_reply->len,
                    GEARMAN_JOB_PRIORITY_NORMAL, 0);
     freeReplyObject(get_reply);
   }
