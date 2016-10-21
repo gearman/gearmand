@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Gearmand client and server library.
  *
  *  Copyright (C) 2012-2013 Data Differential, http://datadifferential.com/ All
@@ -138,7 +138,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
 
     data.vec_append_printf(".\n");
   }
-  else if (packet->argc >= 3 
+  else if (packet->argc >= 3
            and strcasecmp("cancel", (char *)(packet->arg[0])) == 0)
   {
     if (packet->argc == 3
@@ -172,7 +172,8 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
              server_job != NULL;
              server_job= server_job->unique_next)
         {
-          data.vec_append_printf("%.*s\n", int(server_job->unique_length), server_job->unique);
+          data.vec_append_printf("%.*s\t%.*s\n", int(server_job->unique_length), server_job->unique,
+                                GEARMAND_JOB_HANDLE_SIZE, server_job->job_handle);
         }
       }
 
@@ -293,7 +294,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
         }
       }
 
-      /* 
+      /*
         To preserve the existing behavior of maxqueue, ensure that the
          one-parameter invocation is applied to all priorities.
       */
@@ -304,7 +305,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
           max_queue_size[priority]= max_queue_size[0];
         }
       }
-       
+
       for (uint32_t function_key= 0; function_key < GEARMAND_DEFAULT_HASH_SIZE;
            function_key++)
       {
@@ -358,7 +359,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   else
   {
     gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Failed to find command %.*s(%" PRIu64 ")",
-                       packet->arg_size[0], packet->arg[0], 
+                       packet->arg_size[0], packet->arg[0],
                        packet->arg_size[0]);
     data.vec_printf(TEXT_ERROR_UNKNOWN_COMMAND, (int)packet->arg_size[0], (char *)(packet->arg[0]));
   }
