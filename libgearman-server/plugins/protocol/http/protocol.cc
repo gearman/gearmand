@@ -238,7 +238,7 @@ public:
                                     packet->command == GEARMAN_COMMAND_JOB_CREATED ?  int(packet->arg_size[0]) : int(packet->arg_size[0] - 1),
                                     (const char *)packet->arg[0],
                                     gearman_strcommand(packet->command),
-                                    uint64_t(content.size()));
+                                    (uint64_t)packet->data_size); // Content-length
       }
 
       _sent_header= true;
