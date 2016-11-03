@@ -116,7 +116,7 @@ Hiredis::~Hiredis()
 gearmand_error_t Hiredis::initialize()
 {
   int service_port= atoi(service.c_str());
-  if ((_redis= redisConnect("127.0.0.1", service_port)) == NULL)
+  if ((_redis= redisConnect(server.c_str(), service_port)) == NULL)
   {
     return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_QUEUE_ERROR, "Could not connect to redis server: %s", _redis->errstr);
   }
