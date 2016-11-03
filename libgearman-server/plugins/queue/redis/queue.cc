@@ -118,13 +118,13 @@ gearmand_error_t Hiredis::initialize()
   int service_port= atoi(service.c_str());
   if ((_redis= redisConnect("127.0.0.1", service_port)) == NULL)
   {
-    return gearmand_gerror("Could not connect to redis server", GEARMAND_QUEUE_ERROR);
+    return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_QUEUE_ERROR, "Could not connect to redis server: %s", _redis->errstr);
   }
 
   gearmand_info("Initializing hiredis module");
 
   gearman_server_set_queue(Gearmand()->server, this, _hiredis_add, _hiredis_flush, _hiredis_done, _hiredis_replay);   
-   
+
   return GEARMAND_SUCCESS;
 }
 
@@ -234,7 +234,10 @@ static gearmand_error_t _hiredis_done(gearman_server_st *, void *context,
   redisReply *reply= (redisReply*)redisCommand(queue->redis(), "DEL %s", &key[0]);
   if (reply == NULL)
   {
-    return GEARMAND_QUEUE_ERROR;
+    return gearmand_log_gerror(
+      GEARMAN_DEFAULT_LOG_PARAM,
+      GEARMAND_QUEUE_ERROR,
+      "Failed to call DEL for key %s: %s", &key[0], queue->redis()->errstr);
   }
   freeReplyObject(reply);
 
@@ -255,7 +258,7 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
   redisReply *reply= (redisReply*)redisCommand(queue->redis(), "KEYS %s*", GEARMAND_QUEUE_GEARMAND_DEFAULT_PREFIX);
   if (reply == NULL)
   {
-    return gearmand_gerror("Failed to call KEYS during QUEUE replay", GEARMAND_QUEUE_ERROR);
+    return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_QUEUE_ERROR, "Failed to call KEYS during QUEUE replay: %s", queue->redis()->errstr);
   }
 
   for (size_t x= 0; x < reply->elements; x++)
@@ -287,6 +290,9 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
     redisReply *get_reply= (redisReply*)redisCommand(queue->redis(), "GET %s", reply->element[x]->str);
     if (get_reply == NULL)
     {
+      gearmand_log_debug(
+        GEARMAN_DEFAULT_LOG_PARAM,
+        "GET %s failed: %s", reply->element[x]->str, queue->redis()->errstr);
       continue;
     }
 
