@@ -66,7 +66,7 @@ gearman_return_t EchoCheck::success(gearman_connection_st* con)
     if (memcmp(_workload, con->_packet.value(), compared) == 0)
     {
       return gearman_universal_set_error(_universal, GEARMAN_ECHO_DATA_CORRUPTION, GEARMAN_AT,
-                                         "Truncation occured, Expected %u, received %u",
+                                         "Truncation occurred, Expected %u, received %u",
                                          uint32_t(_workload_size), uint32_t(con->_packet.data_size));
     }
 

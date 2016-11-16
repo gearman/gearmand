@@ -388,7 +388,7 @@ static gearmand_error_t _gear_con_add(gearman_server_con_st *connection)
           continue;
 
         case SSL_ERROR_SYSCALL:
-          return gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "Error occured on SSL_accept()");
+          return gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "Error occurred on SSL_accept()");
 
         case SSL_ERROR_SSL:
         case SSL_ERROR_ZERO_RETURN:

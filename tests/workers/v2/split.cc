@@ -64,7 +64,7 @@ gearman_return_t split_worker(gearman_job_st *job, void* /* context */)
     {
       if ((workload +x -chunk_begin) == 11 and memcmp(chunk_begin, test_literal_param("mapper_fail") == 0))
       {
-        return gearman_job_send_exception(job, test_literal_param("Error occured on purpose"));
+        return gearman_job_send_exception(job, test_literal_param("Error occurred on purpose"));
       }
 
       // NULL Chunk
@@ -82,7 +82,7 @@ gearman_return_t split_worker(gearman_job_st *job, void* /* context */)
   {
     if ((size_t(workload +workload_size) -size_t(chunk_begin) ) == 11 and not memcmp(chunk_begin, test_literal_param("mapper_fail")))
     {
-      return gearman_job_send_exception(job, test_literal_param("Error occured on purpose"));
+      return gearman_job_send_exception(job, test_literal_param("Error occurred on purpose"));
     }
 
     gearman_return_t rc= gearman_job_send_data(job, chunk_begin, size_t(workload +workload_size) -size_t(chunk_begin));

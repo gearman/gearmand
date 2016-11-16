@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
    "Prefix used to generate a job handle string. If not provided, the default \"H:<host_name>\" is used.")
 
   ("hashtable-buckets", boost::program_options::value(&hashtable_buckets)->default_value(GEARMAND_DEFAULT_HASH_SIZE),
-   "Number of buckets in the internal job hash tables. The default of 991 works well for about three million jobs in queue. If the number of jobs in the queue at any time will exceed three million, use proportionally larger values (991 * # of jobs / 3M). For example, to accomodate 2^32 jobs, use 1733003. This will consume ~26MB of extra memory. Gearmand cannot support more than 2^32 jobs in queue at this time.")
+   "Number of buckets in the internal job hash tables. The default of 991 works well for about three million jobs in queue. If the number of jobs in the queue at any time will exceed three million, use proportionally larger values (991 * # of jobs / 3M). For example, to accommodate 2^32 jobs, use 1733003. This will consume ~26MB of extra memory. Gearmand cannot support more than 2^32 jobs in queue at this time.")
 
   ("keepalive", boost::program_options::bool_switch(&opt_keepalive)->default_value(false),
    "Enable keepalive on sockets.")
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   boost::program_options::options_description hidden("Hidden options");
   hidden.add_options()
   ("check-args", boost::program_options::bool_switch(&opt_check_args)->default_value(false),
-   "Check command line and configuration file argments and then exit.");
+   "Check command line and configuration file arguments and then exit.");
   all.add(hidden);
 
   boost::program_options::variables_map vm;

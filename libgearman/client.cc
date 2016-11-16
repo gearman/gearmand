@@ -154,7 +154,7 @@ static void *_client_do(gearman_client_st *client_shell, gearman_command_t comma
     // We only record the error if it is different then the one we saved.
     if (client->universal.error_code() != ret)
     {
-      gearman_error(client->universal, ret, "occured during gearman_client_run_tasks()");
+      gearman_error(client->universal, ret, "occurred during gearman_client_run_tasks()");
     }
 
     *ret_ptr= ret;
@@ -195,7 +195,7 @@ static void *_client_do(gearman_client_st *client_shell, gearman_command_t comma
   }
   else // gearman_client_run_tasks() was successful, but the task was not
   {
-    gearman_error(client->universal, do_task->impl()->error_code(), "occured during gearman_client_run_tasks()");
+    gearman_error(client->universal, do_task->impl()->error_code(), "occurred during gearman_client_run_tasks()");
 
     *ret_ptr= do_task->impl()->error_code();
     *result_size= 0;
@@ -1720,7 +1720,7 @@ gearman_return_t gearman_client_run_tasks(gearman_client_st *client_shell)
   {
     Client* client= client_shell->impl();
 
-    if (client->task_list == NULL) // We are immediatly successful if all tasks are completed
+    if (client->task_list == NULL) // We are immediately successful if all tasks are completed
     {
       return GEARMAN_SUCCESS;
     }
@@ -1745,7 +1745,7 @@ gearman_return_t gearman_client_run_tasks(gearman_client_st *client_shell)
 
 gearman_return_t gearman_client_run_block_tasks(Client* client, gearman_task_st* exit_task)
 {
-  if (client->task_list == NULL) // We are immediatly successful if all tasks are completed
+  if (client->task_list == NULL) // We are immediately successful if all tasks are completed
   {
     return GEARMAN_SUCCESS;
   }

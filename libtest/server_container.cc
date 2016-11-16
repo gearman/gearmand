@@ -358,7 +358,7 @@ bool server_startup_st::_start_server(const bool is_socket,
   }
   catch (...)
   {
-    Error << "error occured while creating server: " << server_type;
+    Error << "error occurred while creating server: " << server_type;
     return false;
   }
 

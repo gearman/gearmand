@@ -97,7 +97,7 @@ void *client_do(gearman_client_st *client_shell, gearman_command_t command,
   // gearman_client_run_block_tasks failed
   if (gearman_failed(ret))
   {
-    gearman_error(client->universal, ret, "occured during gearman_client_run_tasks()");
+    gearman_error(client->universal, ret, "occurred during gearman_client_run_tasks()");
 
     *ret_ptr= ret;
     *result_size= 0;
@@ -119,7 +119,7 @@ void *client_do(gearman_client_st *client_shell, gearman_command_t command,
     }
     else // gearman_client_run_block_tasks() was successful, but the task was not
     {
-      gearman_error(client->universal, do_task->impl()->error_code(), "occured during gearman_client_run_tasks()");
+      gearman_error(client->universal, do_task->impl()->error_code(), "occurred during gearman_client_run_tasks()");
 
       *ret_ptr= do_task->impl()->error_code();
       *result_size= 0;

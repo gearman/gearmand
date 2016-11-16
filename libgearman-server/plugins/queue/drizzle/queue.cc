@@ -636,7 +636,7 @@ static gearmand_error_t _libdrizzle_done(gearman_server_st *,
   
   if (libdrizzle_failed(_libdrizzle_query(queue, &query[0], query_size)))
   {
-    return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Error occured from %.*s", query_size, &query[0]);
+    return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Error occurred from %.*s", query_size, &query[0]);
   }
 
   drizzle_result_free(queue->result());

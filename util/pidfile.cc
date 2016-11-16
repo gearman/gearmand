@@ -112,7 +112,7 @@ bool Pidfile::create()
     {
       _last_errno= errno;
       std::stringstream error_stream;
-      error_stream << "Unable to remove exisiting file:" << _filename << "(" << strerror(errno) << ")";
+      error_stream << "Unable to remove existing file:" << _filename << "(" << strerror(errno) << ")";
       _error_message= error_stream.str();
 
       return false;

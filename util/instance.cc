@@ -388,7 +388,7 @@ bool Instance::run()
                     if (errno)
                     {
                       std::stringstream msg;
-                      msg << "Error occured on SSL_acceptsend(" << strerror(errno) << ")";
+                      msg << "Error occurred on SSL_acceptsend(" << strerror(errno) << ")";
                       _last_error= msg.str();
                       read_size= SOCKET_ERROR;
                       break;
@@ -426,7 +426,7 @@ bool Instance::run()
             if (_last_error.empty())
             {
               _last_error.clear();
-              _last_error+= "Error occured while reading data from ";
+              _last_error+= "Error occurred while reading data from ";
               _last_error+= _host;
             }
 

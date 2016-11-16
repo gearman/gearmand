@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
         {
           if (benchmark.verbose > 1)
           {
-            std::cerr << "Error occured while trying to add task: " << gearman_client_error(&client);
+            std::cerr << "Error occurred while trying to add task: " << gearman_client_error(&client);
           }
           continue;
         }
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
         }
 
         error= true;
-        goto exit_immediatly;
+        goto exit_immediately;
       }
     }
 
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
     gearman_client_free(&client);
   } while (count or error);
 
-exit_immediatly:
+exit_immediately:
   if (shutdown_worker)
   {
     gearman_client_do(&master_client, "shutdown", 0, 0, 0, 0, 0);

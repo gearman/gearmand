@@ -854,7 +854,7 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       if (job_handle_length >= GEARMAND_JOB_HANDLE_SIZE || job_handle_length < 0)
       {
         return _server_error_packet(GEARMAN_DEFAULT_LOG_PARAM, server_con, GEARMAN_ARGUMENT_TOO_LARGE,
-                                    gearman_literal_param("Error occured due to GEARMAND_JOB_HANDLE_SIZE being too small from snprintf"));
+                                    gearman_literal_param("Error occurred due to GEARMAND_JOB_HANDLE_SIZE being too small from snprintf"));
       }
 
       gearman_server_job_st *server_job= gearman_server_job_get(Server, job_handle, (size_t)job_handle_length,

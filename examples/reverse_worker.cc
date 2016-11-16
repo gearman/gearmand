@@ -78,7 +78,7 @@ static gearman_return_t reverse_worker(gearman_job_st *job, void *context)
 
   if (options.verbose)
   {
-    std::cout << "Recieved " << workload_size << " bytes" << std::endl;
+    std::cout << "Received " << workload_size << " bytes" << std::endl;
   }
 
   std::vector<char> result;

@@ -850,7 +850,7 @@ gearman_job_st *gearman_worker_grab_job(gearman_worker_st *worker_shell,
 
                 if (worker->job()->impl()->assigned.command == GEARMAN_COMMAND_NOOP)
                 {
-                  gearman_log_debug(worker->universal, "Recieved NOOP");
+                  gearman_log_debug(worker->universal, "Received NOOP");
                 }
 
                 if (worker->job()->impl()->assigned.command == GEARMAN_COMMAND_JOB_ASSIGN or

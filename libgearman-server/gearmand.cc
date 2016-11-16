@@ -685,7 +685,7 @@ static gearmand_error_t _listen_init(gearmand_st *gearmand)
         if (waited >= bind_timeout)
         {
           freeaddrinfo(addrinfo);
-          return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Timeout occured when calling bind() for %s:%s", host, port->port);
+          return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Timeout occurred when calling bind() for %s:%s", host, port->port);
         }
 
         if (ret != EADDRINUSE)

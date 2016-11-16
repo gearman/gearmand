@@ -771,7 +771,7 @@ void gearmand_con_check_queue(gearmand_thread_st *thread)
       gearmand_error_t rc;
       if ((rc= _con_add(thread, dcon)) != GEARMAND_SUCCESS)
       {
-        gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, rc, "%s:%s _con_add() has failed, please report any crashes that occur immediatly after this.",
+        gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, rc, "%s:%s _con_add() has failed, please report any crashes that occur immediately after this.",
                             dcon->host,
                             dcon->port);
         gearmand_con_free(dcon);
