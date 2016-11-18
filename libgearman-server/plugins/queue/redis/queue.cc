@@ -93,6 +93,7 @@ public:
 
   std::string server;
   std::string service;
+  std::string password;
 
 private:
   redisContext *_redis;
@@ -106,7 +107,8 @@ Hiredis::Hiredis() :
 {
   command_line_options().add_options()
     ("redis-server", boost::program_options::value(&server), "Redis server")
-    ("redis-port", boost::program_options::value(&service), "Redis server port/service");
+    ("redis-port", boost::program_options::value(&service), "Redis server port/service")
+	("redis-password", boost::program_options::value(&password), "Redis server password/service");
 }
 
 Hiredis::~Hiredis()
@@ -122,6 +124,17 @@ gearmand_error_t Hiredis::initialize()
       GEARMAN_DEFAULT_LOG_PARAM,
       GEARMAND_QUEUE_ERROR,
       "Could not connect to redis server: %s", _redis->errstr);
+  }
+
+  if (password.size())
+  {
+	  redisReply *reply = (redisReply*)redisCommand(_redis, "AUTH %s", password.c_str());
+	  if (reply == NULL)
+	  {
+		  return gearmand_gerror("Could not auth with redis server", GEARMAND_QUEUE_ERROR);
+	  }
+	  gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "hires auth reply: %.*s", (uint32_t)reply->len, reply->str);
+	  freeReplyObject(reply);
   }
 
   gearmand_info("Initializing hiredis module");
