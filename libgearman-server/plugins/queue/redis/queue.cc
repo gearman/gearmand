@@ -129,7 +129,7 @@ gearmand_error_t Hiredis::initialize()
   if (password.size())
   {
 	  redisReply *reply = (redisReply*)redisCommand(_redis, "AUTH %s", password.c_str());
-	  if (reply == NULL)
+	  if (reply->type == REDIS_REPLY_ERROR)
 	  {
 		  return gearmand_gerror("Could not auth with redis server", GEARMAND_QUEUE_ERROR);
 	  }
