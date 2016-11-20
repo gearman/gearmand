@@ -137,7 +137,7 @@ gearmand_error_t Hiredis::initialize()
 		  GEARMAND_QUEUE_ERROR,
 		  "Could not auth with redis server,hires auth reply: %.*s",(uint32_t)reply->len, reply->str);
 	  }
-	  gearmand_info(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
+	  gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
 
 	  freeReplyObject(reply);
   }
