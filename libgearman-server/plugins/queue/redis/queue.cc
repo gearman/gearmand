@@ -129,12 +129,15 @@ gearmand_error_t Hiredis::initialize()
   if (password.size())
   {
 	  redisReply *reply = (redisReply*)redisCommand(_redis, "AUTH %s", password.c_str());
-	  if (reply->type == REDIS_REPLY_ERROR)
+	  if (reply == NULL)
 	  {
 		  freeReplyObject(reply);
-		  return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM,GEARMAND_QUEUE_ERROR,"Could not auth with redis server,hires auth reply: %.*s",(uint32_t)reply->len, reply->str);
+		  return gearmand_log_gerror(
+		  GEARMAN_DEFAULT_LOG_PARAM,
+		  GEARMAND_QUEUE_ERROR,
+		  "Could not auth with redis server,hires auth reply: %.*s",(uint32_t)reply->len, reply->str);
 	  }
-	  gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
+	  gearmand_info(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
 
 	  freeReplyObject(reply);
   }
