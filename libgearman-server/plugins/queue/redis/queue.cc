@@ -132,19 +132,18 @@ gearmand_error_t Hiredis::initialize()
 	  if (reply == NULL)
 	  {
 		  return gearmand_log_gerror(
-		  GEARMAN_DEFAULT_LOG_PARAM,
-		  GEARMAND_QUEUE_ERROR,
-		  "Faild to auth with redis server error");
-	  } else {
-	      if(reply->type == REDIS_REPLY_ERROR) {
-          char *reply_str = reply->str;
-		  uint32_t reply_len = (uint32_t)reply->len;
-          freeReplyObject(reply);
-		  
-		  return gearmand_log_gerror(
 			GEARMAN_DEFAULT_LOG_PARAM,
 			GEARMAND_QUEUE_ERROR,
-		    "Could not auth with redis server,hires auth reply: %.*s",reply_len, reply_str);
+			"Faild to auth with redis server error");
+	  } else {
+		  if(reply->type == REDIS_REPLY_ERROR) {
+			  char *reply_str = reply->str;
+			  freeReplyObject(reply);
+			  
+			  return gearmand_log_gerror(
+				GEARMAN_DEFAULT_LOG_PARAM,
+				GEARMAND_QUEUE_ERROR,
+				"Could not auth with redis server,hires auth reply: *s", reply_str);
         }
     }
     freeReplyObject(reply);
