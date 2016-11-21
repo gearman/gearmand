@@ -144,7 +144,6 @@ int main(int args, char *argv[])
     ("getpid", "Get Process ID for the server.")
     ("status", "Status for the server.")
     ("workers", "Workers for the server.")
-    ("shutdown", "Shutdown server.")
     ("ssl,S", "Enable SSL connections.")
             ;
 
@@ -184,18 +183,13 @@ int main(int args, char *argv[])
      vm.count("show-jobs") == 0 and
      vm.count("getpid") == 0 and
      vm.count("status") == 0 and
-     vm.count("workers") == 0 and
-     vm.count("shutdown") == 0)
+     vm.count("workers") == 0)
   {
     std::cout << "No option execution operation given." << std::endl << std::endl;
     std::cout << desc << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (vm.count("shutdown"))
-  {
-    instance.push(new util::Operation(util_literal_param("shutdown\r\n")));
-  }
 
   if (vm.count("status"))
   {
@@ -258,12 +252,9 @@ int main(int args, char *argv[])
 
   if (not instance.run())
   {
-    /* shutdown will produce a read error since nothing is read */
-    if (not vm.count("shutdown"))
-    {
-      std::cerr << "Error: " << instance.last_error() << std::endl;
-      return EXIT_FAILURE;
-    }
+    /* will produce a read error since nothing is read */
+    std::cerr << "Error: " << instance.last_error() << std::endl;
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;
