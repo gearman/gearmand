@@ -439,7 +439,7 @@ test_st gearadmin_tests[] ={
 };
 
 test_st gearadmin_shutdown_tests[] ={
-  {"--shutdown", 0, gearadmin_shutdown_test}, // Must be run last since it shuts down the server
+  {"--shutdown", 0, gearadmin_shutdown_test}, // shutdown test is a relict. It doesn't shut down the server anymore
   {0, 0, 0}
 };
 
