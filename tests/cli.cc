@@ -194,21 +194,7 @@ static test_return_t gearadmin_shutdown_test(void* object)
   snprintf(buffer, sizeof(buffer), "--port=%d", int(context->port()));
   const char *args[]= { buffer, "--shutdown", 0 };
 
-  ASSERT_EQ(EXIT_SUCCESS, exec_cmdline("bin/gearadmin", args, true));
-
-  Server *server= context->servers.pop_server();
-  ASSERT_TRUE(server);
-  
-  // We will now quiet down the false error about it not being able to restart
-  server->out_of_ban_killed(true);
-
-  while (server->ping()) 
-  {
-    // Wait out the death of the server
-  }
-
-  // Since we killed the server above, we need to reset it
-  delete server;
+  ASSERT_EQ(EXIT_FAILURE, exec_cmdline("bin/gearadmin", args, true));
 
   return TEST_SUCCESS;
 }
