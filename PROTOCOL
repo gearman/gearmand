@@ -572,15 +572,6 @@ maxqueue
       three optional maximum queue sizes (to enforce for high-, normal-, and
       low-priority job submissions).
 
-shutdown
-
-    Shutdown the server. If the optional "graceful" argument is used,
-    close the listening socket and let all existing connections
-    complete.
-
-    Arguments:
-    - Optional "graceful" mode.
-
 version
 
     Send back the version of the server.
