@@ -42,10 +42,6 @@ The following list represents the current list of commands supported. You can is
 
    Return the process id of the server.
 
-.. describe:: shutdown
-
-   Tell the server to shutdown.
-
 .. describe:: verbose
 
    Change the verbose level of the server.
