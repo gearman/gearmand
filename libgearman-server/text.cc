@@ -328,25 +328,6 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   {
     data.vec_printf("OK %d\n", (int)getpid());
   }
-  else if (strcasecmp("shutdown", (char *)(packet->arg[0])) == 0)
-  {
-    if (packet->argc == 1)
-    {
-      Server->shutdown= true;
-      data.vec_printf(TEXT_SUCCESS);
-    }
-    else if (packet->argc == 2 &&
-             strcasecmp("graceful", (char *)(packet->arg[1])) == 0)
-    {
-      Server->shutdown_graceful= true;
-      data.vec_printf(TEXT_SUCCESS);
-    }
-    else
-    {
-      // shutdown
-      data.vec_printf(TEXT_ERROR_ARGS, (int)packet->arg_size[0], (char *)(packet->arg[0]));
-    }
-  }
   else if (strcasecmp("verbose", (char *)(packet->arg[0])) == 0)
   {
     data.vec_printf("OK %s\n", gearmand_verbose_name(Gearmand()->verbose));
