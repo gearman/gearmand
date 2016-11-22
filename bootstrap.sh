@@ -312,7 +312,7 @@ set_VENDOR ()
       VENDOR='suse'
       ;;
     *)
-      die "An attempt was made to set an invalid VENDOR=$_vendor"
+      die "An attempt was made to set an invalid VENDOR=$vendor"
       ;;
   esac
 
