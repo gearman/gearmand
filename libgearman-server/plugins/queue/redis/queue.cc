@@ -129,17 +129,27 @@ gearmand_error_t Hiredis::initialize()
   if (password.size())
   {
     redisReply *reply = (redisReply*)redisCommand(_redis, "AUTH %s", password.c_str());
-    if(reply == NULL || reply->type == REDIS_REPLY_ERROR) 
-      {
-           freeReplyObject(reply);
-           
-           return gearmand_log_gerror(
-           GEARMAN_DEFAULT_LOG_PARAM,
-           GEARMAND_QUEUE_ERROR,
-           "Could not auth with redis server,hires auth reply: %s", _redis->errstr);
-      } 
-      freeReplyObject(reply);
-      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
+    if(reply == NULL)
+    {
+        return gearmand_log_gerror(
+          GEARMAN_DEFAULT_LOG_PARAM,
+          GEARMAND_QUEUE_ERROR,
+          "Failed to exec AUTH command, redis server reply: %s", _redis->errstr);
+    }
+    
+    if(reply->type == REDIS_REPLY_ERROR)
+    {
+        gearmand_log_gerror(
+          GEARMAN_DEFAULT_LOG_PARAM,
+          GEARMAND_QUEUE_ERROR,
+          "Could not pass redis server auth, redis server reply: %s", reply->str);
+        freeReplyObject(reply);
+
+        return GEARMAND_QUEUE_ERROR;
+    }
+    
+    freeReplyObject(reply);
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
   }
 
   gearmand_info("Initializing hiredis module");
@@ -354,3 +364,4 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
 #pragma GCC diagnostic pop
 
 #endif // defined(HAVE_HIREDIS) && HAVE_HIREDIS
+
