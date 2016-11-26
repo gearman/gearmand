@@ -79,9 +79,9 @@ test_return_t check_client_fork_TEST(void*)
           if (gearman_failed(ret= gearman_client_echo(&client, test_literal_param("child forked"))))
           {
             Error << gearman_client_error(&client);
-            exit(int(ret));
+            _exit(int(ret));
           }
-          exit(0);
+          _exit(0);
         }
 
       default:
