@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 
 # Copyright (C) 2012-2013 Brian Aker
 # All rights reserved.
@@ -312,7 +312,7 @@ set_VENDOR ()
       VENDOR='suse'
       ;;
     *)
-      die "An attempt was made to set an invalid VENDOR=$_vendor"
+      die "An attempt was made to set an invalid VENDOR=$vendor"
       ;;
   esac
 
