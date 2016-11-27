@@ -528,6 +528,21 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
 
     break;
 
+  case GEARMAN_COMMAND_MASS_DO:
+    char *token;
+    token= strtok((char *)packet->arg[0], " ");
+    while(token) {
+      token = strtok(NULL, " ");
+      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Registering function: %.*s", strlen(token), token);
+      if (gearman_server_worker_add(server_con, (char *)(token),
+                                    strlen(token), 0) == NULL)
+      {
+        return GEARMAND_MEMORY_ALLOCATION_FAILURE;
+      }
+    }
+
+    break;
+
   case GEARMAN_COMMAND_CAN_DO_TIMEOUT:
     {
       if (packet->arg_size[1] > GEARMAN_MAXIMUM_INTEGER_DISPLAY_LENGTH)

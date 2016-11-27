@@ -110,6 +110,7 @@ namespace {
     case GEARMAN_COMMAND_WORK_WARNING:
     case GEARMAN_COMMAND_GET_STATUS_UNIQUE:
     case GEARMAN_COMMAND_STATUS_RES_UNIQUE:
+    case GEARMAN_COMMAND_MASS_DO:
       assert(0);
       break;
     }
@@ -317,6 +318,7 @@ gearman_task_st *add_task(Client& client,
   case GEARMAN_COMMAND_WORK_WARNING:
   case GEARMAN_COMMAND_GET_STATUS_UNIQUE:
   case GEARMAN_COMMAND_STATUS_RES_UNIQUE:
+  case GEARMAN_COMMAND_MASS_DO:
     rc= GEARMAN_INVALID_ARGUMENT;
     assert(rc != GEARMAN_INVALID_ARGUMENT);
     break;
