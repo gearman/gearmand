@@ -12,6 +12,7 @@ matrix:
           packages:
             - gcc-4.9
             - g++-4.9
+        artifacts: true
       env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
@@ -21,6 +22,7 @@ matrix:
           packages:
             - gcc-5
             - g++-5
+        artifacts: true
       env: COMPILER=g++-5
 
 before_install:
