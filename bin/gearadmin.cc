@@ -143,6 +143,7 @@ int main(int args, char *argv[])
     ("show-jobs", "Show all jobs on the server.")
     ("getpid", "Get Process ID for the server.")
     ("status", "Status for the server.")
+    ("priority-status", "Queued jobs status by priority.")
     ("workers", "Workers for the server.")
     ("ssl,S", "Enable SSL connections.")
             ;
@@ -183,6 +184,7 @@ int main(int args, char *argv[])
      vm.count("show-jobs") == 0 and
      vm.count("getpid") == 0 and
      vm.count("status") == 0 and
+     vm.count("priority-status") == 0 and
      vm.count("workers") == 0)
   {
     std::cout << "No option execution operation given." << std::endl << std::endl;
@@ -194,6 +196,11 @@ int main(int args, char *argv[])
   if (vm.count("status"))
   {
     instance.push(new util::Operation(util_literal_param("status\r\n")));
+  }
+
+  if (vm.count("priority-status"))
+  {
+    instance.push(new util::Operation(util_literal_param("prioritystatus\r\n")));
   }
 
   if (vm.count("workers"))

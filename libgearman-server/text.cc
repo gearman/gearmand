@@ -119,6 +119,39 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
 
     data.vec_append_printf(".\n");
   }
+  else if (strcasecmp("prioritystatus", (char *)(packet->arg[0])) == 0)
+  {
+    uint32_t job_queued[GEARMAN_JOB_PRIORITY_MAX];
+
+    for (uint32_t function_key= 0;
+         function_key < GEARMAND_DEFAULT_HASH_SIZE;
+         function_key++)
+    {
+      for (gearman_server_function_st *function= Server->function_hash[function_key];
+           function != NULL;
+           function= function->next)
+      {
+        for (size_t priority = 0; priority < GEARMAN_JOB_PRIORITY_MAX; priority++)
+        {
+          job_queued[priority] = 0;
+          for (gearman_server_job_st *server_job= function->job_list[priority];
+               server_job != NULL;
+               server_job= server_job->next)
+          {
+            job_queued[priority]++;
+          }
+        }
+
+        data.vec_append_printf("%.*s\t%u\t%u\t%u\t%u\n",
+                               int(function->function_name_size), function->function_name,
+                               job_queued[GEARMAN_JOB_PRIORITY_HIGH],
+                               job_queued[GEARMAN_JOB_PRIORITY_NORMAL],
+                               job_queued[GEARMAN_JOB_PRIORITY_LOW],
+                               function->worker_count);
+      }
+    }
+    data.vec_append_printf(".\n");
+  }
   else if (strcasecmp("status", (char *)(packet->arg[0])) == 0)
   {
     for (uint32_t function_key= 0;
@@ -135,7 +168,6 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
                                function->job_running, function->worker_count);
       }
     }
-
     data.vec_append_printf(".\n");
   }
   else if (packet->argc >= 3 
