@@ -275,6 +275,18 @@ static test_return_t gearadmin_status_with_jobs_TEST(void* object)
   return TEST_SUCCESS;
 }
 
+static test_return_t gearadmin_priority_status_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char buffer[1024];
+  snprintf(buffer, sizeof(buffer), "--port=%d", int(context->port()));
+  const char *args[]= { buffer, "--priority-status", 0 };
+
+  ASSERT_EQ(EXIT_SUCCESS, exec_cmdline("bin/gearadmin", args, true));
+  return TEST_SUCCESS;
+}
+
 static test_return_t gearadmin_show_unique_jobs_TEST(void* object)
 {
   cli::Context *context= (cli::Context*)object;
@@ -444,6 +456,7 @@ test_st gearadmin_tests[] ={
   {"--show-jobs", 0, gearadmin_show_jobs_TEST},
   {"--show-unique-jobs", 0, gearadmin_show_unique_jobs_TEST},
   {"--status", 0, gearadmin_status_TEST},
+  {"--priority-status", 0, gearadmin_priority_status_TEST},
   {"gearman_client_do_background(100) --status", 0, gearadmin_status_with_jobs_TEST},
   {"--getpid", 0, gearadmin_getpid_test},
   {"--workers", 0, gearadmin_workers_test},

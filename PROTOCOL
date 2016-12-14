@@ -557,6 +557,26 @@ status
     Arguments:
     - None.
 
+prioritystatus
+
+    This sends back a list of all registered functions. Next to each
+    function is the number of queued jobs that are not running, broken down
+    by priority, and the number of capable workers. The columns are tab
+    separated, and the list is terminated with a line containing
+    a single '.' (period). The format is:
+
+    FUNCTION\tHIGH-QUEUED\tNORMAL-QUEUED\tLOW-QUEUED\tAVAILABLE_WORKERS
+
+    Columns:
+    - Function name.
+    - Number of queued high priority jobs.
+    - Number of queued normal priority jobs.
+    - Number of queued low priority jobs.
+    - Available workers registered for this function.
+
+    Arguments:
+    - None.
+
 maxqueue
 
     This sets the maximum queue size for a function. If no size is
