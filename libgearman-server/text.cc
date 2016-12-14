@@ -121,7 +121,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   }
   else if (strcasecmp("prioritystatus", (char *)(packet->arg[0])) == 0)
   {
-    uint32_t jon_queued[GEARMAN_JOB_PRIORITY_MAX];
+    uint32_t job_queued[GEARMAN_JOB_PRIORITY_MAX];
 
     for (uint32_t function_key= 0;
          function_key < GEARMAND_DEFAULT_HASH_SIZE;
@@ -133,20 +133,20 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
       {
         for (size_t priority = 0; priority < GEARMAN_JOB_PRIORITY_MAX; priority++)
         {
-          jon_queued[priority] = 0;
+          job_queued[priority] = 0;
           for (gearman_server_job_st *server_job= function->job_list[priority];
                server_job != NULL;
                server_job= server_job->next)
           {
-            jon_queued[priority]++;
+            job_queued[priority]++;
           }
         }
 
         data.vec_append_printf("%.*s\t%u\t%u\t%u\t%u\n",
                                int(function->function_name_size), function->function_name,
-                               jon_queued[GEARMAN_JOB_PRIORITY_HIGH],
-                               jon_queued[GEARMAN_JOB_PRIORITY_NORMAL],
-                               jon_queued[GEARMAN_JOB_PRIORITY_LOW],
+                               job_queued[GEARMAN_JOB_PRIORITY_HIGH],
+                               job_queued[GEARMAN_JOB_PRIORITY_NORMAL],
+                               job_queued[GEARMAN_JOB_PRIORITY_LOW],
                                function->worker_count);
       }
     }
