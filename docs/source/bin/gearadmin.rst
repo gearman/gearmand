@@ -46,10 +46,6 @@ SYNOPSIS
 
    Workers for the server.
 
-.. option:: --shutdown
-
-   Shutdown server.
-
 
 -----------
 DESCRIPTION
