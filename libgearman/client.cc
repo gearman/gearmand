@@ -599,7 +599,7 @@ gearman_return_t gearman_client_add_server(gearman_client_st *client_shell,
   {
     Client* client= client_shell->impl();
 
-    if (gearman_connection_create(client->universal, host, port) == false)
+    if (gearman_connection_create(client->universal, host, port) == NULL)
     {
       assert(client->error_code() != GEARMAN_SUCCESS);
       return client->error_code();
@@ -614,7 +614,7 @@ gearman_return_t gearman_client_add_server(gearman_client_st *client_shell,
 
 gearman_return_t Client::add_server(const char *host, const char* service_)
 {
-  if (gearman_connection_create(universal, host, service_) == false)
+  if (gearman_connection_create(universal, host, service_) == NULL)
   {
     assert(error_code() != GEARMAN_SUCCESS);
     return error_code();
