@@ -170,7 +170,7 @@ SUBMIT_JOB_LOW, SUBMIT_JOB_LOW_BG
     server will then assign a job handle and respond with a JOB_CREATED
     packet.
 
-    If on of the BG versions is used, the client is not updated with
+    If one of the BG versions is used, the client is not updated with
     status or notified when the job has completed (it is detached).
 
     The Gearman job server queue is implemented with three levels:
