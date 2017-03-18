@@ -273,12 +273,20 @@ AC_DEFUN([AX_ENABLE_SSL],
                       [AC_DEFINE([HAVE_SSL],[1],[Enable SSL Support])
                         AC_DEFINE([HAVE_OPENSSL],[0],[Enable OPENSSL Support])
                       ],
-                      [test "x${have_openssl}" = "xyes"],
-                      [AC_DEFINE([HAVE_SSL],[1],[Enable SSL Support])],
-                      [enable_ssl=no])
-               ])
+                      [AS_IF([test "x${have_openssl}" = "xyes"],
+                        [AC_DEFINE([HAVE_SSL],[1],[Enable SSL Support])]
+                       )]
+                      )
+               ]
+             )
          AM_CONDITIONAL([ENABLE_SSL],[test "x${enable_ssl}" = "xyes"])
          ])
+
+if [ test "x${enable_ssl}" = "xyes" ]; then
+  if ! [ test "x${have_openssl}" = "xyes" ] &&  ! [ test "x${have_cyassl}" = "xyes" ]; then
+    AC_MSG_ERROR([Unable to find either openssl or cyassl])
+  fi
+fi
 
 AX_ENABLE_SSL
 
