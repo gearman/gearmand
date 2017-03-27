@@ -194,6 +194,7 @@ collection_st collection[] ={
 
 static void *world_create(server_startup_st& servers, test_return_t& error)
 {
+  SKIP("unreliable test");
   if (jenkins_is_caller())
   {
     error= TEST_SKIPPED;
