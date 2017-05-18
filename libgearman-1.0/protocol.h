@@ -87,6 +87,7 @@ enum gearman_command_t
   GEARMAN_COMMAND_JOB_ASSIGN_ALL,          /* J->W: HANDLE[0]FUNC[0]UNIQ[0]REDUCER[0]ARGS */
   GEARMAN_COMMAND_GET_STATUS_UNIQUE,          /* C->J: UNIQUE */
   GEARMAN_COMMAND_STATUS_RES_UNIQUE,          /* J->C: UNIQUE[0]KNOWN[0]RUNNING[0]NUM[0]DENOM[0]CLIENT_COUNT */
+  GEARMAN_COMMAND_MASS_DO,              /* W->J: FUNC */
   GEARMAN_COMMAND_MAX /* Always add new commands before this. */
 };
 
