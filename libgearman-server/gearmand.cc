@@ -578,7 +578,7 @@ gearmand_error_t set_socket(gearmand_st* gearmand, int& fd, struct addrinfo *add
   return GEARMAND_SUCCESS;
 }
 
-static const uint32_t bind_timeout= 20; // Number is not special, but look at INFO messages if you decide to change it.
+static const uint32_t bind_timeout= 40; // Number is not special, but look at INFO messages if you decide to change it.
 
 typedef std::pair<std::string, std::string> host_port_t;
 
@@ -697,7 +697,7 @@ static gearmand_error_t _listen_init(gearmand_st *gearmand)
         this_wait= retry * retry / 3 + 1;
 
         // We are in single user threads, so strerror() is fine.
-        gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Retrying bind(%s) on %s:%s %u + %u >= %u", 
+        gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "Retrying bind(%s) on %s:%s %u + %u >= %u",
                            strerror(ret), host, port->port,
                            waited, this_wait, bind_timeout);
 
