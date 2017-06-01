@@ -198,6 +198,7 @@ static void *sig_thread(void *arg)
 
 SignalThread::SignalThread() :
   magic_memory(MAGIC_MEMORY),
+  __shutdown{},
   thread(pthread_self())
 {
   pthread_mutex_init(&shutdown_mutex, NULL);
