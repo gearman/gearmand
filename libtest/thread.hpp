@@ -54,10 +54,7 @@ public:
 
   ~Mutex()
   {
-    if ((_err= pthread_mutex_destroy(&_mutex)))
-    {
-      throw libtest::fatal(LIBYATL_DEFAULT_PARAM, "pthread_cond_destroy: %s", strerror(_err));
-    }
+    _err= pthread_mutex_destroy(&_mutex);
   }
 
   pthread_mutex_t* handle()
@@ -86,11 +83,8 @@ public:
 
   ~ScopedLock()
   {
-    int err;
-    if ((err= pthread_mutex_unlock(_mutex.handle())))
-    {
-      throw libtest::fatal(LIBYATL_DEFAULT_PARAM, "pthread_mutex_unlock: %s", strerror(err));
-    }
+    // returns int error code
+    pthread_mutex_unlock(_mutex.handle());
   }
 
   Mutex* handle()
@@ -101,11 +95,8 @@ public:
 private:
   void init()
   {
-    int err;
-    if ((err= pthread_mutex_lock(_mutex.handle())))
-    {
-      throw libtest::fatal(LIBYATL_DEFAULT_PARAM, "pthread_mutex_lock: %s", strerror(err));
-    }
+    // returns int (error code)
+    pthread_mutex_lock(_mutex.handle());
   }
 
 private:
@@ -126,11 +117,8 @@ public:
 
   ~Condition()
   {
-    int err;
-    if ((err= pthread_cond_destroy(&_cond)))
-    {
-      throw libtest::fatal(LIBYATL_DEFAULT_PARAM, "pthread_cond_destroy: %s", strerror(err));
-    }
+    // returns int - error code
+    pthread_cond_destroy(&_cond);
   }
 
   void broadcast()
