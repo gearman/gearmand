@@ -1,3 +1,12 @@
+branches:
+  only:
+    - master
+    - gh-pages
+
+cache:
+  directories:
+    - docs/dev
+
 language: cpp
 dist: trusty
 sudo: required
@@ -43,3 +52,13 @@ script:
   - ./configure
   - make
   - make test
+  - rm -Rf docs/dev
+  - mv docs/build docs/dev
+  
+deploy:
+  provider: pages                                                                                                                   
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  on:
+    branch: gh-pages
+  target_branch: gh-pages
