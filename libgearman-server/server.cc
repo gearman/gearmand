@@ -809,7 +809,7 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
                                                                 server_con);
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                          "Exception being sent from: %.*s(%lu)",
-                         server_job->function->function_name_size, server_job->function->function_name, server_job->function->function_name_size);
+                         server_job->function->function_name, server_job->function->function_name_size);
       if (server_job == NULL)
       {
         return _server_error_packet(GEARMAN_DEFAULT_LOG_PARAM, server_con, GEARMAN_JOB_NOT_FOUND, 
