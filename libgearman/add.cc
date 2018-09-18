@@ -322,6 +322,7 @@ gearman_task_st *add_task(Client& client,
     break;
   }
 
+  free((void *)(task->send.data));
   if (gearman_success(rc))
   {
     client.new_tasks++;
