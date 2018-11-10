@@ -43,7 +43,7 @@ namespace libtest {
 class disconnected : public libtest::exception
 {
 public:
-  disconnected(const char *file, int line, const char *func, const std::string&, const in_port_t port, ...);
+  disconnected(const char *file, int line, const char *func, const std::string&, const int port, ...);
 
   disconnected(const disconnected&);
 

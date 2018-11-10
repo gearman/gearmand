@@ -1029,8 +1029,8 @@ static test_return_t check_for_gearman(void *)
 
 static test_return_t check_for_drizzle(void *)
 {
-#if defined(HAVE_CYASSL) && HAVE_CYASSL
-  SKIP_IF(HAVE_CYASSL);
+#if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+  SKIP_IF(HAVE_WOLFSSL);
 #endif
 
   test_skip(true, has_drizzled());
@@ -1069,8 +1069,8 @@ static test_return_t clear_servers(void* object)
 
 static test_return_t check_for_memcached(void* object)
 {
-#if defined(HAVE_CYASSL) && HAVE_CYASSL
-  SKIP_IF(HAVE_CYASSL);
+#if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+  SKIP_IF(HAVE_WOLFSSL);
 #endif
 
   test_skip(true, has_memcached());

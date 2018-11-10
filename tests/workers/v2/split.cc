@@ -62,7 +62,7 @@ gearman_return_t split_worker(gearman_job_st *job, void* /* context */)
   {
     if (int(workload[x]) == 0 or int(workload[x]) == int(' '))
     {
-      if ((workload +x -chunk_begin) == 11 and memcmp(chunk_begin, test_literal_param("mapper_fail") == 0))
+      if ((workload +x -chunk_begin) == 11 and memcmp(chunk_begin, test_literal_param("mapper_fail")) == 0)
       {
         return gearman_job_send_exception(job, test_literal_param("Error occurred on purpose"));
       }

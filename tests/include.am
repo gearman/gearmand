@@ -37,7 +37,8 @@ EXTRA_t_cycle_DEPENDENCIES=
 EXTRA_t_cycle_DEPENDENCIES+= gearmand/gearmand
 t_cycle_SOURCES+= tests/cycle.cc
 t_cycle_LDADD+= ${CLIENT_LDADD}
-check_PROGRAMS+=t/cycle
+#TODO fix unreliable t/cycle
+# check_PROGRAMS+=t/cycle
 noinst_PROGRAMS+=t/cycle
 
 t_blobslap_client_SOURCES=

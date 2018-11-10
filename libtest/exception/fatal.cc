@@ -89,7 +89,7 @@ void fatal::increment_disabled_counter() throw()
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 disconnected::disconnected(const char *file_arg, int line_arg, const char *func_arg,
-                           const std::string& instance, const in_port_t port, ...) :
+                           const std::string& instance, const int port, ...) :
   libtest::exception(file_arg, line_arg, func_arg),
   _port(port)
 {

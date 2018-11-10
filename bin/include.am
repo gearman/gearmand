@@ -29,9 +29,9 @@ bin_gearadmin_LDADD+= @BOOST_PROGRAM_OPTIONS_LIB@
 bin_gearadmin_LDFLAGS=
 
 if ENABLE_SSL
-if ENABLE_CYASSL
-bin_gearadmin_LDADD+= @CYASSL_LIB@
-bin_gearadmin_LDFLAGS+= @CYASSL_LDFLAGS@
+if ENABLE_WOLFSSL
+bin_gearadmin_LDADD+= @WOLFSSL_LIB@
+bin_gearadmin_LDFLAGS+= @WOLFSSL_LDFLAGS@
 else
 if ENABLE_OPENSSL
 bin_gearadmin_LDADD+= @OPENSSL_LIBS@

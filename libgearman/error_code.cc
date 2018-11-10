@@ -38,7 +38,15 @@
 #include "gear_config.h"
 
 #include "libgearman/error_code.h"
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-register"
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#endif
 #include "libgearman/error_code.hpp"
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #include "libgearman-1.0/visibility.h"
 #include "libgearman-1.0/strerror.h"

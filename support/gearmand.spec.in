@@ -1,6 +1,6 @@
 Summary: Gearman Server and C Library
 Name: @PACKAGE@
-Version: @VERSION@
+Version: @LIBGEARMAN_VERSION_STRING@
 Release: @RPM_RELEASE@
 License: BSD
 Group: System Environment/Libraries
@@ -10,7 +10,7 @@ Requires: sqlite, libevent >= 1.4, boost-program-options >=  1.39
 
 Packager: Brian Aker <brian@tangent.org>
 
-Source: https://github.com/gearman/gearmand/archive/%{version}.tar.gz
+Source: @PACKAGE@-@VERSION@.tar.gz
 Source1: support/gearmand.init
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
@@ -40,7 +40,7 @@ for %{name}. If you like to develop programs using %{name},
 you will need to install %{name}-devel.
 
 %prep
-%setup -q
+%setup -q -n @PACKAGE@-@VERSION@
 
 %configure --disable-libpq --disable-libtokyocabinet --disable-libdrizzle --disable-libmemcached --enable-jobserver=no
 
@@ -95,7 +95,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS README.md HACKING THANKS
+%doc AUTHORS COPYING NEWS HACKING THANKS README.md
 %{_bindir}/gearadmin
 %{_bindir}/gearman
 %{_libdir}/libgearman.la
@@ -106,7 +106,7 @@ fi
 
 %files server
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS README.md HACKING THANKS
+%doc AUTHORS COPYING NEWS HACKING THANKS README.md
 %{_mandir}/man8/gearmand.8.gz
 %{_sbindir}/gearmand
 /etc/rc.d/init.d/gearmand
@@ -115,7 +115,7 @@ fi
 
 %files devel
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS README.md HACKING THANKS
+%doc AUTHORS COPYING NEWS HACKING THANKS README.md
 %{_includedir}/libgearman/gearman.h
 %{_includedir}/libgearman-1.0/actions.h
 %{_includedir}/libgearman-1.0/aggregator.h

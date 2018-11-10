@@ -58,9 +58,9 @@ use_banner ()
 
 command_not_found_handle ()
 {
-  warn "$@: command not found"
+  warn "$*" ": command not found"
 
-  #if $DEBUG; then 
+  #if $DEBUG; then
     echo ""
     echo "Stack trace:"
     local frame=0
@@ -74,29 +74,30 @@ command_not_found_handle ()
 }
 
 error ()
-{ 
-  echo "$BASH_SOURCE:$BASH_LINENO: $@" >&2
+{
+  echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: " "$*" >&2
 }
 
 die ()
-{ 
-  echo "$BASH_SOURCE:$BASH_LINENO: $@" >&2
-  exit 1; 
+{
+  echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: " "$*" >&2
+  exit 1;
 }
 
 warn ()
-{ 
-  echo "$BASH_SOURCE:$BASH_LINENO: $@"
-  #echo "$BASH_SOURCE:$BASH_LINENO: $@" >&1
+{
+  echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: " "$*"
+  #echo "$BASH_SOURCE:${BASH_LINENO[0]}: $@" >&1
 }
 
 nassert ()
 {
   local param_name=\$"$1"
-  local param_value="$(eval "expr \"$param_name\" ")"
+  local param_value
+  param_value="$(eval "expr \"$param_name\" ")"
 
   if [ -n "$param_value" ]; then
-    echo "$bash_source:$bash_lineno: assert($param_name) had value of "$param_value"" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($param_name) had value of $param_value" >&2
     exit 1
   fi
 }
@@ -104,10 +105,11 @@ nassert ()
 assert ()
 {
   local param_name=\$"$1"
-  local param_value="$(eval "expr \"$param_name\" ")"
+  local param_value
+  param_value="$(eval "expr \"$param_name\" ")"
 
   if [ -z "$param_value" ]; then
-    echo "$bash_source:$bash_lineno: assert($param_name)" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($param_name)" >&2
     exit 1
   fi
 }
@@ -115,7 +117,7 @@ assert ()
 assert_file ()
 {
   if [ ! -f "$1" ]; then
-    echo "$BASH_SOURCE:$BASH_LINENO: assert($1) does not exist: $2" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($1) does not exist: $2" >&2
     exit 1; 
   fi
 }
@@ -123,7 +125,7 @@ assert_file ()
 assert_no_file ()
 {
   if [ -f "$1" ]; then
-    echo "$BASH_SOURCE:$BASH_LINENO: assert($1) file exists: $2" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($1) file exists: $2" >&2
     exit 1;
   fi
 }
@@ -131,7 +133,7 @@ assert_no_file ()
 assert_no_directory ()
 {
   if [ -d "$1" ]; then
-    echo "$BASH_SOURCE:$BASH_LINENO: assert($1) directory exists: $2" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($1) directory exists: $2" >&2
     exit 1;
   fi
 }
@@ -139,12 +141,12 @@ assert_no_directory ()
 assert_exec_file ()
 {
   if [ ! -f "$1" ]; then
-    echo "$BASH_SOURCE:$BASH_LINENO: assert($1) does not exist: $2" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($1) does not exist: $2" >&2
     exit 1;
   fi
 
   if [ ! -x "$1" ]; then
-    echo "$BASH_SOURCE:$BASH_LINENO: assert($1) exists but is not executable: $2" >&2
+    echo "${BASH_SOURCE[0]}:${BASH_LINENO[0]}: assert($1) exists but is not executable: $2" >&2
     exit 1;
   fi
 }
@@ -168,7 +170,8 @@ rebuild_host_os ()
 #  values: darwin,fedora,rhel,ubuntu,debian,opensuse
 set_VENDOR_DISTRIBUTION ()
 {
-  local dist="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+  local dist
+  dist="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
   case "$dist" in
     darwin)
       VENDOR_DISTRIBUTION='darwin'
@@ -188,7 +191,7 @@ set_VENDOR_DISTRIBUTION ()
     suse)
       VENDOR_DISTRIBUTION='opensuse'
       ;;
-    opensuse)
+    opensuse*)
       VENDOR_DISTRIBUTION='opensuse'
       ;;
     *)
@@ -200,9 +203,10 @@ set_VENDOR_DISTRIBUTION ()
 # Validate a Vendor's release name/number 
 set_VENDOR_RELEASE ()
 {
-  local release="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+  local release
+  release="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
 
-  if $verbose; then 
+  if $verbose; then
     echo "VENDOR_DISTRIBUTION:$VENDOR_DISTRIBUTION"
     echo "VENDOR_RELEASE:$release"
   fi
@@ -232,16 +236,13 @@ set_VENDOR_RELEASE ()
           VENDOR_RELEASE='mavericks'
           ;;
         *)
-          echo $release
+          echo "$release"
           VENDOR_RELEASE='unknown'
           ;;
       esac
       ;;
     fedora)
       VENDOR_RELEASE="$release"
-      if [[ "x$VENDOR_RELEASE" == '18' ]]; then
-        VENDOR_RELEASE='sphericalcow'
-      fi
       ;;
     rhel)
       VENDOR_RELEASE="$release"
@@ -275,7 +276,8 @@ set_VENDOR_RELEASE ()
 #  Valid values are: apple, redhat, centos, canonical, oracle, suse
 set_VENDOR ()
 {
-  local vendor="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+  local vendor
+  vendor="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
 
   case $vendor in
     apple)
@@ -305,7 +307,7 @@ set_VENDOR ()
     debian)
       VENDOR='debian'
       ;;
-    opensuse)
+    opensuse*)
       VENDOR='suse'
       ;;
     suse)
@@ -318,64 +320,54 @@ set_VENDOR ()
 
   set_VENDOR_DISTRIBUTION "$2"
   set_VENDOR_RELEASE "$3"
-
-  # Set which vendor/versions we trust for autoreconf
-  case $VENDOR_DISTRIBUTION in
-    fedora)
-      if [[ "x$VENDOR_RELEASE" == 'x18' ]]; then
-        AUTORECONF_REBUILD_HOST=true
-      elif [[ "x$VENDOR_RELEASE" == 'xsphericalcow' ]]; then
-        AUTORECONF_REBUILD_HOST=true
-      elif [[ "x$VENDOR_RELEASE" == 'x19' ]]; then
-        AUTORECONF_REBUILD_HOST=true
-      fi
-      ;;
-    canonical)
-      if [[ "x$VENDOR_RELEASE" == 'xprecise' ]]; then
-        AUTORECONF_REBUILD_HOST=true
-      elif [[ "x$VENDOR_RELEASE" == 'xquantal' ]]; then
-        AUTORECONF_REBUILD_HOST=true
-      fi
-      ;;
-  esac
-
 }
 
 determine_target_platform ()
 {
   UNAME_MACHINE_ARCH="$(uname -m 2>/dev/null)" || UNAME_MACHINE_ARCH=unknown
-  UNAME_KERNEL="$(uname -s 2>/dev/null)"  || UNAME_SYSTEM=unknown
+  UNAME_KERNEL="$(uname -s 2>/dev/null)"  || UNAME_KERNEL=unknown
   UNAME_KERNEL_RELEASE="$(uname -r 2>/dev/null)" || UNAME_KERNEL_RELEASE=unknown
 
-  if [[ -x '/usr/bin/sw_vers' ]]; then 
-    local _VERSION="$(/usr/bin/sw_vers -productVersion)"
-    set_VENDOR 'apple' 'darwin' $_VERSION
+  if [[ -x '/usr/bin/sw_vers' ]]; then
+    local _VERSION
+    _VERSION="$(/usr/bin/sw_vers -productVersion)"
+    set_VENDOR 'apple' 'darwin' "$_VERSION"
   elif [[ $(uname) == 'Darwin' ]]; then
     set_VENDOR 'apple' 'darwin' 'mountain'
-  elif [[ -f '/etc/fedora-release' ]]; then 
-    local fedora_version="$(awk ' { print $3 } ' < /etc/fedora-release)"
-    set_VENDOR 'redhat' 'fedora' $fedora_version
+  elif [[ -f '/etc/fedora-release' ]]; then
+    local fedora_version
+    fedora_version="$(awk ' { print $3 } ' < /etc/fedora-release)"
+    set_VENDOR 'redhat' 'fedora' "$fedora_version"
   elif [[ -f '/etc/centos-release' ]]; then
-    local centos_version="$(awk ' { print $7 } ' < /etc/centos-release)"
-    set_VENDOR 'centos' 'rhel' $centos_version
+    local centos_version
+    centos_version="$(awk ' { print $7 } ' < /etc/centos-release)"
+    set_VENDOR 'centos' 'rhel' "$centos_version"
   elif [[ -f '/etc/SuSE-release' ]]; then
-    local suse_distribution="$(head -1 /etc/SuSE-release | awk ' { print $1 } ')"
-    local suse_version="$(head -1 /etc/SuSE-release | awk ' { print $2 } ')"
-    set_VENDOR 'suse' $suse_distribution $suse_version
+    local suse_distribution
+    suse_distribution="$(head -1 /etc/SuSE-release | awk ' { print $1 } ')"
+    local suse_version
+    suse_version="$(head -1 /etc/SuSE-release | awk ' { print $2 } ')"
+    set_VENDOR 'suse' "$suse_distribution" "$suse_version"
   elif [[ -f '/etc/redhat-release' ]]; then
-    local rhel_version="$(awk ' { print $7 } ' < /etc/redhat-release)"
-    local _vendor="$(rpm -qf /etc/redhat-release)"
-    set_VENDOR $_vendor 'rhel' $rhel_version
-  elif [[ -f '/etc/os-release' ]]; then 
+    local rhel_version
+    rhel_version="$(awk ' { print $7 } ' < /etc/redhat-release)"
+    local _vendor
+    _vendor="$(rpm -qf /etc/redhat-release)"
+    set_VENDOR "$_vendor" 'rhel' "$rhel_version"
+  elif [[ -f '/etc/os-release' ]]; then
+    # shellcheck disable=SC1091
     source '/etc/os-release'
-    set_VENDOR $ID $ID $VERSION_ID
-  elif [[ -x '/usr/bin/lsb_release' ]]; then 
-    local _ID="$(/usr/bin/lsb_release -s -i)"
-    local _VERSION="$(/usr/bin/lsb_release -s -r)"
-    set_VENDOR $_ID $_ID $_VERSION_ID
-  elif [[ -f '/etc/lsb-release' ]]; then 
+    set_VENDOR "$ID" "$ID" "$VERSION_ID"
+  elif [[ -x '/usr/bin/lsb_release' ]]; then
+    local _ID
+    _ID="$(/usr/bin/lsb_release -s -i)"
+    local _VERSION
+    _VERSION="$(/usr/bin/lsb_release -s -r)"
+    set_VENDOR "$_ID" "$_ID" "$_VERSION_ID"
+  elif [[ -f '/etc/lsb-release' ]]; then
+    # shellcheck disable=SC1091
     source '/etc/lsb-release'
-    set_VENDOR 'canonical' $DISTRIB_ID $DISTRIB_CODENAME
+    set_VENDOR 'canonical' "$DISTRIB_ID" "$DISTRIB_CODENAME"
   fi
 
   rebuild_host_os
@@ -395,14 +387,8 @@ run_configure ()
     die "$CONFIGURE does not exist"
   fi
 
-  local BUILD_DIR="$1"
-  if [[ -n "$BUILD_DIR" ]]; then
-    rm -r -f $BUILD_DIR
-    mkdir -p $BUILD_DIR
-  fi
-
   # Arguments for configure
-  local BUILD_CONFIGURE_ARG='' 
+  local BUILD_CONFIGURE_ARG=''
 
   # If debug is set we enable both debug and asssert, otherwise we see if this is a VCS checkout and if so enable assert
   # Set ENV ASSERT in order to enable assert.
@@ -430,11 +416,11 @@ run_configure ()
   case $HOST_OS in
     rhel-5*)
       command_exists 'gcc44' || die "Could not locate gcc44"
-      run CC=gcc44 CXX=gcc44 $top_srcdir/configure "$BUILD_CONFIGURE_ARG" || die "Cannot execute CC=gcc44 CXX=gcc44 configure $BUILD_CONFIGURE_ARG"
+      run CC=gcc44 CXX=gcc44 "$top_srcdir/configure" "$BUILD_CONFIGURE_ARG" || die "Cannot execute CC=gcc44 CXX=gcc44 configure $BUILD_CONFIGURE_ARG"
       ret=$?
       ;;
     *)
-      run $CONFIGURE "$BUILD_CONFIGURE_ARG"
+      run "$CONFIGURE" "$BUILD_CONFIGURE_ARG"
       ret=$?
       ;;
   esac
@@ -452,11 +438,14 @@ setup_gdb_command ()
 {
   GDB_TMPFILE=$(mktemp /tmp/gdb.XXXXXXXXXX)
   echo 'set logging overwrite on' > "$GDB_TMPFILE"
-  echo 'set logging on' >> "$GDB_TMPFILE"
-  echo 'set environment LIBTEST_IN_GDB=1' >> "$GDB_TMPFILE"
-  echo 'run' >> "$GDB_TMPFILE"
-  echo 'thread apply all bt' >> "$GDB_TMPFILE"
-  echo 'quit' >> "$GDB_TMPFILE"
+  {
+  echo 'set logging on'
+  echo 'set environment LIBTEST_IN_GDB=1'
+  echo 'run'
+  echo 'thread apply all bt'
+  echo 'quit'
+  } >> "$GDB_TMPFILE"
+
   GDB_COMMAND="gdb -f -batch -x $GDB_TMPFILE"
 }
 
@@ -587,12 +576,13 @@ make_valgrind ()
 
 make_install_system ()
 {
-  local INSTALL_LOCATION="$(mktemp -d /tmp/XXXXXXXXXX)"
+  local INSTALL_LOCATION
+  INSTALL_LOCATION="$(mktemp -d /tmp/XXXXXXXXXX)"
 
   save_BUILD
   PREFIX_ARG="--prefix=$INSTALL_LOCATION"
 
-  if [ ! -d $INSTALL_LOCATION ] ; then
+  if [ ! -d "$INSTALL_LOCATION" ] ; then
     die "ASSERT temp directory not found '$INSTALL_LOCATION'"
   fi
 
@@ -604,7 +594,7 @@ make_install_system ()
 
   make_target 'uninstall'
 
-  rm -r -f $INSTALL_LOCATION
+  rm -r -f "$INSTALL_LOCATION"
   make 'distclean'
 
   if [ -f 'Makefile' ]; then
@@ -728,7 +718,7 @@ make_for_mingw ()
   fi
 
   # Make sure it is clean
-  if [ -f Makefile -o -f configure ]; then
+  if [ -f Makefile ] || [ -f configure ]; then
     make_maintainer_clean
   fi
 
@@ -755,7 +745,7 @@ make_for_clang ()
   fi
 
   # Make sure it is clean
-  if [ -f Makefile -o -f configure ]; then
+  if [ -f Makefile ] || [ -f configure ]; then
     make_maintainer_clean
   fi
 
@@ -787,7 +777,7 @@ make_for_clang_analyzer ()
   fi
 
   # Make sure it is clean
-  if [ -f Makefile -o -f configure ]; then
+  if [ -f Makefile ] || [ -f configure ]; then
     make_maintainer_clean
   fi
 
@@ -799,6 +789,7 @@ make_for_clang_analyzer ()
   export CC CXX
   CONFIGURE='scan-build ./configure'
   CONFIGURE_ARGS='--enable-debug'
+  export CONFIGURE_ARGS
 
   run_configure
 
@@ -847,8 +838,9 @@ make_universe ()
   make_for_clang_analyzer
 
   use_banner 'mingw'
-  check_mingw
-  if [ $? -eq 0 ]; then
+
+  if !  check_mingw
+  then
     make_for_mingw
   fi
 
@@ -1009,7 +1001,7 @@ make_distcheck ()
 make_rpm ()
 {
   if command_exists 'rpmbuild'; then
-    if [ -f 'rpm.am' -o -d 'rpm' ]; then
+    if [ -f 'rpm.am' ] || [ -d 'rpm' ]; then
       run_configure_if_required
       make_target 'dist-rpm'
 
@@ -1093,7 +1085,7 @@ run_autoreconf ()
   fi
 
   if $use_libtool; then
-    assert $BOOTSTRAP_LIBTOOLIZE
+    assert "$BOOTSTRAP_LIBTOOLIZE"
     if $jenkins_build_environment; then
       run "$BOOTSTRAP_LIBTOOLIZE" '--copy' '--install' || die "Cannot execute $BOOTSTRAP_LIBTOOLIZE"
     else
@@ -1109,7 +1101,7 @@ run_autoreconf ()
 run ()
 {
   if $verbose; then
-    echo "\`$@' $ARGS"
+    echo "\`$*'" "$ARGS"
   fi
 
   if [ -z "$1" ]; then
@@ -1121,7 +1113,7 @@ run ()
 
 parse_command_line_options ()
 {
-  local SHORTOPTS=':apcmt:dvh'
+  local SHORTOPTS=':apcmt:dvho:'
 
   nassert OPT_TARGET
 
@@ -1184,7 +1176,7 @@ parse_command_line_options ()
   shift $((OPTIND-1))
 
   if [ -n "$1" ]; then
-    OPT_TARGET="$@"
+    OPT_TARGET="$*"
   fi
 }
 
@@ -1264,7 +1256,7 @@ autoreconf_setup ()
 
   if $use_libtool; then
     if [[ -n "$LIBTOOLIZE" ]]; then
-      BOOTSTRAP_LIBTOOLIZE="$(type -p $LIBTOOLIZE)"
+      BOOTSTRAP_LIBTOOLIZE=$(type -p "$LIBTOOLIZE")
 
       if [[ -z "$BOOTSTRAP_LIBTOOLIZE" ]]; then
         echo "Couldn't find user supplied libtoolize, it is required"
@@ -1528,10 +1520,10 @@ execute_job ()
     return 1
   fi
 
-  if $print_setup_opt -o  $debug; then
-    echo 
+  if $print_setup_opt -o  "$debug"; then
+    echo
     print_setup
-    echo 
+    echo
 
     # Exit if all we were looking for were the currently used options
     if $print_setup_opt; then
@@ -1552,13 +1544,13 @@ execute_job ()
   fi
 
   local BOOTSTRAP_TARGET_ARRAY
-  BOOTSTRAP_TARGET_ARRAY=( $BOOTSTRAP_TARGET )
+  BOOTSTRAP_TARGET_ARRAY=( "$BOOTSTRAP_TARGET" )
 
   for target in "${BOOTSTRAP_TARGET_ARRAY[@]}"
   do
     # If we are running inside of Jenkins, we want to only run some of the possible tests
     if $jenkins_build_environment; then
-      check_make_target $target
+      check_make_target "$target"
       ret=$?
       if [ $ret -ne 0 ]; then
         warn "Unknown BOOTSTRAP_TARGET option: $target"
@@ -1570,7 +1562,6 @@ execute_job ()
       use_banner $target
     fi
 
-    local snapshot_run=false
     local valgrind_run=false
 
     case $target in
@@ -1629,7 +1620,6 @@ execute_job ()
         ;;
       'snapshot')
         make_for_snapshot
-        snapshot_run=true
         check_snapshot
         ;;
       'rpm')
@@ -1694,10 +1684,6 @@ main ()
   local OLD_PREFIX=
   local OLD_MAKE=
   local OLD_LOG_COMPILER=
-
-  # If we call autoreconf on the platform or not
-  local AUTORECONF_REBUILD_HOST=false
-  local AUTORECONF_REBUILD=false
 
   local -r top_srcdir="$(pwd)"
 
@@ -1785,7 +1771,7 @@ merge ()
 
   if [[ "$VCS_CHECKOUT" == 'bzr' ]]; then
     if test -n "$BRANCH_TO_MERGE"; then
-      bzr merge $BRANCH_TO_MERGE
+      bzr merge "$BRANCH_TO_MERGE"
       bzr commit --message="Merge $BRANCH_TO_MERGE Build: $BUILD_TAG" --unchanged
     fi
 
@@ -1798,7 +1784,8 @@ merge ()
 enable_debug ()
 {
   if ! $debug; then
-    local caller_loc="$(caller)"
+    local caller_loc
+    caller_loc="$(caller)"
     if [[ -n "$1" ]]; then
       echo "$caller_loc Enabling debug: $1"
     else
@@ -1880,6 +1867,7 @@ bootstrap ()
   BOOTSTRAP_SNAPSHOT_CHECK=
 
   if [ -f '.bootstrap' ]; then
+    # shellcheck disable=SC1091
     source '.bootstrap'
   fi
 

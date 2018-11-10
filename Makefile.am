@@ -69,6 +69,7 @@ TESTS += $(check_PROGRAMS)
 XFAIL_TESTS += $(bin_PROGRAMS)
 
 EXTRA_DIST+= HACKING
+EXTRA_DIST+= README.md
 EXTRA_DIST+= scripts/README.solaris
 
 test: check

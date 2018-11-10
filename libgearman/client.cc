@@ -946,7 +946,7 @@ gearman_return_t gearman_client_job_status(gearman_client_st *client_shell,
       *denominator= do_task->impl()->denominator;
     }
 
-    if (is_known == false and is_running == false)
+    if (!is_known and !is_running)
     {
       if (do_task->impl()->options.is_running) 
       {

@@ -465,8 +465,8 @@ collection_st collection[] ={
 
 static void *world_create(server_startup_st& servers, test_return_t& error)
 {
-#if defined(HAVE_CYASSL) && HAVE_CYASSL
-  SKIP_IF(HAVE_CYASSL);
+#if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+  SKIP_IF(HAVE_WOLFSSL);
 #endif
 
   cli::Context *context= new cli::Context(servers);

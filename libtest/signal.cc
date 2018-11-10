@@ -37,6 +37,10 @@
 #include "libtest/yatlcon.h"
 #include <libtest/common.h>
 
+#include <fcntl.h>
+#include <semaphore.h>
+#include <unistd.h>
+
 #include <csignal>
 
 #include <libtest/signal.h>
@@ -83,7 +87,7 @@ shutdown_t SignalThread::get_shutdown()
 
 void SignalThread::post()
 {
-  sem_post(&lock);
+  sem_post(lock);
 }
 
 void SignalThread::test()
@@ -127,7 +131,7 @@ SignalThread::~SignalThread()
     pthread_join(thread, &retval);
   }
 #endif
-  sem_destroy(&lock);
+  sem_close(lock);
 
   unblock();
 }
@@ -210,7 +214,8 @@ SignalThread::SignalThread() :
 
   sigaddset(&set, SIGUSR2);
 
-  sem_init(&lock, 0, 0);
+  strcpy(lock_name, "/XXXXXXXX");
+  mktemp(lock_name);
 
   sigemptyset(&original_set);
   pthread_sigmask(SIG_BLOCK, NULL, &original_set);
@@ -220,6 +225,12 @@ SignalThread::SignalThread() :
 bool SignalThread::setup()
 {
   set_shutdown(SHUTDOWN_RUNNING);
+  lock = sem_open(lock_name, O_CREAT|O_EXCL);
+  if (lock == SEM_FAILED)
+  {
+    Error << strerror(errno) << " when opening lock.";
+  }
+
 
   if (sigismember(&original_set, SIGQUIT))
   {
@@ -254,7 +265,7 @@ bool SignalThread::setup()
     return false;
   }
 
-  sem_wait(&lock);
+  sem_wait(lock);
 
   return true;
 }

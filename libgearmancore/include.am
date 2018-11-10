@@ -13,7 +13,6 @@ noinst_LTLIBRARIES+= libgearman/libgearmancore.la
 libgearman_libgearmancore_la_SOURCES= 
 libgearman_libgearmancore_la_SOURCES+= libgearman/allocator.cc
 libgearman_libgearmancore_la_SOURCES+= libgearman/backtrace.cc
-libgearman_libgearmancore_la_SOURCES+= libgearman/byteorder.cc
 libgearman_libgearmancore_la_SOURCES+= libgearman/check.cc
 libgearman_libgearmancore_la_SOURCES+= libgearman/command.cc
 libgearman_libgearmancore_la_SOURCES+= libgearman/connection.cc

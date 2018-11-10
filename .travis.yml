@@ -1,3 +1,5 @@
+os:
+  - linux
 language: cpp
 dist: trusty
 sudo: required
@@ -13,7 +15,8 @@ matrix:
             - gcc-4.9
             - g++-4.9
         artifacts: true
-      env: COMPILER=g++-4.9
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     - compiler: gcc
       addons:
         apt:
@@ -23,20 +26,23 @@ matrix:
             - gcc-5
             - g++-5
         artifacts: true
-      env: COMPILER=g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+        artifacts: true
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
 before_install:
-  - sudo apt-get update -qq
-  - if [ "$COMPILER" = "g++-4.9" ]; then sudo apt-get install -qq g++-4.9; fi
-  - if [ "$COMPILER" = "g++-4.9" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-  - if [ "$COMPILER" = "g++-5" ]; then sudo apt-get install -qq g++-5; fi
-  - if [ "$COMPILER" = "g++-5" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - sudo apt-get install -y libboost-all-dev
-  - sudo apt-get install -y gperf
-  - sudo apt-get install -y libevent-dev
-  - sudo apt-get install -y uuid-dev
-  - sudo apt-get install -y python-sphinx
-  - sudo apt-get install -y libhiredis-dev
+  - eval "${MATRIX_EVAL}"
+  - . scripts/travis-$TRAVIS_OS_NAME.sh
 
 script:
   - ./bootstrap.sh -a

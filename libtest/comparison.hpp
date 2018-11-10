@@ -93,17 +93,6 @@ bool _compare(const char *file, int line, const char *func, const T1_comparable&
 template <class T1_comparable, class T2_comparable>
 bool _compare_strcmp(const char *file, int line, const char *func, const T1_comparable& __expected, const T2_comparable& __actual)
 {
-  if (__expected == NULL)
-  {
-    FATAL("Expected value was NULL, programmer error");
-  }
-
-  if (__actual == NULL)
-  {
-    libtest::stream::make_cerr(file, line, func) << "Expected " << __expected << " but got NULL";
-    return false;
-  }
-
   if (strncmp(__expected, __actual, strlen(__expected)))
   {
     libtest::stream::make_cerr(file, line, func) << "Expected " << __expected << " passed \"" << __actual << "\"";

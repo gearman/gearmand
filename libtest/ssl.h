@@ -40,6 +40,6 @@
 
 #pragma once
 
-#define YATL_CA_CERT_PEM "/home/brian/cyassl/certs/ca-cert.pem"
-#define YATL_CERT_PEM "/home/brian/cyassl/certs/server-cert.pem"
-#define YATL_CERT_KEY_PEM "/home/brian/cyassl/certs/server-key.pem"
+#define YATL_CA_CERT_PEM "/home/brian/wolfssl/certs/ca-cert.pem"
+#define YATL_CERT_PEM "/home/brian/wolfssl/certs/server-cert.pem"
+#define YATL_CERT_KEY_PEM "/home/brian/wolfssl/certs/server-key.pem"

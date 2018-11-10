@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
 
   ("keepalive", boost::program_options::bool_switch(&opt_keepalive)->default_value(false),
    "Enable keepalive on sockets.")
-
   ("keepalive-idle", boost::program_options::value(&opt_keepalive_idle)->default_value(-1),
    "If keepalive is enabled, set the value for TCP_KEEPIDLE for systems that support it. A value of -1 means that either the system does not support it or an error occurred when trying to retrieve the default value.")
 
@@ -265,12 +264,14 @@ int main(int argc, char *argv[])
         std::vector<std::string> args;
         std::copy(tok.begin(), tok.end(), back_inserter(args));
 
+#if defined(DEBUG) && DEBUG
         for (std::vector<std::string>::iterator iter= args.begin();
              iter != args.end();
              ++iter)
         {
           std::cerr << *iter << std::endl;
         }
+#endif
 
         // Parse the file and store the options
         store(boost::program_options::command_line_parser(args).options(visible).run(), vm);
@@ -386,6 +387,12 @@ int main(int argc, char *argv[])
   }
 
   gearmand_config_sockopt_keepalive(gearmand_config, opt_keepalive);
+
+  gearmand_config_sockopt_keepalive_count(gearmand_config, opt_keepalive_count);
+
+  gearmand_config_sockopt_keepalive_idle(gearmand_config, opt_keepalive_idle);
+
+  gearmand_config_sockopt_keepalive_interval(gearmand_config, opt_keepalive_interval);
 
   gearmand_st *_gearmand= gearmand_create(gearmand_config,
                                           host.empty() ? NULL : host.c_str(),
