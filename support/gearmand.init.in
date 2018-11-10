@@ -25,8 +25,8 @@ prog=@PACKAGE@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -f @sysconf@ ]; then
-        . @sysconf@
+if [ -f $sysconf ]; then
+        . $sysconf
 fi
 
 [ -z "${PIDFILE}" ] && pidfile="@localstatedir@/run/@PACKAGE@/@PACKAGE@.pid"
@@ -51,6 +51,14 @@ stop() {
 	[ $RETVAL = 0 ] && rm -f $lockfile $pidfile
 }
 
+reload() {
+        echo -n $"Reloading $prog: "
+        killproc -p $pidfile $gearmand -SIGHUP
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ]
+}
+
 # See how we were called.
 case "$1" in
   start)
@@ -64,8 +72,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   restart|reload)
-	stop
-	start
+	reload
 	;;
   condrestart|try-restart)
 	if status -p $pidfile $gearmand >&/dev/null; then

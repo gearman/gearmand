@@ -31,7 +31,6 @@ noinst_HEADERS+= libgearman-server/queue.hpp
 noinst_HEADERS+= libgearman-server/text.h
 noinst_HEADERS+= \
 		 libgearman-server/byte.h \
-		 libgearman-server/byteorder.h \
 		 libgearman-server/client.h \
 		 libgearman-server/common.h \
 		 libgearman-server/config.h \
@@ -61,7 +60,6 @@ libgearman_server_libgearman_server_la_SOURCES+= libgearman/vector.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman-server/text.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman-server/config.cc
 libgearman_server_libgearman_server_la_SOURCES+= \
-						 libgearman-server/byteorder.cc \
 						 libgearman-server/client.cc \
 						 libgearman-server/connection.cc \
 						 libgearman-server/function.cc \
@@ -95,9 +93,9 @@ libgearman_server_libgearman_server_la_LIBADD+= @LIBM@
 libgearman_server_libgearman_server_la_LIBADD+= @lt_cv_dlopen_libs@
 libgearman_server_libgearman_server_la_LIBADD+= @RT_LIB@
 if ENABLE_SSL
-if ENABLE_CYASSL
-libgearman_server_libgearman_server_la_LIBADD+= @CYASSL_LIB@
-libgearman_server_libgearman_server_la_LDFLAGS+= @CYASSL_LDFLAGS@
+if ENABLE_WOLFSSL
+libgearman_server_libgearman_server_la_LIBADD+= @WOLFSSL_LIB@
+libgearman_server_libgearman_server_la_LDFLAGS+= @WOLFSSL_LDFLAGS@
 else
 if ENABLE_OPENSSL
 libgearman_server_libgearman_server_la_LIBADD+= @OPENSSL_LIBS@

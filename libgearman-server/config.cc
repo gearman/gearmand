@@ -61,7 +61,7 @@ void gearmand_config_sockopt_keepalive(gearmand_config_st *config, bool keepaliv
   }
 }
 
-void gearmand_config_sockopt_keepalive_idle(gearmand_config_st *config, bool keepalive_idle_)
+void gearmand_config_sockopt_keepalive_idle(gearmand_config_st *config, int keepalive_idle_)
 {
   if (config)
   {
@@ -69,7 +69,7 @@ void gearmand_config_sockopt_keepalive_idle(gearmand_config_st *config, bool kee
   }
 }
 
-void gearmand_config_sockopt_keepalive_interval(gearmand_config_st *config, bool keepalive_interval_)
+void gearmand_config_sockopt_keepalive_interval(gearmand_config_st *config, int keepalive_interval_)
 {
   if (config)
   {
@@ -77,7 +77,7 @@ void gearmand_config_sockopt_keepalive_interval(gearmand_config_st *config, bool
   }
 }
 
-void gearmand_config_sockopt_keepalive_count(gearmand_config_st *config, bool keepalive_count_)
+void gearmand_config_sockopt_keepalive_count(gearmand_config_st *config, int keepalive_count_)
 {
   if (config)
   {

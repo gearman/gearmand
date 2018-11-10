@@ -37,6 +37,18 @@
 
 #pragma once
 
+#include "gear_config.h"
+
+#if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED
+#ifndef GEARMAND_PLUGINS_QUEUE_LIBMEMCACHED_H
+#define GEARMAND_PLUGINS_QUEUE_LIBMEMCACHED_H
+
+#include <libgearman-server/common.h>
+#include <libgearman-server/plugins/queue/base.h>
+#include "libgearman-server/log.h"
+#include <libmemcached/memcached.h>
+
+#include <cerrno>
 
 namespace gearmand {
 namespace plugins {
@@ -47,3 +59,6 @@ void initialize_libmemcached();
 } // namespace queue
 } // namespace plugin
 } // namespace gearmand
+
+#endif
+#endif

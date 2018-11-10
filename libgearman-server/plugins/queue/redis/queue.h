@@ -37,13 +37,71 @@
 
 #pragma once
 
+#if defined(HAVE_HIREDIS) && HAVE_HIREDIS
+#ifndef GEARMAND_PLUGINS_QUEUE_REDIS_H
+#define GEARMAND_PLUGINS_QUEUE_REDIS_H
+
+#include <libgearman-server/common.h>
+#include <libgearman-server/plugins/queue/base.h>
+#include <hiredis/hiredis.h>
+
+typedef std::vector<char> vchar_t;
 
 namespace gearmand {
 namespace plugins {
 namespace queue {
 
+/**
+ * redis result record struct
+ */
+struct redis_record_t {
+  uint32_t priority;
+  std::string data;
+};
+
+/**
+ * redis queue class
+ * provides redisContex object
+ * and a set of helper methods
+ */
+class Hiredis : public Queue {
+  private:
+    redisContext *_redis;
+  public:
+    std::string server;
+    std::string service;
+    std::string password;
+
+    Hiredis();
+    ~Hiredis();
+
+    gearmand_error_t initialize();
+
+    redisContext* redis();
+
+    /*
+     * hmset(vchar_t key, const void *data, size_t data_size, uint32_t)
+     *
+     * returns true if hiredis HMSET succeeded
+     */
+    bool hmset(vchar_t, const void *, size_t, uint32_t);
+
+    /*
+     * bool fetch(char *key, redis_record_t &req)
+     *
+     * fetch redis data for the key
+     * and put it into record
+     *
+     * returns true on success
+     */
+    bool fetch(char *, redis_record_t &);
+}; // class Hiredis
+
 void initialize_redis();
 
 } // namespace queue
-} // namespace plugin
+} // namespace plugins
 } // namespace gearmand
+
+#endif // ifndef GEARMAND_PLUGINS_QUEUE_REDIS_H
+#endif // if defined(HAVE_HIREDIS) && HAVE_HIREDIS

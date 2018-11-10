@@ -40,7 +40,15 @@
 #include <libgearman/common.h>
 
 #include <libgearman-1.0/visibility.h>
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-register"
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#endif
 #include "libgearman/command.hpp"
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #include "libgearman/strcommand.h"
 
 #include "libgearman/assert.hpp"
@@ -133,7 +141,7 @@ const gearman_command_info_st *gearman_command_info(gearman_command_t command)
   return command_info;
 }
 
-const struct gearman_command_info_st * gearman_command_lookup (register const char *str, register unsigned int len)
+const struct gearman_command_info_st * gearman_command_lookup (const char *str, unsigned int len)
 {
   const struct gearman_command_string_st* com_str= String2gearman_command_t::in_word_set(str, len);
   return gearman_command_info(com_str->code);

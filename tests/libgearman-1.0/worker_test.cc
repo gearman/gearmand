@@ -529,6 +529,9 @@ static test_return_t gearman_worker_add_server_GEARMAN_GETADDRINFO_TEST(void *)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#endif
 #pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"
 static test_return_t job_order_TEST(void *)
 {
@@ -597,6 +600,9 @@ static test_return_t job_order_TEST(void *)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#endif
 #pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"
 static test_return_t job_order_background_TEST(void *)
 {

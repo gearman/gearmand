@@ -57,7 +57,6 @@
 
 #include <libgearman-server/constants.h>
 #include <libgearman-server/wakeup.h>
-#include <libgearman-server/byteorder.h>
 #include <libgearman-server/log.h>
 #include <libgearman-server/packet.h>
 #include <libgearman-server/connection.h>

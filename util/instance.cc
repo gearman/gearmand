@@ -113,9 +113,9 @@ Instance::~Instance()
   {
     SSL_CTX_free(_ctx_ssl);
   }
-# if defined(HAVE_CYASSL) && HAVE_CYASSL
-  CyaSSL_Cleanup();
-# endif // defined(HAVE_CYASSL)
+# if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+  wolfSSL_Cleanup();
+# endif // defined(HAVE_WOLFSSL)
 #endif
 }
 
@@ -154,7 +154,7 @@ bool Instance::init_ssl()
     _last_error= message.str();
     return false;
   }
-#endif // defined(HAVE_CYASSL) && HAVE_CYASSL
+#endif // defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
   return true;
 }
 
@@ -315,9 +315,9 @@ bool Instance::run()
               case SSL_ERROR_SSL:
               default:
                 {
-                  char cyassl_error_buffer[SSL_ERROR_SIZE]= { 0 };
-                  ERR_error_string_n(ssl_error, cyassl_error_buffer, sizeof(cyassl_error_buffer));
-                  _last_error= cyassl_error_buffer;
+                  char wolfssl_error_buffer[SSL_ERROR_SIZE]= { 0 };
+                  ERR_error_string_n(ssl_error, wolfssl_error_buffer, sizeof(wolfssl_error_buffer));
+                  _last_error= wolfssl_error_buffer;
 
                   errno= ECONNRESET;
                   write_size= SOCKET_ERROR;
@@ -398,9 +398,9 @@ bool Instance::run()
                 case SSL_ERROR_SSL:
                 default:
                   {
-                    char cyassl_error_buffer[SSL_ERROR_SIZE]= { 0 };
-                    ERR_error_string_n(ssl_error, cyassl_error_buffer, sizeof(cyassl_error_buffer));
-                    _last_error= cyassl_error_buffer;
+                    char wolfssl_error_buffer[SSL_ERROR_SIZE]= { 0 };
+                    ERR_error_string_n(ssl_error, wolfssl_error_buffer, sizeof(wolfssl_error_buffer));
+                    _last_error= wolfssl_error_buffer;
                     read_size= SOCKET_ERROR;
                     break;
                   }

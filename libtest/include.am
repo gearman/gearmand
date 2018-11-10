@@ -120,9 +120,9 @@ libtest_libtest_la_SOURCES=
 libtest_libtest_la_CXXFLAGS+= @LIBMEMCACHED_CFLAGS@
 libtest_libtest_la_LIBADD+= @LIBMEMCACHED_LIB@
 if ENABLE_SSL
-if ENABLE_CYASSL
-libtest_libtest_la_LIBADD+= @CYASSL_LIB@
-libtest_libtest_la_LDFLAGS+= @CYASSL_LDFLAGS@
+if ENABLE_WOLFSSL
+libtest_libtest_la_LIBADD+= @WOLFSSL_LIB@
+libtest_libtest_la_LDFLAGS+= @WOLFSSL_LDFLAGS@
 else
 if ENABLE_OPENSSL
 libtest_libtest_la_LIBADD+= @OPENSSL_LIBS@

@@ -668,7 +668,7 @@ gearman_return_t gearman_connection_st::enable_ssl()
     if (_ssl == NULL)
     {
       close_socket();
-      return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, "CyaSSL_new() failed to return a valid object");
+      return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, "wolfSSL_new() failed to return a valid object");
     }
 
     if (SSL_set_fd(_ssl, fd) != SSL_SUCCESS)
@@ -823,8 +823,8 @@ gearman_return_t gearman_connection_st::flush()
 #if defined(HAVE_SSL) && HAVE_SSL
         if (_ssl)
         {
-#if defined(HAVE_CYASSL) && HAVE_CYASSL
-          write_size= CyaSSL_send(_ssl, send_buffer_ptr, int(send_buffer_size), MSG_NOSIGNAL);
+#if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+          write_size= wolfSSL_send(_ssl, send_buffer_ptr, int(send_buffer_size), MSG_NOSIGNAL);
 #elif defined(HAVE_OPENSSL) && HAVE_OPENSSL
           write_size= SSL_write(_ssl, send_buffer_ptr, int(send_buffer_size));
 #endif
@@ -1013,6 +1013,9 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
       size_t recv_size= recv_socket(recv_buffer +recv_buffer_size, GEARMAN_RECV_BUFFER_SIZE -recv_buffer_size, ret);
       if (gearman_failed(ret))
       {
+        if (ret != GEARMAN_IO_WAIT) {
+          recv_state= GEARMAN_CON_RECV_UNIVERSAL_NONE;
+        }
         return NULL;
       }
 
@@ -1129,8 +1132,8 @@ size_t gearman_connection_st::recv_socket(void *data, size_t data_size, gearman_
 #if defined(HAVE_SSL) && HAVE_SSL
     if (_ssl)
     {
-# if defined(HAVE_CYASSL) && HAVE_CYASSL
-      read_size= CyaSSL_recv(_ssl, data, int(data_size), MSG_NOSIGNAL);
+# if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+      read_size= wolfSSL_recv(_ssl, data, int(data_size), MSG_NOSIGNAL);
 # elif defined(HAVE_OPENSSL) && HAVE_OPENSSL
       read_size= SSL_read(_ssl, data, int(data_size));
 # endif

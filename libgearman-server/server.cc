@@ -623,7 +623,7 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
                                           server_job->data, server_job->data_size,
                                           NULL);
       }
-      else if (packet->command == GEARMAN_COMMAND_GRAB_JOB_ALL and server_job->reducer)
+      else if (packet->command == GEARMAN_COMMAND_GRAB_JOB_ALL and *server_job->reducer != '\0')
       {
         gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                            "Sending reduce submission, Partitioner: %.*s(%lu) Reducer: %.*s(%lu) Unique: %.*s(%lu) with data sized (%lu)" ,
@@ -807,14 +807,15 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       gearman_server_job_st *server_job= gearman_server_job_get(Server,
                                                                 (char *)(packet->arg[0]), (size_t)strlen(packet->arg[0]),
                                                                 server_con);
-      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
-                         "Exception being sent from: %.*s(%lu)",
-                         server_job->function->function_name_size, server_job->function->function_name, server_job->function->function_name_size);
       if (server_job == NULL)
       {
         return _server_error_packet(GEARMAN_DEFAULT_LOG_PARAM, server_con, GEARMAN_JOB_NOT_FOUND, 
                                     gearman_literal_param("An exception was received for a job that does not exist"));
       }
+
+      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
+                         "Exception being sent for handle: %.*s",
+                         (size_t)strlen(server_job->job_handle), server_job->job_handle);
 
       /* Queue the exception packet for all clients. */
       ret= _server_queue_work_data(server_job, packet, GEARMAN_COMMAND_WORK_EXCEPTION);

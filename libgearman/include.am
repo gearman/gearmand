@@ -41,7 +41,6 @@ noinst_HEADERS+= \
 		 libgearman/allocator.hpp \
 		 libgearman/assert.hpp \
 		 libgearman/backtrace.hpp \
-		 libgearman/byteorder.h \
 		 libgearman/command.h \
 		 libgearman/common.h \
 		 libgearman/connection.hpp \
@@ -99,7 +98,6 @@ libgearman_libgearman_la_SOURCES+= \
 				  libgearman/argument.cc \
 				  libgearman/add.cc \
 				  libgearman/backtrace.cc \
-				  libgearman/byteorder.cc \
 				  libgearman/client.cc \
 				  libgearman/command.cc \
 				  libgearman/connection.cc \
@@ -142,9 +140,9 @@ libgearman_libgearman_la_CXXFLAGS+= -DBUILDING_LIBGEARMAN
 libgearman_libgearman_la_LDFLAGS+= -version-info $(GEARMAN_LIBRARY_VERSION)
 
 if ENABLE_SSL
-if ENABLE_CYASSL
-libgearman_libgearman_la_LIBADD+= @CYASSL_LIB@
-libgearman_libgearman_la_LDFLAGS+= @CYASSL_LDFLAGS@
+if ENABLE_WOLFSSL
+libgearman_libgearman_la_LIBADD+= @WOLFSSL_LIB@
+libgearman_libgearman_la_LDFLAGS+= @WOLFSSL_LDFLAGS@
 else
 if ENABLE_OPENSSL
 libgearman_libgearman_la_LIBADD+= @OPENSSL_LIBS@

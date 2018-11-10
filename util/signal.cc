@@ -35,6 +35,8 @@
  */
 
 #include "gear_config.h"
+#include <semaphore.h>
+#include <unistd.h>
 
 #include <cassert>
 #include <cerrno>
@@ -88,7 +90,7 @@ shutdown_t SignalThread::get_shutdown()
 
 void SignalThread::post()
 {
-  sem_post(&lock);
+  sem_post(lock);
 }
 
 void SignalThread::test()
@@ -129,7 +131,7 @@ SignalThread::~SignalThread()
     pthread_join(thread, &retval);
   }
 #endif
-  sem_destroy(&lock);
+  sem_close(lock);
 }
 
 extern "C" {
@@ -203,7 +205,8 @@ SignalThread::SignalThread(bool exit_on_signal_arg) :
   sigaddset(&set, SIGTERM);
   sigaddset(&set, SIGUSR2);
 
-  sem_init(&lock, 0, 0);
+  strcpy(lock_name, "/XXXXXXXXX");
+  mktemp(lock_name);
 }
 
 
@@ -224,7 +227,12 @@ bool SignalThread::setup()
     return false;
   }
 
-  sem_wait(&lock);
+  lock = sem_open(lock_name, 0, 0);
+  if (lock == SEM_FAILED) {
+    std::cerr << "WARNING: sem_open failed(" << strerror(errno) << ")" << std::endl;
+  } else {
+    sem_wait(lock);
+  }
 
   return true;
 }

@@ -40,16 +40,6 @@
 
 #pragma once
 
-#ifndef HAVE_HTONLL
-
-GEARMAN_INTERNAL_API
-uint64_t ntohll(uint64_t);
-
-GEARMAN_INTERNAL_API
-uint64_t htonll(uint64_t);
-
-#endif
-
 #ifdef linux
 /* /usr/include/netinet/in.h defines macros from ntohs() to _bswap_nn to
  * optimize the conversion functions, but the prototypes generate warnings

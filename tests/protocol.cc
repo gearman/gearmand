@@ -53,6 +53,7 @@ using namespace libtest;
 #include "libgearman/protocol/work_exception.h"
 
 #include "tests/regression.h"
+#include <typeinfo>
 
 #ifndef __INTEL_COMPILER
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -163,7 +164,7 @@ static test_return_t GEARMAN_COMMAND_ECHO_REQ_overrun_TEST(void *)
 
   gearman_connection_st *connection1;
   ASSERT_TRUE(connection1= gearman_connection_create(universal, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
-  ASSERT_TRUE(connection1);
+  ASSERT_TRUE(typeid(decltype(*connection1)).name()==typeid(gearman_connection_st).name());
 
   for (size_t x= 0; x < 1000; ++x)
   {

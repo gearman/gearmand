@@ -123,8 +123,8 @@ static size_t _connection_read(gearman_server_con_st *con, void *data, size_t da
 #if defined(HAVE_SSL) && HAVE_SSL
     if (con->_ssl)
     {
-# if defined(HAVE_CYASSL) && HAVE_CYASSL
-      read_size= CyaSSL_recv(con->_ssl, data, int(data_size), MSG_DONTWAIT);
+# if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+      read_size= wolfSSL_recv(con->_ssl, data, int(data_size), MSG_DONTWAIT);
 # else
       read_size= SSL_read(con->_ssl, data, int(data_size));
 # endif
@@ -301,8 +301,8 @@ static gearmand_error_t _connection_flush(gearman_server_con_st *con)
 #if defined(HAVE_SSL) && HAVE_SSL
         if (con->_ssl)
         {
-#if defined(HAVE_CYASSL) && HAVE_CYASSL
-          write_size= CyaSSL_send(con->_ssl, connection->send_buffer_ptr, int(connection->send_buffer_size), MSG_NOSIGNAL|MSG_DONTWAIT);
+#if defined(HAVE_WOLFSSL) && HAVE_WOLFSSL
+          write_size= wolfSSL_send(con->_ssl, connection->send_buffer_ptr, int(connection->send_buffer_size), MSG_NOSIGNAL|MSG_DONTWAIT);
 #elif defined(HAVE_OPENSSL) && HAVE_OPENSSL
           write_size= SSL_write(con->_ssl, connection->send_buffer_ptr, int(connection->send_buffer_size));
 #endif

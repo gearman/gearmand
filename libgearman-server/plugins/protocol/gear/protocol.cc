@@ -374,8 +374,8 @@ static gearmand_error_t _gear_con_add(gearman_server_con_st *connection)
     int accept_error;
     while ((accept_error= SSL_accept(connection->_ssl)) != SSL_SUCCESS)
     {
-      int cyassl_error;
-      switch (cyassl_error= SSL_get_error(connection->_ssl, accept_error))
+      int wolfssl_error;
+      switch (wolfssl_error= SSL_get_error(connection->_ssl, accept_error))
       {
         case SSL_ERROR_NONE:
           break;
@@ -393,10 +393,10 @@ static gearmand_error_t _gear_con_add(gearman_server_con_st *connection)
         case SSL_ERROR_SSL:
         case SSL_ERROR_ZERO_RETURN:
         default:
-          char cyassl_error_buffer[SSL_ERROR_SIZE]= { 0 };
-          ERR_error_string_n(cyassl_error, cyassl_error_buffer, sizeof(cyassl_error_buffer));
+          char wolfssl_error_buffer[SSL_ERROR_SIZE]= { 0 };
+          ERR_error_string_n(wolfssl_error, wolfssl_error_buffer, sizeof(wolfssl_error_buffer));
           return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION, "%s(%d)", 
-                                     cyassl_error_buffer, cyassl_error);
+                                     wolfssl_error_buffer, wolfssl_error);
       }
     }
     gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "GearSSL connection made: %s:%s", connection->host(), connection->port());

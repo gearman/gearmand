@@ -60,7 +60,7 @@ AS_IF([test "x${ac_cv_prog_cc_c99}" == "xno"],[AC_MSG_ERROR([No c99 compatible c
 AC_DEFUN([CHECK_CXX0X],[
           AC_LANG_PUSH([C++])
           AX_CHECK_COMPILE_FLAG([-std=c++0x],[
-                                 CXXFLAGS="$CXXFLAGS -std=c++0x"])
+                                 CXX_STD="c++0x"])
           AC_LANG_POP([C++])
           ])
 CHECK_CXX0X
@@ -175,6 +175,8 @@ AC_CHECK_HEADERS_ONCE([syslog.h])
 AC_CHECK_HEADERS_ONCE([unistd.h])
 AC_CHECK_HEADERS_ONCE([winsock2.h])
 AC_CHECK_HEADERS_ONCE([libmemcached-1.0/types/return.h])
+AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
+              [Define to 1 if you have htonll.])])
 
 AM_CONDITIONAL([BUILD_WIN32_WRAPPERS],[test "x$ac_cv_header_winsock2_h" = "xyes"])
 AS_IF([test "x$ac_cv_header_winsock2_h" = "xyes"],
@@ -252,9 +254,9 @@ AX_CHECK_OPENSSL([have_openssl=yes
                   [have_openssl=no]) 
 AM_CONDITIONAL([ENABLE_OPENSSL],[test "x${have_openssl}" = "xyes"])
 
-# Check for CyaSSL
-AX_CHECK_CYASSL([have_cyassl=yes],[have_cyassl=no]) 
-AM_CONDITIONAL([ENABLE_CYASSL],[test "x${have_cyassl}" = "xyes"])
+# Check for wolfSSL
+AX_CHECK_WOLFSSL([have_wolfssl=yes],[have_wolfssl=no]) 
+AM_CONDITIONAL([ENABLE_WOLFSSL],[test "x${have_wolfssl}" = "xyes"])
 
 AC_DEFUN([AX_ENABLE_SSL],
          [AC_PREREQ([2.63])dnl
@@ -269,7 +271,7 @@ AC_DEFUN([AX_ENABLE_SSL],
                                         ],
                                         [enable_ssl=]_SSL_ENABLE_DEFAULT)
          AS_IF([test "x${enable_ssl}" = "xyes"],
-               [AS_IF([test "x${have_cyassl}" = "xyes"],
+               [AS_IF([test "x${have_wolfssl}" = "xyes"],
                       [AC_DEFINE([HAVE_SSL],[1],[Enable SSL Support])
                         AC_DEFINE([HAVE_OPENSSL],[0],[Enable OPENSSL Support])
                       ],
@@ -283,8 +285,8 @@ AC_DEFUN([AX_ENABLE_SSL],
          ])
 
 if [ test "x${enable_ssl}" = "xyes" ]; then
-  if ! [ test "x${have_openssl}" = "xyes" ] &&  ! [ test "x${have_cyassl}" = "xyes" ]; then
-    AC_MSG_ERROR([Unable to find either openssl or cyassl])
+  if ! [ test "x${have_openssl}" = "xyes" ] &&  ! [ test "x${have_wolfssl}" = "xyes" ]; then
+    AC_MSG_ERROR([Unable to find either openssl or wolfssl])
   fi
 fi
 
@@ -337,6 +339,16 @@ AC_CONFIG_FILES([Makefile
                  support/gearmand.pc
                  support/gearmand.spec])
 
+AS_IF([test "x${ax_enable_debug}" = "xyes"],
+      [AC_DEFUN([CHECK_CXX11],
+          [AC_LANG_PUSH([C++])
+          AX_CHECK_COMPILE_FLAG([-std=c++11], [CXX_STD="c++11"])
+          AC_LANG_POP([C++])
+          ])
+      CHECK_CXX11])
+
+CXXFLAGS=" $CXXFLAGS -std=$CXX_STD"
+
 AC_OUTPUT
 
 echo "---"
@@ -355,6 +367,7 @@ echo "   * LDFLAGS Flags:             $LDFLAGS"
 echo "   * Assertions enabled:        $ax_enable_assert"
 echo "   * Debug enabled:             $ax_enable_debug"
 echo "   * Warnings as failure:       $ac_cv_warnings_as_errors"
+echo "   * Building with hiredis      $ac_enable_hiredis"
 echo "   * Building with libsqlite3   $WANT_SQLITE3"
 echo "   * Building with libdrizzle   $ac_enable_libdrizzle"
 echo "   * Building with libmemcached $ax_enable_libmemcached"
@@ -362,13 +375,21 @@ echo "   * Building with libpq        $ac_cv_libpq"
 echo "   * Building with tokyocabinet $ac_enable_libtokyocabinet"
 echo "   * Building with libmysql     $found_mysql"
 echo "   * SSL enabled:               $enable_ssl"
-echo "   * cyassl found:              $have_cyassl"
+echo "   * wolfssl found:             $have_wolfssl"
 echo "   * openssl found:             $have_openssl"
 echo "   * make -j:                   $enable_jobserver"
 echo "   * VCS checkout:              $ac_cv_vcs_checkout"
 echo "   * sphinx-build:              $SPHINXBUILD"
 echo ""
 echo "---"
+
+if [test "x${ax_enable_debug}" = "xyes"]; then
+    echo "*****"
+    echo "*"
+    echo "*  NOTE: You should execute gearmand with --threads 0 when --enable-debug is specified."
+    echo "*"
+    echo "*****"
+fi
 
 case "$host_os" in
   *freebsd*)

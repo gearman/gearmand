@@ -61,7 +61,6 @@ struct gearman_universal_st;
 #include "libgearman/error_code.h"
 
 /* These are private not to be installed headers */
-#include "libgearman/byteorder.h"
 #include "libgearman/strcommand.h"
 #include "libgearman/vector.hpp"
 #include "libgearman/unique.hpp"

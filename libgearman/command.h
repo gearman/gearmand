@@ -57,7 +57,7 @@ const char *gearman_enum_strcommand(gearman_command_t);
 
 const struct gearman_command_info_st *gearman_command_info(gearman_command_t command);
 
-const struct gearman_command_info_st * gearman_command_lookup (register const char *str, register unsigned int len);
+const struct gearman_command_info_st * gearman_command_lookup (const char *str, unsigned int len);
 
 #ifdef __cplusplus
 }

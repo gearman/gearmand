@@ -318,14 +318,6 @@ gearman_client_st *gearman_job_use_client(gearman_job_st *job_shell)
   return NULL;
 }
 
-static inline void gearman_job_reset_error(Job* job)
-{
-  if (job)
-  {
-    gearman_worker_reset_error(job->_worker);
-  }
-}
-
 gearman_return_t gearman_job_send_data(gearman_job_st *job_shell, const void *data, size_t data_size)
 {
   if (job_shell and job_shell->impl())
