@@ -1636,6 +1636,9 @@ static test_return_t gearman_worker_set_identifier_TEST(void *)
   return TEST_SUCCESS;
 }
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wformat-truncation"
+#endif
 static test_return_t gearman_worker_add_options_GEARMAN_WORKER_GRAB_UNIQ_worker_work(void *)
 {
   libgearman::Worker worker(libtest::default_port());

@@ -45,6 +45,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 gearman_return_t _client_run_task(Task *task)
 {
   // This should not be possible

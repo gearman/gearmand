@@ -63,6 +63,9 @@ using namespace libtest;
 #include <getopt.h>
 #include <unistd.h>
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 int main(int argc, char *argv[], char* environ_[])
 {
   bool opt_massive= false;

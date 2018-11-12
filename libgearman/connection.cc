@@ -464,6 +464,9 @@ gearman_return_t gearman_connection_st::send_packet(const gearman_packet_st& pac
  * This is the real implementation that actually sends a packet. Read the comments for send_packet() for why
  * that is. Note that this is a private method. External callers should only call send_packet().
  */
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 gearman_return_t gearman_connection_st::_send_packet(const gearman_packet_st& packet_arg, const bool flush_buffer)
 {
   switch (send_state)
@@ -684,6 +687,9 @@ gearman_return_t gearman_connection_st::enable_ssl()
   return GEARMAN_SUCCESS;
 }
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 gearman_return_t gearman_connection_st::flush()
 {
   while (1)
@@ -954,6 +960,9 @@ gearman_return_t gearman_connection_st::flush()
   }
 }
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_arg,
                                                     gearman_return_t& ret,
                                                     const bool recv_data)

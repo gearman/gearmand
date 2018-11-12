@@ -572,6 +572,9 @@ gearmand_con_st *gearman_io_context(const gearmand_io_st *connection)
   return connection->context;
 }
 
+#if __GNUC__ >= 7
+  #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
+#endif
 gearmand_error_t gearman_io_send(gearman_server_con_st *con,
                                  const gearmand_packet_st *packet, bool flush)
 {
