@@ -217,7 +217,7 @@ SignalThread::SignalThread() :
 
   strcpy(lock_name, "/XXXXXXXX");
   char *mkdt = mkdtemp(lock_name);
-  if(mkdt == nullptr)
+  if (mkdt == nullptr)
   {
     Error << strerror(errno) << " mkdtemp failed.";
   }

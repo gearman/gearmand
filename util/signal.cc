@@ -206,7 +206,12 @@ SignalThread::SignalThread(bool exit_on_signal_arg) :
   sigaddset(&set, SIGUSR2);
 
   strcpy(lock_name, "/XXXXXXXXX");
-  mktemp(lock_name);
+  char *mkdt = mkdtemp(lock_name);
+  if (mkdt == nullptr)
+  {
+    std::cerr << strerror(errno) << " mkdtemp failed.";
+    abort();
+  }
 }
 
 
