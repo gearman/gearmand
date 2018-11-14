@@ -216,7 +216,11 @@ SignalThread::SignalThread() :
   sigaddset(&set, SIGUSR2);
 
   strcpy(lock_name, "/XXXXXXXX");
-  mktemp(lock_name);
+  char *mkdt = mkdtemp(lock_name);
+  if(mkdt == nullptr)
+  {
+    Error << strerror(errno) << " mkdtemp failed.";
+  }
 
   sigemptyset(&original_set);
   pthread_sigmask(SIG_BLOCK, NULL, &original_set);
