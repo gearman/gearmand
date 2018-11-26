@@ -81,6 +81,19 @@ static test_return_t collection_init(void *object)
   return TEST_SUCCESS;
 }
 
+static test_return_t collection_init_with_prefix(void *object)
+{
+  SKIP_IF(true);
+  Context *test= (Context *)object;
+  assert(test);
+
+  const char *argv[]= { "--queue-type=redis", "--redis-prefix=_prefix_", 0 };
+
+  test->initialize(argv);
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t collection_cleanup(void *object)
 {
   Context *test= (Context *)object;
@@ -142,6 +155,7 @@ test_st regressions[] ={
 collection_st collection[] ={
   {"gearmand redis options", 0, 0, gearmand_basic_option_tests},
   {"redis queue", collection_init, collection_cleanup, tests},
+  {"redis queue with prefix", collection_init_with_prefix, collection_cleanup, tests},
   {"regressions", collection_init, collection_cleanup, regressions},
   {0, 0, 0, 0}
 };

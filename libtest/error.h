@@ -91,6 +91,8 @@ class Error
     {
     }
 
+    Error& operator=(const Error&) = delete;
+
     bool is_error() const
     {
       return _is_error;

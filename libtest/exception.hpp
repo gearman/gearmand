@@ -45,6 +45,8 @@ public:
 
   exception( const exception& );
 
+  exception& operator=(const exception&) = delete;
+
   virtual ~exception() throw();
 
   virtual const char* what() const throw()

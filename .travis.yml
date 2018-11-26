@@ -55,8 +55,16 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - . scripts/travis-$TRAVIS_OS_NAME.sh
 
+before_script:
+  - export -f travis_fold
+
 script:
   - ./bootstrap.sh -a
   - ./configure
   - make
   - make test
+
+after_failure:
+  - travis_fold start "after_failure"
+  - cat test-suite.log
+  - travis_fold end "after_failure"

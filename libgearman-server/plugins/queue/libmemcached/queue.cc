@@ -59,8 +59,6 @@ using namespace gearmand;
 /**
  * Default values.
  */
-static constexpr const char GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX[] = "gear_";
-
 namespace gearmand { namespace plugins { namespace queue { class Libmemcached;  }}}
 
 namespace gearmand {
@@ -69,8 +67,9 @@ namespace queue {
 class LibmemcachedQueue : public gearmand::queue::Context 
 {
 public:
-  LibmemcachedQueue(memcached_server_st* servers):
-    memc_(nullptr)
+  LibmemcachedQueue(memcached_server_st* servers, const std::string& prefix):
+    memc_(nullptr),
+    prefix_(prefix)
   { 
     memc_= memcached_create(nullptr);
 
@@ -105,6 +104,7 @@ public:
 
 private:
   memcached_st* memc_;
+  const std::string prefix_;
 };
 
 } // namespace queue
@@ -122,6 +122,7 @@ public:
   gearmand_error_t initialize();
 
   std::string server_list;
+  std::string prefix;
 private:
 
 };
@@ -130,7 +131,8 @@ Libmemcached::Libmemcached() :
   Queue("libmemcached")
 {
   command_line_options().add_options()
-    ("libmemcached-servers", boost::program_options::value(&server_list), "List of Memcached servers to use.");
+    ("libmemcached-servers", boost::program_options::value(&server_list), "List of Memcached servers to use.")
+    ("libmemcached-prefix", boost::program_options::value(&prefix)->default_value("gear_"), "Prefix to use in memcached keys");
 }
 
 Libmemcached::~Libmemcached()
@@ -147,7 +149,7 @@ gearmand_error_t Libmemcached::initialize()
     return gearmand_gerror("memcached_servers_parse", GEARMAND_QUEUE_ERROR);
   }
 
-  gearmand::queue::LibmemcachedQueue* exec_queue = new gearmand::queue::LibmemcachedQueue { servers };
+  gearmand::queue::LibmemcachedQueue* exec_queue = new gearmand::queue::LibmemcachedQueue { servers, prefix };
   if (exec_queue and exec_queue->init())
   {
     gearman_server_set_queue(Gearmand()->server, exec_queue);
@@ -194,7 +196,7 @@ gearmand_error_t LibmemcachedQueue::add(gearman_server_st *server,
 
   char key[MEMCACHED_MAX_KEY];
   size_t key_length= (size_t)snprintf(key, MEMCACHED_MAX_KEY, "%s%.*s-%.*s",
-                                      GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX,
+                                      prefix_.c_str(),
                                       (int)function_name_size,
                                       (const char *)function_name, (int)unique_size,
                                       (const char *)unique);
@@ -226,7 +228,7 @@ gearmand_error_t LibmemcachedQueue::done(gearman_server_st*,
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "libmemcached done: %.*s", (uint32_t)unique_size, (char *)unique);
 
   size_t key_length= (size_t)snprintf(key, MEMCACHED_MAX_KEY, "%s%.*s-%.*s",
-                                      GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX,
+                                      prefix_.c_str(),
                                       (int)function_name_size,
                                       (const char *)function_name, (int)unique_size,
                                       (const char *)unique);
@@ -245,9 +247,10 @@ gearmand_error_t LibmemcachedQueue::done(gearman_server_st*,
 class Replay
 {
 public:
-  Replay(gearman_server_st* server_arg, memcached_st* _memc) :
+  Replay(gearman_server_st* server_arg, memcached_st* _memc, const std::string& _prefix) :
     server_(server_arg),
-    memc_(nullptr)
+    memc_(nullptr),
+    prefix_(_prefix)
   {
     memc_= memcached_clone(nullptr, _memc);
   }
@@ -274,9 +277,15 @@ public:
     return server_;
   }
 
+  const char* prefix()
+  {
+    return prefix_.c_str();
+  }
+
 private:
   gearman_server_st* server_;
   memcached_st* memc_;
+  const std::string prefix_;
 };
 
 static memcached_return_t callback_loader(const memcached_st*,
@@ -286,13 +295,15 @@ static memcached_return_t callback_loader(const memcached_st*,
   Replay* replay= (Replay*)context;
 
   const char *key= memcached_result_key_value(result);
-  if (strncmp(key, GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX, strlen(GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX)) != 0)
+  const char *prefix= replay->prefix();
+
+  if (strncmp(key, prefix, strlen(prefix)) != 0)
   {
-    gearmand_debug("memcached key did not match GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX");
+    gearmand_debug("memcached key did not match specified prefix");
     return MEMCACHED_SUCCESS;
   }
 
-  const char* function= key +strlen(GEARMAND_QUEUE_LIBMEMCACHED_DEFAULT_PREFIX);
+  const char* function= key +strlen(prefix);
 
   const char* unique= index(function, '-');
   if (!unique)
@@ -364,7 +375,7 @@ gearmand_error_t LibmemcachedQueue::replay(gearman_server_st *server)
 
   if (local_clone)
   {
-    Replay replay_exec(server, memc_);
+    Replay replay_exec(server, memc_, prefix_);
 
     if (replay_exec.init())
     {

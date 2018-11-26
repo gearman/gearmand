@@ -159,7 +159,6 @@ in_port_t get_free_port()
       { 
         struct sockaddr_in sin;
         sin.sin_port= 0;
-        sin.sin_addr.s_addr= 0;
         sin.sin_addr.s_addr= INADDR_ANY;
         sin.sin_family= AF_INET;
 

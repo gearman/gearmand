@@ -112,6 +112,8 @@ Server::Server(const std::string& host_arg, const in_port_t port_arg,
   _hostname(host_arg),
   _app(executable, _is_libtool),
   out_of_ban_killed_(false),
+  _error_file{nullptr},
+  _error_line{},
   _timeout(40)
 {
 }

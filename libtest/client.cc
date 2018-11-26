@@ -62,7 +62,8 @@ SimpleClient::SimpleClient(const std::string& hostname_, in_port_t port_) :
   _error_line(0),
   requested_message(1),
   _ctx_ssl(NULL),
-  _ssl(NULL)
+  _ssl(NULL),
+  _ai{nullptr}
 {
   if (is_ssl())
   {

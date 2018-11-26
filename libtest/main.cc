@@ -180,6 +180,8 @@ int main(int argc, char *argv[], char* environ_[])
 
       case OPT_LIBYATL_LIST_TESTS:
         opt_list_tests= true;
+        opt_list_collection= true;
+        break;
 
       case OPT_LIBYATL_LIST_COLLECTIONS:
         opt_list_collection= true;
@@ -248,17 +250,17 @@ int main(int argc, char *argv[], char* environ_[])
     }
   }
 
-  if ((bool(getenv("YATL_WILDCARD"))))
+  if (getenv("YATL_WILDCARD"))
   {
     wildcard= getenv("YATL_WILDCARD");
   }
 
-  if ((bool(getenv("YATL_RUN_MASSIVE_TESTS"))) or opt_massive)
+  if (getenv("YATL_RUN_MASSIVE_TESTS"))
   {
     opt_massive= true;
   }
 
-  if ((bool(getenv("YATL_SSL"))) or opt_ssl)
+  if (getenv("YATL_SSL"))
   {
     opt_ssl= true;
   }

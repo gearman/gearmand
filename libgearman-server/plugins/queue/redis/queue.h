@@ -71,6 +71,7 @@ class Hiredis : public Queue {
     std::string server;
     std::string service;
     std::string password;
+    std::string prefix;
 
     Hiredis();
     ~Hiredis();

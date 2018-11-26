@@ -39,6 +39,7 @@
 
 #include <fcntl.h>
 #include <semaphore.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -94,7 +95,7 @@ void SignalThread::test()
 {
   fatal_assert(magic_memory == MAGIC_MEMORY);
 
-  if (bool(getenv("LIBTEST_IN_GDB")) == false)
+  if (!getenv("LIBTEST_IN_GDB"))
   {
     assert(sigismember(&set, SIGALRM));
     assert(sigismember(&set, SIGABRT));
@@ -115,6 +116,27 @@ bool SignalThread::unblock()
   }
 
   return true;
+}
+
+std::string SignalThread::random_lock_name(std::string::size_type len = 10)
+{
+  static auto& chrs = "0123456789"
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  thread_local static std::mt19937 rg{std::random_device{}()};
+  thread_local static std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+
+  // convenient to named semaphore definition
+  // http://man7.org/linux/man-pages/man7/sem_overview.7.html
+  std::string s{"/"};
+  s.reserve(len--);
+
+  while (len--)
+  {
+    s += chrs[pick(rg)];
+  }
+  return s;
 }
 
 SignalThread::~SignalThread()
@@ -198,11 +220,12 @@ static void *sig_thread(void *arg)
 
 SignalThread::SignalThread() :
   magic_memory(MAGIC_MEMORY),
+  __shutdown{},
   thread(pthread_self())
 {
   pthread_mutex_init(&shutdown_mutex, NULL);
   sigemptyset(&set);
-  if (bool(getenv("LIBTEST_IN_GDB")) == false)
+  if (!getenv("LIBTEST_IN_GDB"))
   {
     sigaddset(&set, SIGALRM);
     sigaddset(&set, SIGABRT);
@@ -211,12 +234,7 @@ SignalThread::SignalThread() :
     sigaddset(&set, SIGVTALRM);
   }
   sigaddset(&set, SIGPIPE);
-
   sigaddset(&set, SIGUSR2);
-
-  strcpy(lock_name, "/XXXXXXXX");
-  mktemp(lock_name);
-
   sigemptyset(&original_set);
   pthread_sigmask(SIG_BLOCK, NULL, &original_set);
 }
@@ -225,12 +243,14 @@ SignalThread::SignalThread() :
 bool SignalThread::setup()
 {
   set_shutdown(SHUTDOWN_RUNNING);
-  lock = sem_open(lock_name, O_CREAT|O_EXCL);
+
+  const char * lock_name = random_lock_name().c_str();
+  lock = sem_open(lock_name, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0);
   if (lock == SEM_FAILED)
   {
-    Error << strerror(errno) << " when opening lock.";
+    Error << errno << ": " << strerror(errno)
+          << " when opening lock '" << lock_name << "'.";
   }
-
 
   if (sigismember(&original_set, SIGQUIT))
   {

@@ -39,6 +39,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <random>
 
 enum shutdown_t {
   SHUTDOWN_RUNNING,
@@ -50,13 +51,14 @@ namespace libtest {
 
 class SignalThread {
   sigset_t set;
-  char lock_name[10];
   sem_t *lock;
   uint64_t magic_memory;
   volatile shutdown_t __shutdown;
   pthread_mutex_t shutdown_mutex;
   pthread_t thread;
   sigset_t original_set;
+
+  std::string random_lock_name(std::string::size_type);
 
 public:
 

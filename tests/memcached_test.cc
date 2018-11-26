@@ -215,6 +215,30 @@ static test_return_t collection_init(void *object)
   return TEST_SUCCESS;
 }
 
+static test_return_t collection_init_with_prefix(void *object)
+{
+  Context *test= (Context *)object;
+  assert(test);
+
+  memcached_port= libtest::get_free_port();
+  ASSERT_TRUE(server_startup(test->_servers, "memcached", memcached_port, NULL));
+
+  char memcached_server_string[1024];
+  int length= snprintf(memcached_server_string,
+                       sizeof(memcached_server_string),
+                       "--libmemcached-servers=localhost:%d --libmemcached-prefix=prefix_",
+                       int(memcached_port));
+  ASSERT_TRUE(size_t(length) < sizeof(memcached_server_string));
+  const char *argv[]= {
+    memcached_server_string,
+    "--queue-type=libmemcached",
+    0 };
+
+  ASSERT_TRUE(test->initialize(argv));
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t collection_cleanup(void *object)
 {
   Context *test= (Context *)object;
@@ -270,6 +294,7 @@ test_st queue_restart_TESTS[] ={
 collection_st collection[] ={
   {"gearmand options", 0, 0, gearmand_basic_option_tests},
   {"memcached queue", collection_init, collection_cleanup, tests},
+  {"memcached queue with prefix", collection_init_with_prefix, collection_cleanup, tests},
   {"queue restart", 0, collection_cleanup, queue_restart_TESTS},
   {0, 0, 0, 0}
 };

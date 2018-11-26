@@ -35,7 +35,9 @@
  */
 
 #include "gear_config.h"
+#include <fcntl.h>
 #include <semaphore.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -109,6 +111,26 @@ void SignalThread::sighup(signal_callback_fn* arg)
   _sighup= arg;
 }
 
+std::string SignalThread::random_lock_name(std::string::size_type len = 10)
+{
+  static auto& chrs = "0123456789"
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  thread_local static std::mt19937 rg{std::random_device{}()};
+  thread_local static std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+
+  // convenient to named semaphore definition
+  // http://man7.org/linux/man-pages/man7/sem_overview.7.html
+  std::string s{"/"};
+  s.reserve(len--);
+
+  while (len--)
+  {
+    s += chrs[pick(rg)];
+  }
+  return s;
+}
 void SignalThread::sighup()
 {
   if (_sighup)
@@ -204,9 +226,6 @@ SignalThread::SignalThread(bool exit_on_signal_arg) :
   sigaddset(&set, SIGQUIT);
   sigaddset(&set, SIGTERM);
   sigaddset(&set, SIGUSR2);
-
-  strcpy(lock_name, "/XXXXXXXXX");
-  mktemp(lock_name);
 }
 
 
@@ -227,9 +246,11 @@ bool SignalThread::setup()
     return false;
   }
 
-  lock = sem_open(lock_name, 0, 0);
+  const char * lock_name = random_lock_name().c_str();
+  lock = sem_open(lock_name, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0);
   if (lock == SEM_FAILED) {
-    std::cerr << "WARNING: sem_open failed(" << strerror(errno) << ")" << std::endl;
+    std::cerr << "WARNING: sem_open failed(" << strerror(errno) << ")"
+              << " when opening lock '" << lock_name << "'." << std::endl;
   } else {
     sem_wait(lock);
   }

@@ -47,6 +47,8 @@ public:
 
   disconnected(const disconnected&);
 
+  disconnected& operator=(const disconnected&) = delete;
+
   // The following are just for unittesting the exception class
   static bool is_disabled();
   static void disable();

@@ -58,12 +58,11 @@ static int wakeup_fd[2];
 
 static __attribute__((noreturn)) void* current_epoch_handler(void*)
 {
-  gearmand_debug("staring up Epoch thread");
-
+  gearmand_debug("starting up Epoch thread");
   pollfd fds[2];
   while (true)
   {
-    memset(fds, 0, sizeof(pollfd));
+    memset(fds, 0, sizeof(fds));
     fds[0].fd= -1; //STDIN_FILENO;
     fds[0].events= POLLIN;
     fds[0].revents= 0;
