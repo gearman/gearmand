@@ -52,6 +52,7 @@
 #include <sys/types.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <grp.h>
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -506,7 +507,9 @@ static bool _switch_user(const char *user)
       return EXIT_FAILURE;
     }
 
-    if (setgid(pw->pw_gid) == -1 || setuid(pw->pw_uid) == -1)
+    if (setgroups(0, NULL) == -1 ||
+        setgid(pw->pw_gid) == -1 ||
+        setuid(pw->pw_uid) == -1)
     {
       error::message("Could not switch to user", user);
       return EXIT_FAILURE;
