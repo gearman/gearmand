@@ -1648,7 +1648,12 @@ static test_return_t gearman_worker_add_options_GEARMAN_WORKER_GRAB_UNIQ_worker_
   snprintf(function_name, GEARMAN_FUNCTION_MAX_SIZE, "_%s%d", __func__, int(random())); 
 
   char unique_name[GEARMAN_MAX_UNIQUE_SIZE];
-  snprintf(unique_name, GEARMAN_MAX_UNIQUE_SIZE, "_%s%d", __func__, int(random())); 
+  // As function name length is allready 64 bytes it should be subset of __func__
+  char half_unique_name[(GEARMAN_MAX_UNIQUE_SIZE / 2)];
+  memset(unique_name, 0x00, GEARMAN_MAX_UNIQUE_SIZE);
+  memcpy(half_unique_name, __func__, (GEARMAN_MAX_UNIQUE_SIZE / 2));
+  half_unique_name[(GEARMAN_MAX_UNIQUE_SIZE / 2) -1] = '\0';
+  snprintf(unique_name, GEARMAN_MAX_UNIQUE_SIZE, "_%s%d", half_unique_name, int(random())); 
 
   bool success= false;
   ASSERT_EQ(GEARMAN_SUCCESS,
