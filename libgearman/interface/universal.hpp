@@ -51,7 +51,8 @@ enum universal_options_t
   GEARMAN_UNIVERSAL_NON_BLOCKING,
   GEARMAN_UNIVERSAL_DONT_TRACK_PACKETS,
   GEARMAN_UNIVERSAL_IDENTIFY,
-  GEARMAN_UNIVERSAL_MAX
+  GEARMAN_UNIVERSAL_MAX,
+  GEARMAN_UNIVERSAL_STOP_WAIT_ON_SIGNAL
 };
 
 /**
@@ -66,12 +67,14 @@ struct gearman_universal_st : public error_st
   struct Options {
     bool dont_track_packets;
     bool non_blocking;
+    bool stop_wait_on_signal;
     bool no_new_data;
     bool _ssl;
 
     Options() :
       dont_track_packets{false},
       non_blocking{false},
+      stop_wait_on_signal{false},
       no_new_data{false},
       _ssl{false}
     { }
@@ -123,6 +126,15 @@ struct gearman_universal_st : public error_st
   void non_blocking(bool arg_)
   {
     options.non_blocking= arg_;
+  }
+
+  bool is_stop_wait_on_signal() const
+  {
+      return options.stop_wait_on_signal;
+  }
+  void stop_wait_on_signal(bool arg_)
+  {
+    options.stop_wait_on_signal = arg_;
   }
 
   const char *error() const

@@ -97,6 +97,7 @@ void gearman_universal_clone(gearman_universal_st &destination, const gearman_un
   destination.wakeup(source.has_wakeup());
 
   (void)gearman_universal_set_option(destination, GEARMAN_UNIVERSAL_NON_BLOCKING, source.options.non_blocking);
+  (void)gearman_universal_set_option(destination, GEARMAN_UNIVERSAL_STOP_WAIT_ON_SIGNAL, source.options.stop_wait_on_signal);
 
   destination.ssl(source.ssl());
 
@@ -144,6 +145,10 @@ gearman_return_t gearman_universal_set_option(gearman_universal_st &self, univer
   {
   case GEARMAN_UNIVERSAL_NON_BLOCKING:
     self.options.non_blocking= value;
+    break;
+
+  case GEARMAN_UNIVERSAL_STOP_WAIT_ON_SIGNAL:
+    self.options.stop_wait_on_signal= value;
     break;
 
   case GEARMAN_UNIVERSAL_DONT_TRACK_PACKETS:
@@ -319,6 +324,10 @@ gearman_return_t gearman_wait(gearman_universal_st& universal)
       switch(errno)
       {
       case EINTR:
+        if (universal.is_stop_wait_on_signal())
+        {
+          return GEARMAN_IO_WAIT;
+        }
         continue;
 
       case EINVAL:
@@ -447,6 +456,10 @@ gearman_return_t gearman_universal_st::option(const universal_options_t& option_
   {
     case GEARMAN_UNIVERSAL_NON_BLOCKING:
       non_blocking(value);
+      break;
+
+    case GEARMAN_UNIVERSAL_STOP_WAIT_ON_SIGNAL:
+        stop_wait_on_signal(value);
       break;
 
     case GEARMAN_UNIVERSAL_DONT_TRACK_PACKETS:
