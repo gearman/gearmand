@@ -56,12 +56,12 @@ void set_default_socket(const char *socket)
   if (socket)
   {
     uint16_t strlength = strlen(socket);
-    if(strlength > 1024)
+    if(strlength >= 1024)
     {
-      strlength = 1024;
+      strlength = 1023;
     }
     memcpy(global_socket, socket, strlength);
-    global_socket[1024 -1]= '\0';
+    global_socket[strlength]= '\0';
   }
 }
 
