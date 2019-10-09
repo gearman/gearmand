@@ -167,7 +167,7 @@ gearmand_thread_st::gearmand_thread_st(gearmand_st& gearmand_):
   dcon_add_count{0},
   free_dcon_count{0},
   wakeup_fd{},
-  _gearmand{gearmand_},
+  _gearmand(gearmand_),
   next{nullptr},
   prev{nullptr},
   base{nullptr},

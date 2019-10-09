@@ -66,7 +66,7 @@ gearman_server_options_st::gearman_server_options_st(gearman_universal_st &unive
   _option{option_arg_size},
   next{nullptr},
   prev{nullptr},
-  universal{universal_}
+  universal(universal_)
 {
   _option.append(option_arg, option_arg_size);
   if (universal.server_options_list)
