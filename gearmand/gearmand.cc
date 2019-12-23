@@ -134,6 +134,13 @@ int main(int argc, char *argv[])
   int opt_keepalive_interval;
   int opt_keepalive_count;
 
+#ifdef EVTHREAD_USE_PTHREADS_IMPLEMENTED
+  evthread_use_pthreads();
+#endif
+
+#ifdef EVTHREAD_USE_WINDOWS_THREADS_IMPLEMENTED
+  evthread_use_windows_threads();
+#endif
 
   boost::program_options::options_description general("General options");
 
