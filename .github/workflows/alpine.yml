@@ -1,0 +1,21 @@
+name : alpine
+
+on:
+  push
+
+jobs:
+  gearman:
+    runs-on: ubuntu-latest
+    container: alpine
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install deps 
+        run:
+          apk add musl-dev gcc g++ autoconf automake m4 git make util-linux-dev libuuid libevent-dev gperf boost-dev 
+      - name: Configure
+        run:
+          ./configure
+      - name: Make
+        run: 
+          make 
