@@ -197,6 +197,9 @@ set_VENDOR_DISTRIBUTION ()
     alpine)
       VENDOR_DISTRIBUTION='alpine'
       ;;
+    nixos)
+      VENDOR_DISTRIBUTION='nixos'
+      ;;
     *)
       die "attempt to set an invalid VENDOR_DISTRIBUTION=$dist"
       ;;
@@ -269,6 +272,9 @@ set_VENDOR_RELEASE ()
     alpine)
       VENDOR_RELEASE="$release"
       ;;
+    nixos)
+      VENDOR_RELEASE="$release"
+      ;;
     unknown)
       die "attempt to set VENDOR_RELEASE without setting VENDOR_DISTRIBUTION"
       ;;
@@ -315,6 +321,9 @@ set_VENDOR ()
       ;;
     debian)
       VENDOR='debian'
+      ;;
+    nixos)
+      VENDOR='nixos'
       ;;
     opensuse*)
       VENDOR='suse'
