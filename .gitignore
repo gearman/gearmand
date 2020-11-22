@@ -56,7 +56,6 @@ libgearman/libgearman_worker.la
 libgearman/quit.lo
 libgearman/server.lo
 libgearman/stamp-h1
-libhashkit/hashkitcon.h
 libhostile/t/accept
 libhostile/t/close
 libhostile/t/hostile_accept

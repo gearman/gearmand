@@ -48,7 +48,7 @@
 
 #include "libgearman/vector.h"
 #include "libgearman/uuid.hpp"
-#include "libhashkit-1.0/hashkit.h"
+#include <libhashkit/hashkit.h>
 
 #include <cerrno>
 #include <cstdio>
