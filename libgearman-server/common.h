@@ -129,7 +129,8 @@ extern "C" {
     __obj->__prefix ## prev->__prefix ## next= __obj->__prefix ## next; \
   if (__obj->__prefix ## next != NULL) \
     __obj->__prefix ## next->__prefix ## prev= __obj->__prefix ## prev; \
-  __list ## _count--; \
+  if (__list ## _count > 0) \
+    __list ## _count--; \
 }
 
 #define GEARMAND_LIST__DEL(__list, __obj) { \
@@ -139,7 +140,8 @@ extern "C" {
     __obj->prev->next= __obj->next; \
   if (__obj->next != NULL) \
     __obj->next->prev= __obj->prev; \
-  __list ## _count--; \
+  if (__list ## _count > 0) \
+    __list ## _count--; \
 }
 
 /**
@@ -215,9 +217,9 @@ extern "C" {
     __obj->__prefix ## prev->__prefix ## next= __obj->__prefix ## next; \
   if (__obj->__prefix ## next != NULL) \
     __obj->__prefix ## next->__prefix ## prev= __obj->__prefix ## prev; \
-  __hash ## _count--; \
+  if (__hash ## _count > 0) \
+    __hash ## _count--; \
 }
-
 #define GEARMAND_HASH__DEL(__hash, __key, __obj) { \
   if (__hash ## _hash[__key] == __obj) \
     __hash ## _hash[__key]= __obj->next; \
@@ -225,7 +227,8 @@ extern "C" {
     __obj->prev->next= __obj->next; \
   if (__obj->next != NULL) \
     __obj->next->prev= __obj->prev; \
-  __hash ## _count--; \
+  if (__hash ## _count > 0) \
+    __hash ## _count--; \
 }
 
 #define gearmand_array_size(__object) (sizeof((__object)) / sizeof(*(__object)))

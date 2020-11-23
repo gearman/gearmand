@@ -411,13 +411,17 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
           // Otherwise, just remove the item from the list
           previous_job->function_next= server_job->function_next;
         }
-        
+
         // If it's the tail of the list, move the tail back
         if (server_job->function->job_end[priority] == server_job)
         {
           server_job->function->job_end[priority]= previous_job;
         }
-        server_job->function->job_count--;
+
+        if (server_job->function->job_count > 0)
+        {
+          server_job->function->job_count--;
+        }
 
         server_job->worker= server_worker;
         GEARMAND_LIST_ADD(server_worker->job, server_job, worker_);
