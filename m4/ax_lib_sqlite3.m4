@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_lib_sqlite3.html
+#      https://www.gnu.org/software/autoconf-archive/ax_lib_sqlite3.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -12,9 +12,9 @@
 #
 #   This macro takes only one optional argument, required version of SQLite
 #   3 library. If required version is not passed, 3.0.0 is used in the test
-#   of existance of SQLite 3.
+#   of existence of SQLite 3.
 #
-#   If no intallation prefix to the installed SQLite library is given the
+#   If no installation prefix to the installed SQLite library is given the
 #   macro searches under /usr, /usr/local, and /opt.
 #
 #   This macro calls:
@@ -36,7 +36,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 14
+#serial 18
 
 AC_DEFUN([AX_LIB_SQLITE3],
 [
@@ -108,7 +108,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
             AC_LANG_PROGRAM([[@%:@include <sqlite3.h>]],
                 [[
 #if (SQLITE_VERSION_NUMBER >= $sqlite3_version_req_number)
-// Everything is okay
+/* Everything is okay */
 #else
 #  error SQLite version is too old
 #endif
@@ -122,7 +122,6 @@ AC_DEFUN([AX_LIB_SQLITE3],
             [
             AC_MSG_RESULT([not found])
             success="no"
-            WANT_SQLITE3="no"
             ]
         )
         AC_LANG_POP(C)

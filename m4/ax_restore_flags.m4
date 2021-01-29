@@ -1,5 +1,5 @@
 # ===========================================================================
-#     http://www.gnu.org/software/autoconf-archive/ax_restore_flags.html
+#     https://www.gnu.org/software/autoconf-archive/ax_restore_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -36,7 +36,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 6
+#serial 7
 
 # save one flag in name space
 AC_DEFUN([_AX_RESTORE_ONE_FLAG],[dnl
