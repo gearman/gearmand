@@ -1,4 +1,4 @@
-ARG version=latest
+ARG version=3.13
 FROM alpine:${version}
 
 ARG version
@@ -6,7 +6,7 @@ ARG GEARMAN_REPO=https://github.com/gearman/gearmand
 
 LABEL description="Gearman Job Server Image (Alpine ${version})"
 LABEL maintainer="Gearmand Developers https://github.com/gearman/gearmand"
-LABEL version="https://github.com/gearman/gearmand/tree/master Alpine ${version}"
+LABEL version="${version}"
 
 # Install packages
 RUN apk add --no-cache \
