@@ -204,8 +204,8 @@ Application::error_t Application::run(const char *args[])
 
   fatal_assert(posix_spawnattr_setsigmask(&spawnattr, &mask) == 0);
 
-#if defined(POSIX_SPAWN_USEVFORK) || defined(__linux__)
-  // Use USEVFORK on linux
+#if defined(POSIX_SPAWN_USEVFORK) || defined(__GLIBC__)
+  // Use USEVFORK where appropriate
   flags |= POSIX_SPAWN_USEVFORK;
 #endif
 
