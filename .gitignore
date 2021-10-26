@@ -11,6 +11,8 @@
 .libs
 Makefile
 Makefile.in
+!docker/example/*/Makefile
+!docker/testing/*/*/Makefile
 TAGS
 aclocal.m4
 aminclude.am
