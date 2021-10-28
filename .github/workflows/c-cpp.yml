@@ -17,10 +17,6 @@ jobs:
       run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev gcc g++
     - name: bootstrap
       run: ./bootstrap.sh
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
     - name: make check
       run: make check
     - name: make distcheck
