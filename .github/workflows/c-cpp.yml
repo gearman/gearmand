@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: apt-get install -y -f libboost-all-dev gperf libevent-dev uuid-dev python-sphinx libhiredis-dev gcc g++
+      run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev python-sphinx libhiredis-dev gcc g++
     - name: bootstrap
       run: ./bootstrap.sh
     - name: configure
