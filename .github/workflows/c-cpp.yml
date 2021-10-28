@@ -19,5 +19,3 @@ jobs:
       run: ./bootstrap.sh
     - name: make check
       run: make check
-    - name: make distcheck
-      run: make distcheck
