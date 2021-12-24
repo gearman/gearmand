@@ -130,6 +130,7 @@ Postgres::~Postgres ()
 
 gearmand_error_t Postgres::initialize()
 {
+  // "IF NOT EXISTS" added in Postgres 9.1
   _create_query+= "CREATE TABLE IF NOT EXISTS " +table +" (unique_key VARCHAR" +"(" + TOSTRING(GEARMAN_UNIQUE_SIZE) +"), ";
   _create_query+= "function_name VARCHAR(255), priority INTEGER, data BYTEA, when_to_run INTEGER, UNIQUE (unique_key, function_name))";
 
