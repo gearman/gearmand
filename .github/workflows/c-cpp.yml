@@ -13,12 +13,15 @@ jobs:
 
     runs-on: ${{ matrix.config.os }}
 
-#    container: gcc:${{ matrix.config.tag }}
-
     strategy:
       fail-fast: false
       matrix:
         config:
+#          - {os: ubuntu-16.04, cc: 'gcc', cxx: 'g++', tag: '4.8'}
+#          - {os: ubuntu-16.04, cc: 'gcc', cxx: 'g++', tag: '4.9'}
+          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
+          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
+          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
           - {os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
 
@@ -37,4 +40,4 @@ jobs:
     - name: make
       run: ${CC} --version && make
     - name: make test
-      run: make test
+      run: ${CC} --version && make test
