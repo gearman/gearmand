@@ -12,13 +12,14 @@ jobs:
     name: ${{ matrix.config.os }} ${{ matrix.config.cc }}-${{ matrix.config.tag }}
 
     runs-on: ${{ matrix.config.os }}
+    container: ${{ matrix.container }}
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.8'}
-          - {os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.9'}
+          - {name: 'ubuntu-16.04 gcc-4.8', os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.8'}
+          - {name: 'ubuntu-16.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.9'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
