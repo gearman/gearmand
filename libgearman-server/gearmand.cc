@@ -852,13 +852,13 @@ static void _listen_clear(gearmand_st *gearmand)
 static void _listen_event(int event_fd, short events __attribute__ ((unused)), void *arg)
 {
   gearmand_port_st *port= (gearmand_port_st *)arg;
-  struct sockaddr_storage sa;
+  struct sockaddr sa;
 
   socklen_t sa_len= sizeof(sa);
 #if defined(HAVE_ACCEPT4) && HAVE_ACCEPT4
-  int fd= accept4(event_fd, (struct sockaddr *)&sa, &sa_len, SOCK_NONBLOCK); //  SOCK_NONBLOCK);
+  int fd= accept4(event_fd, &sa, &sa_len, SOCK_NONBLOCK); //  SOCK_NONBLOCK);
 #else
-  int fd= accept(event_fd, (struct sockaddr *)&sa, &sa_len);
+  int fd= accept(event_fd, &sa, &sa_len);
 #endif
 
   if (fd == -1)
@@ -890,8 +890,7 @@ static void _listen_event(int event_fd, short events __attribute__ ((unused)), v
   */
   char host[NI_MAXHOST];
   char port_str[NI_MAXSERV];
-  int error= getnameinfo((struct sockaddr *)&sa, sa_len, host, NI_MAXHOST,
-                         port_str, NI_MAXSERV,
+  int error= getnameinfo(&sa, sa_len, host, NI_MAXHOST, port_str, NI_MAXSERV,
                          NI_NUMERICHOST | NI_NUMERICSERV);
   if (error != 0)
   {
