@@ -1,4 +1,4 @@
-name: GitHub CI
+name: GitHub Actions CI
 
 on:
   push:
@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-latest, container: ubuntu:16.04, cc: 'gcc', cxx: 'g++', tag: '4.8'}
-          - {os: ubuntu-latest, container: ubuntu:16.04, cc: 'gcc', cxx: 'g++', tag: '4.9'}
+          - {os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.8'}
+          - {os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.9'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
           - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
