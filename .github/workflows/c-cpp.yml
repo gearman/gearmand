@@ -12,7 +12,7 @@ jobs:
     name: ${{ matrix.config.os }} ${{ matrix.config.cc }}-${{ matrix.config.tag }}
 
     runs-on: ${{ matrix.config.os }}
-    container: ${{ matrix.container }}
+    container: ${{ matrix.config.container }}
 
     strategy:
       fail-fast: false
