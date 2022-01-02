@@ -9,13 +9,32 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    name: ${{ matrix.config.os }} ${{ matrix.config.cc }} ${{ matrix.config.tag }}
+
+    runs-on: ${{ matrix.config.os }}
+
+    container: gcc:${{ matrix.config.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
+          - {os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
+
+    env:
+      CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
+      CXX: ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
 
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev gcc g++
+      run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
     - name: bootstrap
-      run: ./bootstrap.sh
-    - name: make check
-      run: make check
+      run: ./bootstrap.sh -a
+    - name: configure
+      run: ./configure --enable-ssl
+    - name: make
+      run: ${CC} --version && make
+    - name: make test
+      run: make test
