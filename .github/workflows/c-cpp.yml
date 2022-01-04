@@ -9,8 +9,7 @@ on:
 jobs:
   build:
 
-    name: ${{ matrix.config.os }} ${{ matrix.config.cc }}-${{ matrix.config.tag }}
-
+    name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     container: ${{ matrix.config.container }}
 
@@ -20,19 +19,26 @@ jobs:
         config:
           - {name: 'ubuntu-16.04 gcc-4.8', os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.8'}
           - {name: 'ubuntu-16.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:16.04', cc: 'gcc', cxx: 'g++', tag: '4.9'}
-          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
-          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
-          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
-          - {os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
-          - {os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
-          - {os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
+          - {name: 'ubtunu-18.04 gcc-5', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
+          - {name: 'ubtunu-18.04 gcc-6', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
+          - {name: 'ubtunu-18.04 gcc-7', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
+          - {name: 'ubtunu-18.04 gcc-8', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
+          - {name: 'ubtunu-18.04 gcc-9', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
+          - {name: 'ubtunu-18.04 gcc-10', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
 
     env:
       CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
       CXX: ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
+      GHA_CONTAINER: ${{ matrix.config.container }}
+
+    shell:
+      bash
 
     steps:
     - uses: actions/checkout@v2
+    - name: check if running in a container
+        if: matrix.container != ''
+        run: apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata sudo software-properties-common libssl-dev build-essential
     - name: install dependencies
       run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
     - name: bootstrap
