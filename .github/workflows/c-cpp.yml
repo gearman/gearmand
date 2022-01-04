@@ -23,8 +23,8 @@ jobs:
           - {name: 'ubtunu-18.04 gcc-6', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
           - {name: 'ubtunu-18.04 gcc-7', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
           - {name: 'ubtunu-18.04 gcc-8', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
-          - {name: 'ubtunu-18.04 gcc-9', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
-          - {name: 'ubtunu-18.04 gcc-10', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
+          - {name: 'ubtunu-20.04 gcc-9', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
+          - {name: 'ubtunu-20.04 gcc-10', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
 
     env:
       CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
@@ -39,11 +39,13 @@ jobs:
           sudo apt-add-repository ppa:git-core/ppa
           sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
     - name: install dependencies
-      run: sudo apt-get -o Acquire::Retries=3 install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
+      run: sudo apt-get -o Acquire::Retries=3 install -y libboost-all-dev libboost-program-options-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
     - uses: actions/checkout@v2
     - name: bootstrap
       run: |
-           echo "GHA_CONTAINER = $GHA_CONTAINER"
+           if [ -n "$GHA_CONTAINER" ]; then
+              echo "container: $GHA_CONTAINER"
+           fi
            cat /etc/lsb-release
            ./bootstrap.sh -a
     - name: configure
