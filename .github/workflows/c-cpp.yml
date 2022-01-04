@@ -44,7 +44,7 @@ jobs:
     - name: bootstrap
       run: |
            echo "GHA_CONTAINER = $GHA_CONTAINER"
-           cat /etc/lsb_release
+           cat /etc/lsb-release
            ./bootstrap.sh -a
     - name: configure
       run: ./configure --enable-ssl
