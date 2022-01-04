@@ -31,9 +31,6 @@ jobs:
       CXX: ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
       GHA_CONTAINER: ${{ matrix.config.container }}
 
-    shell:
-      bash
-
     steps:
     - uses: actions/checkout@v2
     - name: check if running in a container
