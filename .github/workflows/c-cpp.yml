@@ -37,8 +37,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: check if running in a container
-        if: matrix.config.container != ''
-        run: apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata sudo software-properties-common libssl-dev build-essential
+      if: matrix.config.container != ''
+      run: apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata sudo software-properties-common libssl-dev build-essential
     - name: install dependencies
       run: sudo apt-get install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
     - name: bootstrap
