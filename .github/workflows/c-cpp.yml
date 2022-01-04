@@ -18,7 +18,7 @@ jobs:
       matrix:
         config:
           - {name: 'ubuntu-14.04 gcc-4.8', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc', cxx: 'g++', tag: '4.8'}
-          - {name: 'ubuntu-14.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc', cxx: 'g++', tag: '4.9'}
+          - {name: 'ubuntu-14.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc', cxx: 'g++', tag: '4.9', toolchain: 'ppa:ubuntu-toolchain-r/test'}
           - {name: 'ubtunu-18.04 gcc-5', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
           - {name: 'ubtunu-18.04 gcc-6', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
           - {name: 'ubtunu-18.04 gcc-7', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
@@ -32,12 +32,17 @@ jobs:
       GHA_CONTAINER: ${{ matrix.config.container }}
 
     steps:
-    - name: if running in a container, update and install sudo and other basics
+    - name: if running in a container, update and install sudo, git, and other basics
       if: matrix.config.container != ''
       run: |
           apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf
           sudo apt-add-repository ppa:git-core/ppa
           sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
+    - name: configure toolchain (optional)
+      if: matrix.config.toolchain != ''
+      run: |
+          sudo apt-add-repository ${{ matrix.config.toolchain }}
+          sudo apt-get update
     - uses: actions/checkout@v2
     - name: install dependencies
       run: sudo apt-get -o Acquire::Retries=3 install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
