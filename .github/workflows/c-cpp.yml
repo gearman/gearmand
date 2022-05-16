@@ -61,4 +61,8 @@ jobs:
     - name: make
       run: ${CC} --version && make
     - name: make test
-      run: ${CC} --version && make test
+      run: |
+           ${CC} --version && make test
+           if [ -f "./test-suite.log" ]; then
+              cat ./test-suite.log
+           fi
