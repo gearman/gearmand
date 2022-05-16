@@ -40,7 +40,7 @@ jobs:
           sudo apt-add-repository ppa:git-core/ppa
           sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
     - name: override DNS to fix IP address for hostname in some Docker containers
-      if: matrix.config.container == 'ubuntu-14.04'
+      if: matrix.config.container == 'ubuntu:14.04'
       run: |
         ip -br addr
         echo "'hostname -i' shows '$(hostname -i)'"
