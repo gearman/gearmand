@@ -35,9 +35,26 @@ jobs:
     - name: if running in a container, update and install sudo, git, and other basics
       if: matrix.config.container != ''
       run: |
+          
           apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf
           sudo apt-add-repository ppa:git-core/ppa
           sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
+    - name: override DNS to fix IP address for hostname in some Docker containers
+      if: matrix.config.container == 'ubuntu-14.04'
+      run: |
+        ip -br addr
+        echo "'hostname -i' shows '$(hostname -i)'"
+        echo "'hostname -I' shows '$(hostname -I)'"
+        hostname_short=$(hostname -s)
+        hostname_long=$(hostname -f)
+        if ! grep -q $hostname_short /etc/hosts; then
+          actual_ip=$(ip -4 addr show dev eth0 | grep -o 'inet [0-9.]*' | cut -f2 -d ' ')
+          echo "Setting $hostname_long / $hostname_short to $actual_ip in /etc/hosts"
+          echo "$actual_ip $hostname_long $hostname_short" | sudo tee -a /etc/hosts
+          ip -br addr
+          echo "'hostname -i' shows '$(hostname -i)'"
+          echo "'hostname -I' shows '$(hostname -I)'"
+        fi
     - name: configure toolchain (optional)
       if: matrix.config.toolchain != ''
       run: |
@@ -66,7 +83,7 @@ jobs:
       if: success() || failure()
       run: |
            if [ -f "./test-suite.log" ]; then
-              cat ./test-suite.log;
+              cat ./test-suite.log
            else
               echo "No test-suite.log file found."
            fi
