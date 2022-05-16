@@ -63,7 +63,7 @@ jobs:
     - name: make test
       run: ${CC} --version && make test
     - name: check test-suite.log
-      if: always()
+      if: success() || failure()
       run: |
            if [ -f "./test-suite.log" ]; then
               cat ./test-suite.log;
