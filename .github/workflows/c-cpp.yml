@@ -42,7 +42,8 @@ jobs:
     - name: override DNS to fix IP address for hostname in some Docker containers
       if: matrix.config.container == 'ubuntu:14.04'
       run: |
-        ip -br addr
+        cat /etc/hosts
+        echo "==="
         echo "'hostname -i' shows '$(hostname -i)'"
         echo "'hostname -I' shows '$(hostname -I)'"
         hostname_short=$(hostname -s)
