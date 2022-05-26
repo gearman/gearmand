@@ -59,16 +59,12 @@ jobs:
         echo "'hostname -I' shows '$(hostname -I)'"
         echo "'hostname -s' shows '$(hostname -s)'"
         echo "'hostname -f' shows '$(hostname -f)'"
-        hostname_short=$(hostname -s)
-        hostname_long=$(hostname -f)
-        if ! grep -q $hostname_short /etc/hosts; then
-          actual_ip=$(ip -4 addr show dev eth0 | grep -o 'inet [0-9.]*' | cut -f2 -d ' ')
-          echo "Setting $hostname_long / $hostname_short to $actual_ip in /etc/hosts"
-          echo "$actual_ip $hostname_long $hostname_short" | sudo tee -a /etc/hosts
-          ip addr
-          echo "'hostname -i' shows '$(hostname -i)'"
-          echo "'hostname -I' shows '$(hostname -I)'"
-        fi
+        echo "==="
+        echo "Changing multi_client_test.cc..."
+        sed -i -e 's/\(test->push_port(\)[^)]*\();\)/\1 19298 \2/' tests/libgearman-1.0/multi_client_test.cc
+        sed -i -e 's/\(test->push_port(\)[^)]*\();\)/\1 19300 \2/' tests/libgearman-1.0/multi_client_test.cc
+        echo "After multi_client_test.cc:"
+        grep push_port tests/libgearman-1.0/multi_client_test.cc
     - name: configure toolchain (optional)
       if: matrix.config.toolchain != ''
       run: |
