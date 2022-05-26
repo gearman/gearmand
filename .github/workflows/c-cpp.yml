@@ -42,12 +42,15 @@ jobs:
     - name: override DNS to fix IP address for hostname in some Docker containers
       if: matrix.config.container == 'ubuntu:14.04'
       run: |
+        echo "==="
+        echo "Before: /etc/hosts"
         cat /etc/hosts
         echo "==="
-        ip addr
-        echo "==="
         echo "Removing localhost name from ::1 entry in /etc/hosts..."
-        sed -i -e 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts
+        sed 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts > /tmp/hosts.temp
+        cp /tmp/hosts.temp /etc/hosts
+        rm /tmp/hosts.temp
+        echo "After: /etc/hosts"
         cat /etc/hosts
         echo "==="
         ip addr
