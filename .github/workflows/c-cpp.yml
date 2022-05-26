@@ -46,8 +46,16 @@ jobs:
         echo "==="
         ip addr
         echo "==="
+        echo "Removing localhost name from ::1 entry in /etc/hosts..."
+        sed -i -e 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts
+        cat /etc/hosts
+        echo "==="
+        ip addr
+        echo "==="
         echo "'hostname -i' shows '$(hostname -i)'"
         echo "'hostname -I' shows '$(hostname -I)'"
+        echo "'hostname -s' shows '$(hostname -s)'"
+        echo "'hostname -f' shows '$(hostname -f)'"
         hostname_short=$(hostname -s)
         hostname_long=$(hostname -f)
         if ! grep -q $hostname_short /etc/hosts; then
