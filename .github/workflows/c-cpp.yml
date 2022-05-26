@@ -47,7 +47,9 @@ jobs:
         cat /etc/hosts
         echo "==="
         echo "Removing localhost name from ::1 entry in /etc/hosts..."
-        sed -ci 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts
+        sed 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts > /tmp/hosts.temp
+        cp /tmp/hosts.temp /etc/hosts
+        rm /tmp/hosts.temp
         echo "After: /etc/hosts"
         cat /etc/hosts
         echo "==="
