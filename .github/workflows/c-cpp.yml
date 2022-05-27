@@ -77,6 +77,7 @@ jobs:
         sed -i -e '0,/test->push_port.*libtest/ s/\(test.*push_port(\).*\();\)/\1 19300 \2/' tests/libgearman-1.0/multi_client_test.cc
         echo "After multi_client_test.cc:"
         grep push_port tests/libgearman-1.0/multi_client_test.cc
+        echo "==="
     - name: install dependencies
       run: sudo apt-get -o Acquire::Retries=3 install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }}-${{ matrix.config.tag }} ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
     - name: bootstrap
