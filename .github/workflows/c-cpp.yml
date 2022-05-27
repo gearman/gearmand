@@ -73,8 +73,8 @@ jobs:
         echo "Before multi_client_test.cc:"
         grep push_port tests/libgearman-1.0/multi_client_test.cc
         echo "Changing multi_client_test.cc..."
-        sed -i -e '0,/test->push_port/ s/\(test.*push_port(\).*\();\)/\1 19298 \2/' tests/libgearman-1.0/multi_client_test.cc
-        sed -i -e '0,/test->push_port/ s/\(test.*push_port(\).*\();\)/\1 19300 \2/' tests/libgearman-1.0/multi_client_test.cc
+        sed -i -e '0,/test->push_port(libtest/ s/\(test.*push_port(\).*\();\)/\1 19298 \2/' tests/libgearman-1.0/multi_client_test.cc
+        sed -i -e '0,/test->push_port(libtest/ s/\(test.*push_port(\).*\();\)/\1 19300 \2/' tests/libgearman-1.0/multi_client_test.cc
         echo "After multi_client_test.cc:"
         grep push_port tests/libgearman-1.0/multi_client_test.cc
     - name: install dependencies
