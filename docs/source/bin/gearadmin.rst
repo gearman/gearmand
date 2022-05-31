@@ -46,6 +46,30 @@ SYNOPSIS
 
    Workers for the server.
 
+.. option:: --cancel-job
+
+   Remove a given job from the server's queue.
+
+.. option:: --show-unique-jobs
+
+   Show unique IDs of jobs on the server.
+
+.. option:: --show-jobs
+
+   Show all jobs on the server.
+
+.. option:: --getpid
+
+   Get Process ID for the server.
+
+.. option:: --priority-status
+
+   Queued jobs status by priority.
+
+.. option:: -S [ --ssl ]
+
+   Enable SSL connections.
+
 
 -----------
 DESCRIPTION
