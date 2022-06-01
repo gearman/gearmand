@@ -136,7 +136,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
           job_queued[priority] = 0;
           for (gearman_server_job_st *server_job= function->job_list[priority];
                server_job != NULL;
-               server_job= server_job->next)
+               server_job= server_job->function_next)
           {
             job_queued[priority]++;
           }
