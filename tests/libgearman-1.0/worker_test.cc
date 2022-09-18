@@ -508,7 +508,7 @@ static test_return_t gearman_worker_add_server_GEARMAN_INVALID_ARGUMENT_TEST(voi
   if (libtest::check_dns())
   {
     ASSERT_EQ(GEARMAN_INVALID_ARGUMENT,
-                 gearman_worker_add_server(NULL, "nonexist.gearman.info", libtest::default_port()));
+                 gearman_worker_add_server(NULL, "does_not_exist.google.com", libtest::default_port()));
   }
 
   return TEST_SUCCESS;
@@ -520,7 +520,7 @@ static test_return_t gearman_worker_add_server_GEARMAN_GETADDRINFO_TEST(void *)
   {
     gearman_worker_st *worker= gearman_worker_create(NULL);
     ASSERT_TRUE(worker);
-    ASSERT_EQ(gearman_worker_add_server(worker, "nonexist.gearman.info", libtest::default_port()), GEARMAN_GETADDRINFO);
+    ASSERT_EQ(gearman_worker_add_server(worker, "does_not_exist.google.com", libtest::default_port()), GEARMAN_GETADDRINFO);
     gearman_worker_free(worker);
   }
 
