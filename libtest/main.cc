@@ -332,7 +332,9 @@ int main(int argc, char *argv[], char* environ_[])
     do
     {
       exit_code= EXIT_SUCCESS;
-      fatal_assert(sigignore(SIGPIPE) == 0);
+      struct sigaction sa;
+      sa.sa_handler=  SIG_IGN;
+      fatal_assert(sigaction(SIGPIPE, &sa, NULL) == 0);
 
       libtest::SignalThread signal;
       if (signal.setup() == false)
