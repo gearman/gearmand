@@ -10,8 +10,8 @@
 
 m4_include([version.m4])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
-AC_PREREQ([2.63])
-AC_INIT([gearmand],VERSION_NUMBER,[https://github.com/gearman/gearmand/issues],[gearmand],[http://gearman.info/])
+AC_PREREQ([2.71])
+AC_INIT([gearmand],[VERSION_NUMBER],[https://github.com/gearman/gearmand/issues],[gearmand],[http://gearman.info/])
 
 AC_CONFIG_AUX_DIR([build-aux])
 
@@ -54,8 +54,7 @@ LT_LIB_M
 
 AC_SUBST([lt_cv_dlopen_libs])
 
-AC_PROG_CC_C99
-AS_IF([test "x${ac_cv_prog_cc_c99}" == "xno"],[AC_MSG_ERROR([No c99 compatible compiler found])])
+# AC_REQUIRE(AC_PROG_CC)
 
 AC_DEFUN([CHECK_CXX0X],[
           AC_LANG_PUSH([C++])
@@ -136,8 +135,6 @@ AX_PROG_SPHINX_BUILD(,[AC_MSG_WARN([sphinx-build version 1.0 or greater is requi
 AX_WITH_PROG([LCOV],[lcov])
 AX_WITH_PROG([LCOV_GENHTML],[genhtml])
 
-# Checks for header files.
-AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS_ONCE([arpa/inet.h])
 AC_CHECK_HEADERS_ONCE([errno.h])
@@ -191,7 +188,8 @@ AC_C_CONST
 AC_C_INLINE
 AC_C_VOLATILE
 AC_HEADER_STDBOOL
-AC_HEADER_TIME
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 AC_TYPE_OFF_T
@@ -259,7 +257,7 @@ AX_CHECK_WOLFSSL([have_wolfssl=yes],[have_wolfssl=no])
 AM_CONDITIONAL([ENABLE_WOLFSSL],[test "x${have_wolfssl}" = "xyes"])
 
 AC_DEFUN([AX_ENABLE_SSL],
-         [AC_PREREQ([2.63])dnl
+         [AC_PREREQ([2.71])dnl
          m4_define([_SSL_ENABLE_DEFAULT], [m4_if($1, no, no, no)])dnl
          AC_ARG_ENABLE([ssl],
                        [AS_HELP_STRING([--enable-ssl],
