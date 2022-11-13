@@ -10,7 +10,7 @@
 
 m4_include([version.m4])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([gearmand],[VERSION_NUMBER],[https://github.com/gearman/gearmand/issues],[gearmand],[http://gearman.info/])
 
 AC_CONFIG_AUX_DIR([build-aux])
@@ -257,7 +257,7 @@ AX_CHECK_WOLFSSL([have_wolfssl=yes],[have_wolfssl=no])
 AM_CONDITIONAL([ENABLE_WOLFSSL],[test "x${have_wolfssl}" = "xyes"])
 
 AC_DEFUN([AX_ENABLE_SSL],
-         [AC_PREREQ([2.71])dnl
+         [AC_PREREQ([2.69])dnl
          m4_define([_SSL_ENABLE_DEFAULT], [m4_if($1, no, no, no)])dnl
          AC_ARG_ENABLE([ssl],
                        [AS_HELP_STRING([--enable-ssl],
