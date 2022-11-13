@@ -19,13 +19,13 @@ jobs:
         config:
           - {name: 'ubuntu-14.04 gcc-4.8', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc', cxx: 'g++', tag: '4.8', toolchain: 'ppa:ubuntu-toolchain-r/test'}
           - {name: 'ubuntu-14.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc', cxx: 'g++', tag: '4.9', toolchain: 'ppa:ubuntu-toolchain-r/test'}
-          - {name: 'ubtunu-18.04c gcc-5', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc', cxx: 'g++', tag: '5'}
           - {name: 'ubtunu-18.04 gcc-5', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '5'}
           - {name: 'ubtunu-18.04 gcc-6', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '6'}
           - {name: 'ubtunu-18.04 gcc-7', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '7'}
           - {name: 'ubtunu-18.04 gcc-8', os: ubuntu-18.04, cc: 'gcc', cxx: 'g++', tag: '8'}
           - {name: 'ubtunu-20.04 gcc-9', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
           - {name: 'ubtunu-20.04 gcc-10', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
+          - {name: 'ubtunu-22.04 gcc-11', os: ubuntu-22.04, cc: 'gcc', cxx: 'g++', tag: '11'}
 
     env:
       CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
