@@ -26,7 +26,6 @@ jobs:
           - {name: 'ubtunu-20.04 gcc-9', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '9'}
           - {name: 'ubtunu-20.04 gcc-10', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '10'}
           - {name: 'ubtunu-20.04 gcc-11', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '11'}
-          - {name: 'ubtunu-20.04 gcc-12', os: ubuntu-20.04, cc: 'gcc', cxx: 'g++', tag: '12'}
 
     env:
       CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
