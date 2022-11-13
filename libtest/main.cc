@@ -333,7 +333,7 @@ int main(int argc, char *argv[], char* environ_[])
     {
       exit_code= EXIT_SUCCESS;
       struct sigaction sa;
-      sa.sa_handler=  SIG_IGN;
+      sa.sa_handler= SIG_IGN;
       fatal_assert(sigaction(SIGPIPE, &sa, NULL) == 0);
 
       libtest::SignalThread signal;
