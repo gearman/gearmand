@@ -31,6 +31,7 @@ jobs:
       CC: ${{ matrix.config.cc }}-${{ matrix.config.tag }}
       CXX: ${{ matrix.config.cxx }}-${{ matrix.config.tag }}
       GHA_CONTAINER: ${{ matrix.config.container }}
+      CCVERSION: ${{ matrix.config.tag }}
 
     steps:
     - name: if running in a container, update and install sudo, git, and other basics
@@ -91,9 +92,21 @@ jobs:
            fi
            ./bootstrap.sh -a
     - name: configure
-      run: ./configure --enable-ssl
+      run: |
+           if [[ "${CC}" == gcc* ]] && [ "${CCVERSION}" -ge 9 ]; then
+              CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS"
+              export CXXFLAGS
+              echo "CXXFLAGS: $CXXFLAGS"
+           fi
+           ./configure --enable-ssl
     - name: make
-      run: ${CC} --version && make
+      run: |
+           if [[ "${CC}" == gcc* ]] && [ "${CCVERSION}" -ge 9 ]; then
+              CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS"
+              export CXXFLAGS
+              echo "CXXFLAGS: $CXXFLAGS"
+           fi
+           ${CC} --version && make
     - name: make test
       run: ${CC} --version && make test
     - name: check test-suite.log
