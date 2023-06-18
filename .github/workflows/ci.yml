@@ -27,7 +27,7 @@ jobs:
           - {name: 'ubuntu-20.04 gcc-10', os: ubuntu-20.04, cc: 'gcc-10', cxx: 'g++-10', tag: '10'}
           - {name: 'ubuntu-20.04 gcc-11', os: ubuntu-20.04, cc: 'gcc-11', cxx: 'g++-11', tag: '11'}
           - {name: 'ubuntu-22.04 gcc-12', os: ubuntu-22.04, cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
-          - {name: 'alpine-3.17 gcc-12', os: ubuntu-latest, container: 'alpine:3.17', cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
+          - {name: 'alpine-3.17 gcc-12', os: ubuntu-latest, container: 'alpine:3.17', cc: 'gcc', cxx: 'g++', tag: '12'}
 
     env:
       CC: ${{ matrix.config.cc }}
