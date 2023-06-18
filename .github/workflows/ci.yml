@@ -46,8 +46,9 @@ jobs:
                  sudo apt-add-repository ppa:git-core/ppa
                  sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
                  ;;
-              ubuntu*)
+              alpine*)
                  apk add --no-cache make gcc g++ autoconf automake m4 bash git libtool file git py3-sphinx util-linux-dev libuuid libevent-dev gperf boost-dev openssl-dev
+                 ;;
               *)
                  ;;
            esac
