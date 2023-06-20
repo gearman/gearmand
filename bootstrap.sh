@@ -200,6 +200,9 @@ set_VENDOR_DISTRIBUTION ()
     nixos)
       VENDOR_DISTRIBUTION='nixos'
       ;;
+    rocky)
+      VENDOR_DISTRIBUTION='rocky'
+      ;;
     *)
       die "attempt to set an invalid VENDOR_DISTRIBUTION=$dist"
       ;;
@@ -275,6 +278,9 @@ set_VENDOR_RELEASE ()
     nixos)
       VENDOR_RELEASE="$release"
       ;;
+    rocky)
+      VENDOR_RELEASE="$release"
+      ;;
     unknown)
       die "attempt to set VENDOR_RELEASE without setting VENDOR_DISTRIBUTION"
       ;;
@@ -330,6 +336,9 @@ set_VENDOR ()
       ;;
     suse)
       VENDOR='suse'
+      ;;
+    rocky*)
+      VENDOR='rocky'
       ;;
     *)
       die "An attempt was made to set an invalid VENDOR=$vendor"
