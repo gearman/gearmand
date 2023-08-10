@@ -160,7 +160,7 @@ before_script:
 script:
   - ${CC} --version
   - ./bootstrap.sh -a
-  - ./configure --enable-ssl
+  - ./configure --enable-ssl --with-postgresql=no
   - make
   - make test
 

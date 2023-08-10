@@ -1,5 +1,5 @@
 # ===========================================================================
-#       http://www.gnu.org/software/autoconf-archive/ax_save_flags.html
+#      https://www.gnu.org/software/autoconf-archive/ax_save_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -34,7 +34,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 7
+#serial 8
 
 # list of flag to save
 AC_DEFUN([_AX_SAVE_FLAGS_LIST],[dnl
