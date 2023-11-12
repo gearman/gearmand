@@ -172,15 +172,9 @@ bool Server::wait_for_pidfile() const
 
 bool Server::init(const char *argv[])
 {
-  if (argv)
+  for (const char **ptr= argv; ptr && *ptr ; ++ptr)
   {
-    for (const char **ptr= argv; *ptr ; ++ptr)
-    {
-      if (ptr)
-      {
-        add_option(*ptr);
-      }
-    }
+    add_option(*ptr);
   }
 
   return build();
