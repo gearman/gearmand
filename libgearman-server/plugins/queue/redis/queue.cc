@@ -341,7 +341,7 @@ static gearmand_error_t _hiredis_add(gearman_server_st *, void *context,
   return gearmand_log_gerror(
     GEARMAN_DEFAULT_LOG_PARAM,
     GEARMAND_QUEUE_ERROR,
-    "failed to insert '%.*s' into redis", key.size(), &key[0]);
+    "failed to insert '%.*s' into redis", (uint32_t)key.size(), &key[0]);
 }
 
 static gearmand_error_t _hiredis_flush(gearman_server_st *, void *)

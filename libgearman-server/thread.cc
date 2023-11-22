@@ -188,7 +188,7 @@ gearman_server_thread_run(gearman_server_thread_st *thread,
       if (server_con->is_dead && server_con->proc_removed)
         gearman_server_con_free(server_con);
       else
-        gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "con %llu isn't dead %d or proc removed %d, but is in to_be_freed_list",
+        gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "con %p isn't dead %d or proc removed %d, but is in to_be_freed_list",
                            server_con, server_con->is_dead, server_con->proc_removed);
     }
 
