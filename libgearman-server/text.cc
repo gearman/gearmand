@@ -61,9 +61,9 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
 
   if (packet->argc)
   {
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "text command %.*s %zu arguments",
-                       packet->arg_size[0],  packet->arg[0],
-                       int(packet->argc));
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "text command %.*s %d arguments",
+                       (uint32_t)packet->arg_size[0],  packet->arg[0],
+                       packet->argc);
   }
 
 #if 0
@@ -371,7 +371,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   else
   {
     gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Failed to find command %.*s(%zu)",
-                       packet->arg_size[0], packet->arg[0], 
+                       (uint32_t)packet->arg_size[0], packet->arg[0], 
                        packet->arg_size[0]);
     data.vec_printf(TEXT_ERROR_UNKNOWN_COMMAND, (int)packet->arg_size[0], (char *)(packet->arg[0]));
   }
