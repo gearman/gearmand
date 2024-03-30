@@ -1,0 +1,91 @@
+name: Build and Deploy Docs
+
+on:
+  # Run on pushes targeting the default branch
+  push:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+
+    name: Build Docs
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Install Dependencies
+      run: |
+        sudo apt update && sudo apt install -y \
+          apt-transport-https \
+          apt-file \
+          software-properties-common \
+          build-essential \
+          autotools-dev \
+          autoconf \
+          automake \
+          make \
+          pkgconf \
+          libboost-all-dev \
+          libevent-dev \
+          gperf \
+          uuid-dev \
+          sphinx-doc \
+          sphinx-common \
+          python3-sphinx
+
+    - name: Clone Repository
+      uses: actions/checkout@v4
+
+    - name: Bootstrap
+      run: |
+           if [ -f "/etc/lsb-release" ]; then
+              cat /etc/lsb-release
+           fi
+           ./bootstrap.sh -a
+      shell: bash
+
+    - name: Configure
+      run: |
+           ./configure
+      shell: bash
+
+    - name: Build HTML Documentation
+      run: make -C docs dirhtml
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+
+    - name: Upload Artifacts
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: 'docs/build/dirhtml'
+
+  deploy:
+    # Add a dependency on the build job
+    needs: build
+
+    name: Deploy Docs
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
