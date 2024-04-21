@@ -152,7 +152,6 @@ endif
 endif
 libgearman_libgearman_la_LIBADD+= @lt_cv_dlopen_libs@
 libgearman_libgearman_la_LIBADD+= @LIBUUID_LIB@
-libgearman_libgearman_la_LIBADD+= libhashkit/libhashkit.la
 
 if HOST_LINUX
 libgearman_libgearman_la_LIBADD+= @LIBM@

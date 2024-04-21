@@ -40,12 +40,10 @@ DISTCLEANFILES+= aminclude.am
 # Should always be first
 include libtest/include.am
 include libhostile/include.am
-include libhashkit-1.0/include.am
 
 include docs/include.am
 include man/include.am
 include libgearmancore/include.am
-include libhashkit/include.am
 include benchmark/include.am
 include bin/include.am
 include examples/include.am

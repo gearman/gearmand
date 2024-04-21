@@ -74,8 +74,6 @@ AC_DEFUN([CHECK_BOOST],
          AX_BOOST_PROGRAM_OPTIONS])
 CHECK_BOOST
 
-m4_include([libhashkit/include.m4])
-
 AX_CXX_CINTTYPES
 CONFIG_EXTRA
 
@@ -291,6 +289,9 @@ fi
 AX_ENABLE_SSL
 
 AX_ENABLE_LIBMEMCACHED
+
+# Check for -lhashkit
+AC_SEARCH_LIBS([libhashkit_murmur3], [hashkit], [], [AC_MSG_ERROR(["Unable to find hashkit"])])
 
 AC_DEFINE([GEARMAND_BLOBSLAP_WORKER],[1],[Have Gearman Blobslap Worker])
 

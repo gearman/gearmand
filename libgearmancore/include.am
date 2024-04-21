@@ -36,4 +36,3 @@ libgearman_libgearmancore_la_CXXFLAGS= -DBUILDING_LIBGEARMAN
 libgearman_libgearmancore_la_LIBADD=
 libgearman_libgearmancore_la_LIBADD+= @lt_cv_dlopen_libs@
 libgearman_libgearmancore_la_LIBADD+= @LIBUUID_LIB@
-libgearman_libgearmancore_la_LIBADD+= libhashkit/libhashkit.la
