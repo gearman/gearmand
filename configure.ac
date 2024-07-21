@@ -8,7 +8,7 @@
 # Use and distribution licensed under the BSD license.  See
 # the COPYING file in this directory for full text.
 
-m4_include([version.m4])
+m4_include([./version.m4])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 AC_PREREQ([2.69])
 AC_INIT([gearmand],[VERSION_NUMBER],[https://github.com/gearman/gearmand/issues],[gearmand],[http://gearman.info/])
