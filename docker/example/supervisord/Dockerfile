@@ -1,6 +1,7 @@
 FROM ubuntu:latest
 
 ARG version=1.0
+ARG timezone=America/New_York
 
 LABEL description="Supervisord Base Image for Gearmand"
 LABEL maintainer="Gearmand Developers https://github.com/gearman/gearmand" 
@@ -8,7 +9,7 @@ LABEL version="${version}"
 
 # Configure timezone
 ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=America/New_York \
+    TZ=${timezone} \
     HOME=/root
 RUN echo $TZ > /etc/timezone
 
@@ -16,8 +17,8 @@ RUN echo $TZ > /etc/timezone
 RUN apt-get update \
  && apt-get -y upgrade \
  && apt-get -y install \
-  supervisor \
-  tzdata \
+        supervisor \
+        tzdata \
  && apt-get clean autoclean \
  && apt-get -y autoremove \
  && rm -rf /var/lib/apt/lists/*
