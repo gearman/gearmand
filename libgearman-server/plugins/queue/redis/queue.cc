@@ -423,7 +423,7 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
                     unique);
 
     free(prefix);
-    if (ret == 0)
+    if (ret != 3)
     {
       continue;
     }
