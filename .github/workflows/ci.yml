@@ -29,6 +29,7 @@ jobs:
           - {name: 'ubuntu-22.04 gcc-12', os: ubuntu-22.04, cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
           - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
           - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
+          - {name: 'alpine-3.18 gcc-12', os: ubuntu-latest, container: 'alpine:3.18', cc: 'gcc', cxx: 'g++', tag: '12'}
 
     env:
       CC: ${{ matrix.config.cc }}
@@ -47,6 +48,9 @@ jobs:
                  apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2
                  sudo apt-add-repository ppa:git-core/ppa
                  sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
+                 ;;
+              alpine*)
+                 apk add --no-cache make gcc g++ autoconf automake m4 bash git libtool file py3-sphinx util-linux-dev libuuid libevent-dev gperf boost-dev openssl-dev
                  ;;
               *)
                  ;;
@@ -70,7 +74,22 @@ jobs:
                  ip addr
                  echo "==="
                  echo "'hostname -i' shows '$(hostname -i)'"
-                 echo "'hostname -I' shows '$(hostname -I)'"
+                 echo "'hostname -s' shows '$(hostname -s)'"
+                 echo "'hostname -f' shows '$(hostname -f)'"
+                 ;;
+              alpine*)
+                 echo "==="
+                 echo "Before: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 echo "Removing ::1 entry from /etc/hosts using vi (the only way that works)..."
+                 echo $'0/::1\nddZZ' | vi /etc/hosts > /dev/null
+                 echo "After: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 ip addr
+                 echo "==="
+                 echo "'hostname -i' shows '$(hostname -i)'"
                  echo "'hostname -s' shows '$(hostname -s)'"
                  echo "'hostname -f' shows '$(hostname -f)'"
                  ;;
