@@ -1,5 +1,5 @@
 IMAGE_NAME = gearmand
-IMAGE_VERSION = 1.1.19.1
+IMAGE_VERSION = 1.1.21
 USE_CACHE ?=
 
 image:

@@ -1,6 +1,6 @@
-FROM gearmand/supervisord:latest
+FROM gearmand/supervisord:1.0
 
-ARG version=1.1.19.1
+ARG version=1.1.21
 
 LABEL description="Gearman Job Server Image"
 LABEL maintainer="Gearmand Developers https://github.com/gearman/gearmand"
@@ -11,17 +11,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get -y upgrade \
  && apt-get -y install \
-	make \
-	gcc \
-	g++ \
-	gperf \
-	libboost-all-dev \
-	libevent-dev \
-	libhiredis-dev \
-	libssl-dev \
-	libtokyocabinet-dev \
-	uuid-dev \
-	wget \
+        make \
+        gcc \
+        g++ \
+        gperf \
+        libboost-all-dev \
+        libevent-dev \
+        libhiredis-dev \
+        libssl-dev \
+        libtokyocabinet-dev \
+        uuid-dev \
+        wget \
  && apt-get clean autoclean \
  && apt-get -y autoremove \
  && rm -rf /var/lib/apt/lists/*
@@ -52,11 +52,6 @@ RUN groupadd gearman \
 RUN touch /var/log/gearmand.log \
  && chown gearman:gearman /var/log/gearmand.log
 COPY gearmand.conf /etc/supervisor/conf.d/gearmand.conf
-
-# Links
-RUN ln /usr/sbin/gearmand /sbin/gearmand \
- && ln /usr/bin/gearman /bin/gearman \
- && ln /usr/bin/gearadmin /bin/gearadmin
 
 HEALTHCHECK --interval=5m --timeout=3s --retries=2 \
         CMD test $(supervisorctl status gearmand | awk '{print $2}' | grep 'RUNNING' | wc -l) -eq 1 || exit 1
