@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository_owner == 'gearman'
 
     name: Build Docs
 
@@ -77,6 +78,7 @@ jobs:
         path: 'docs/build/dirhtml'
 
   deploy:
+    if: github.repository_owner == 'gearman'
 
     name: Deploy Docs
 
