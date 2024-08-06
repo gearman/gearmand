@@ -52,6 +52,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
+#include <algorithm>
+#include <string>
+#include <string.h>
 
 #include "libgearman/ssl.h"
 
@@ -452,8 +455,23 @@ gearmand_error_t Gear::start(gearmand_st *gearmand)
     char* service;
     if ((service= getenv("GEARMAND_PORT")) and service[0])
     {
-      _port.clear();
-      _port.append(service);
+      const size_t max_port_str_len= 5; /* TCP port numbers are unsigned 16-bit integers, so the maximum value is 65535, which is 5 characters long. */
+      std::string port_str(service, std::min(strlen(service), max_port_str_len));
+      /* Truncate at first non-digit character, if present, to address CodeQL gripe about uncontrolled format string. */
+      bool done= false;
+      for (size_t loop= 0; !done && (loop < port_str.length()); loop++)
+      {
+	if (!std::isdigit(port_str[loop]))
+	{
+	  port_str.resize(loop);
+	  done= true;
+        }
+      }
+      if (!port_str.empty())
+      {
+        _port.clear();
+        _port.append(port_str);
+      }
     }
   }
 
