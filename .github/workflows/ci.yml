@@ -30,6 +30,7 @@ jobs:
           - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
           - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
           - {name: 'alpine-3.18 gcc-12', os: ubuntu-latest, container: 'alpine:3.18', cc: 'gcc', cxx: 'g++', tag: '12'}
+          - {name: 'alpine-3.19 gcc-13', os: ubuntu-latest, container: 'alpine:3.19', cc: 'gcc', cxx: 'g++', tag: '13'}
           - {name: 'alpine-3.20 gcc-13', os: ubuntu-latest, container: 'alpine:3.20', cc: 'gcc', cxx: 'g++', tag: '13'}
 
     env:
