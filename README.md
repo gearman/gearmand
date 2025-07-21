@@ -128,3 +128,26 @@ Thanks and keep hacking!
 Cheers,  
   -Brian  
   Seattle, WA.
+
+Releasing Gearmand
+------------------
+
+When it's time to release the master branch, check the last release tag, and
+create a new one. Most releases are patch releases, and so should increment the
+third number in the version.
+
+- Checkout master
+- Ensure there are no changes staged or un-added. Anything not in git master will be removed by the next step!
+- ```$ git clean -xdf # This will remove all generated files```
+- Review changes merged since the last release with git log $LAST_RELEASE_TAG..
+- ```$ git tag -s $NEW_RELEASE_TAG # Type in release notes```
+- ```$ ./bootstrap.sh -a && ./configure # This is needed to make dist properly```
+- ```$ make dist # This creates the tarball```
+- ```$ cd .. && tar -zxvf $OLDPWD/gearmand-$NEW_RELEASE_TAG.tar.gz && cd gearmand-$NEW_RELEASE_TAG && ./configure && make test ## Just to be sure that the tarball actually builds.```
+- ```$ gpg --sign --armor --detach gearmand-$NEW_RELEASE_TAG.tar.gz```
+- ## THIS IS THE POINT OF NO RETURN, TO ABORT git tag -d <new release tag> and start over ##
+- ```$ git push --tags # Uploads the release tag to GitHub```
+- Visit https://github.com/gearman/gearmand/releases and you should see the new tag without details. Create a release using that tag.
+- Upload gearmand-$NEW_RELEASE_TAG.tar.gz and the .asc signature file to the release
+- Announce the release to the gearman Matrix channel and mailing list
+
