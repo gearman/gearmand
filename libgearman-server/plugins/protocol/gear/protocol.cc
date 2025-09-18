@@ -374,8 +374,8 @@ static gearmand_error_t _gear_con_add(gearman_server_con_st *connection)
     int accept_error;
     while ((accept_error= SSL_accept(connection->_ssl)) != SSL_SUCCESS)
     {
-      int wolfssl_error;
-      switch (wolfssl_error= SSL_get_error(connection->_ssl, accept_error))
+      int ssl_error;
+      switch (ssl_error= SSL_get_error(connection->_ssl, accept_error))
       {
         case SSL_ERROR_NONE:
           break;
@@ -393,10 +393,12 @@ static gearmand_error_t _gear_con_add(gearman_server_con_st *connection)
         case SSL_ERROR_SSL:
         case SSL_ERROR_ZERO_RETURN:
         default:
-          char wolfssl_error_buffer[SSL_ERROR_SIZE]= { 0 };
-          ERR_error_string_n(wolfssl_error, wolfssl_error_buffer, sizeof(wolfssl_error_buffer));
-          return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION, "%s(%d)", 
-                                     wolfssl_error_buffer, wolfssl_error);
+          {
+            char ssl_error_buffer[SSL_ERROR_SIZE]= { 0 };
+            ERR_error_string_n(ssl_error, ssl_error_buffer, sizeof(ssl_error_buffer));
+            return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION, "%s(%d)",
+                                       ssl_error_buffer, ssl_error);
+          }
       }
     }
     gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "GearSSL connection made: %s:%s", connection->host(), connection->port());
@@ -511,6 +513,12 @@ gearmand_error_t Gear::start(gearmand_st *gearmand)
       gearmand_log_fatal(GEARMAN_DEFAULT_LOG_PARAM, "SSL_CTX_use_PrivateKey_file() cannot obtain certificate %s", _ssl_key.c_str());
     }
     gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "Loading certificate key : %s", _ssl_key.c_str());
+
+    if (SSL_CTX_check_private_key(gearmand->ctx_ssl()) != SSL_SUCCESS)
+    {
+      gearmand_log_fatal(GEARMAN_DEFAULT_LOG_PARAM, "SSL_CTX_check_private_key() cannot check certificate %s", _ssl_key.c_str());
+    }
+    gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "Checking certificate key : %s", _ssl_key.c_str());
 
     assert(gearmand->ctx_ssl());
   }

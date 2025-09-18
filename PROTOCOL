@@ -332,7 +332,7 @@ CAN_DO_TIMEOUT
 
      Arguments:
      - NULL byte terminated Function name.
-     - Timeout value.
+     - Timeout value (in milliseconds).
 
 CANT_DO
 

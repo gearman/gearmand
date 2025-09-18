@@ -1,11 +1,11 @@
 gearmand
 ========
 
-[![Build Status](https://travis-ci.org/gearman/gearmand.png)](https://travis-ci.org/gearman/gearmand)
+[![Build Status](https://github.com/gearman/gearmand/actions/workflows/ci.yml/badge.svg)](https://github.com/gearman/gearmand/actions/workflows/ci.yml)
 
-The latest version of ```gearmand``` source code and versions 1.1.13 and later can be found at [GitHub Repository](https://github.com/gearman/gearmand). Older versions released before 1.1.13 can be found at [Launchpad Repository](http://launchpad.net/gearmand/).
+The latest version of ```gearmand``` source code and versions 1.1.13 and later can be found at [GitHub Repository](https://github.com/gearman/gearmand). Older versions released before 1.1.13 can be found at [Launchpad Repository](https://launchpad.net/gearmand/).
 
-You can grab the latest release distribution of Gearman from https://github.com/gearman/gearmand/releases
+You can grab the latest release distribution of Gearman from https://github.com/gearman/gearmand/releases. Unless otherwise specified, releases are GPG-signed by Clint Byrum, whose public key can be found at https://fewbar.com/clint-byrum-public-key/.
 
 
 What Is Gearman?
@@ -13,15 +13,15 @@ What Is Gearman?
 
 Gearman provides a generic application framework to farm out work to other machines or processes that are better suited to do the work. It allows you to do work in parallel, to load balance processing, and to call functions between languages. Gearman is the nervous system for how distributed processing communicates.
 
-If you downloaded this package as a ```tar.gz``` distribution you'll want to read ***Getting Started*** section below or visit the more detailed web page [Getting Started](http://gearman.org/getting-started/)
+If you downloaded this package as a ```tar.gz``` distribution, you'll want to read the ***Getting Started*** section below or visit the more detailed web page [Getting Started](https://gearman.org/getting-started/).
 
-If you are interested in developing or submitting patches to the project, read the ***Contributing*** section below and check out the [HACKING](https://github.com/gearman/gearmand/blob/master/HACKING) file for ***Coding Style*** and [COPYING](https://github.com/gearman/gearmand/blob/master/COPYING) for details on ***licensing***.
+If you are interested in developing or submitting patches to the project, read the ***Contributing*** section below and check out the [CONTRIBUTING.md](https://github.com/gearman/gearmand/blob/master/CONTRIBUTING.md) file for ***Coding Style*** and [COPYING](https://github.com/gearman/gearmand/blob/master/COPYING) for details on ***licensing***.
 
 
 Getting Started
 ---------------
 
-If you want to work on the latest code, please read the file [HACKING](https://github.com/gearman/gearmand/blob/master/HACKING).
+If you want to work on the latest code, please read the file [CONTRIBUTING.md](https://github.com/gearman/gearmand/blob/master/CONTRIBUTING.md).
 
 To build a release version from a tarball (```.tar.gz``` or ```.tgz```), you can follow the normal:
 
@@ -29,12 +29,18 @@ Change into the directory where you saved the tarball and run:
 
     tar xzf gearmand-X.Y.tar.gz
     cd gearmand-X.Y
-    
+
 Then run the usual autoconfigure style build (you may need to use ```sudo``` to install):
 
     ./configure
     make
     make install
+
+There are various dependencies that may be satisfied on Ubuntu by installing these packages:
+
+    sudo apt install automake autoconf libtool make curl gcc g++ git gperf     \ 
+        libssl-dev libboost-all-dev libevent-dev libhiredis-dev libpq-dev      \ 
+        libtokyocabinet-dev python3-sphinx uuid-dev
 
 You can also run ```make test``` before installing to make sure everything
 checks out ok. You can also streamline the process of building and testing by running:
@@ -44,7 +50,7 @@ checks out ok. You can also streamline the process of building and testing by ru
 
 Once you have it installed, you can start the Gearman job server with:
 
-    gearmand -v
+    gearmand --verbose INFO
 
 This will start it while printing some verbose messages. To try
 running a job through it, look in the examples/ directory of this
@@ -63,12 +69,14 @@ If all goes well, the reverse_worker application should have output:
 While the reverse_client returned:
 
     Result=!namraeG ,olleH
-    
-There are a lot more details about gearmand at [Getting Started](http://gearman.org/getting-started/).
 
-If you want to start writing your own client and workers, be sure to check out the [Developer API](http://gearman.info/libgearman.html) documentation.
+There are a lot more details about gearmand at [Getting Started](https://gearman.org/getting-started/).
 
-There are also many other [Useful Resources](http://www.gearman.org/) to help you put gearmand to work for you!
+If you want to start writing your own client and workers, be sure to check out the [Developer API](https://gearman.org/gearmand/libgearman/) documentation.
+
+For using and configuring the gearmand server, please check out the [latest documentation](https://gearman.org/gearmand/).
+
+There are also many other [useful resources](https://gearman.org/) to help you put gearmand to work for you!
 
 Enjoy!
 
@@ -86,7 +94,7 @@ Please follow these instructions to clone, create a branch, and generate a pull 
 
         git clone https://github.com/gearman/gearmand
 
-   If you do not have access to create branches in the gearmand GitHub repository, you will probably want to fork the repository and clone your fork instead. Refer to [Contributing to Open Source on GitHub](https://guides.github.com/activities/contributing-to-open-source/#contributing) for details.
+   If you do not have access to create branches in the gearmand GitHub repository, you should fork the repository and clone your fork instead. Refer to [Contributing to Open Source on GitHub](https://guides.github.com/activities/contributing-to-open-source/#contributing) for details.
 
 2. Next, think of a clear, descriptive branch name and then create a new branch and change to it:
 
@@ -110,13 +118,36 @@ Once you have made your changes there are two additional ```make``` targets to b
 To generate a tarball distribution of your code:
 
     make dist
-    
+
 Or to generate an RPM distribution use:
 
     make rpm
-    
+
 Thanks and keep hacking!
 
 Cheers,  
   -Brian  
   Seattle, WA.
+
+Releasing Gearmand
+------------------
+
+When it's time to release the master branch, check the last release tag, and
+create a new one. Most releases are patch releases, and so should increment the
+third number in the version.
+
+- Checkout the master branch of this repository.
+- Ensure there are no changes staged or un-added. Anything not committed to the master branch will be removed by the next step!
+- ```$ git clean -xdf # This will remove all generated files```
+- Review changes merged since the last release with ```git log $LAST_RELEASE_TAG..```
+- ```$ git tag -s $NEW_RELEASE_TAG # Type in release notes```
+- ```$ ./bootstrap.sh -a && ./configure # This is needed to make dist properly```
+- ```$ make -C docs man # This step may or may not be necessary```
+- ```$ make dist # This creates the tarball```
+- ```$ cd .. && tar -zxvf $OLDPWD/gearmand-$NEW_RELEASE_TAG.tar.gz && cd gearmand-$NEW_RELEASE_TAG && ./configure && make test # Just to be sure that the tarball actually builds```
+- ```$ gpg --sign --armor --detach gearmand-$NEW_RELEASE_TAG.tar.gz```
+- **THIS IS THE POINT OF NO RETURN, TO ABORT:** ```git tag -d $NEW_RELEASE_TAG``` and start over.
+- ```$ git push --tags # Uploads the release tag to GitHub```
+- Visit https://github.com/gearman/gearmand/releases and you should see the new tag without details. Create a release using that tag.
+- Upload gearmand-$NEW_RELEASE_TAG.tar.gz and the .asc signature file to the release.
+- Announce the release to the gearman Matrix channel and mailing list.

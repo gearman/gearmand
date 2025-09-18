@@ -136,7 +136,7 @@ extern "C" {
         gearman_return_t rc;
         void *value= gearman_client_do(&client, WORKER_FUNCTION_NAME,
                                        NULL,
-                                       &payload[0], 
+                                       payload.size() ? &payload[0] : NULL,
                                        payload.size() ? random() % payload.size() : 0,
                                        NULL, &rc);
 

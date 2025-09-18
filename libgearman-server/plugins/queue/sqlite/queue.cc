@@ -77,7 +77,7 @@ Sqlite::Sqlite() :
 {
   command_line_options().add_options()
     ("libsqlite3-db", boost::program_options::value(&schema), "Database file to use.")
-    ("store-queue-on-shutdown", boost::program_options::bool_switch(&_store_on_shutdown)->default_value(false), "Store queue on shutdown.")
+    ("store-queue-on-shutdown", boost::program_options::bool_switch(&_store_on_shutdown)->default_value(false), "Store queue on shutdown only.")
     ("libsqlite3-table", boost::program_options::value(&table)->default_value(GEARMAND_QUEUE_SQLITE_DEFAULT_TABLE), "Table to use.")
     ;
 }

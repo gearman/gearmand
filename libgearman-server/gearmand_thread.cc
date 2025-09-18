@@ -167,7 +167,11 @@ gearmand_thread_st::gearmand_thread_st(gearmand_st& gearmand_):
   dcon_add_count{0},
   free_dcon_count{0},
   wakeup_fd{},
+#if __GNUC__ == 4 && __GNUC_MINOR__ < 9
+  _gearmand(gearmand_),
+#else
   _gearmand{gearmand_},
+#endif
   next{nullptr},
   prev{nullptr},
   base{nullptr},

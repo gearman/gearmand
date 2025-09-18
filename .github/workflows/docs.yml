@@ -1,0 +1,100 @@
+name: Build and Deploy Docs
+
+on:
+  # Run on pushes targeting the default branch
+  push:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between any
+# in-progress and latest queued runs. However, do not cancel in-progress runs
+# as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository_owner == 'gearman'
+
+    name: Build Docs
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Dependencies
+      run: |
+        sudo apt-get -o Acquire::Retries=3 update && \
+        env DEBIAN_FRONTEND=noninteractive \
+        sudo apt-get -o Acquire::Retries=3 install -y \
+          apt-transport-https \
+          apt-file \
+          software-properties-common \
+          build-essential \
+          autotools-dev \
+          autoconf \
+          automake \
+          git \
+          make \
+          pkgconf \
+          libboost-all-dev \
+          libevent-dev \
+          gperf \
+          uuid-dev \
+          sphinx-doc \
+          sphinx-common \
+          python3-sphinx
+
+    - name: Clone Repository
+      uses: actions/checkout@v4
+
+    - name: Bootstrap
+      run: |
+           if [ -f "/etc/lsb-release" ]; then
+              cat /etc/lsb-release
+           fi
+           ./bootstrap.sh -a
+      shell: bash
+
+    - name: Configure
+      run: |
+           ./configure
+      shell: bash
+
+    - name: Build HTML Documentation
+      run: make -C docs dirhtml
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+
+    - name: Upload Artifacts
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: 'docs/build/dirhtml'
+
+  deploy:
+    if: github.repository_owner == 'gearman'
+
+    name: Deploy Docs
+
+    # Add a dependency on the build job
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

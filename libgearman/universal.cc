@@ -188,6 +188,15 @@ void gearman_universal_set_timeout(gearman_universal_st &self, int timeout)
   self.timeout= timeout;
 }
 
+void gearman_universal_set_ssl(gearman_universal_st &self, bool ssl,
+    const char *ca_file, const char *certificate, const char *key_file)
+{
+  self.ssl(ssl);
+  self.ssl_ca_file(ca_file);
+  self.ssl_certificate(certificate);
+  self.ssl_key(key_file);
+}
+
 void gearman_set_log_fn(gearman_universal_st &self, gearman_log_fn *function,
                         void *context, gearman_verbose_t verbose)
 {
@@ -483,6 +492,27 @@ bool gearman_universal_st::init_ssl()
   if (ssl())
   {
 #if defined(HAVE_SSL) && HAVE_SSL
+    // Check these files exist or not to avoid coredump.
+    FILE *file = NULL;
+    if ((file = fopen(ssl_ca_file(), "r")) == NULL)
+    {
+      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "Failed to open CA certificate %s (%d: %s)", ssl_ca_file(), errno, strerror(errno));
+      return false;
+    }
+    fclose(file);
+    if ((file = fopen(ssl_certificate(), "r")) == NULL)
+    {
+      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "Failed to open certificate %s (%d: %s)", ssl_certificate(), errno, strerror(errno));
+      return false;
+    }
+    fclose(file);
+    if ((file = fopen(ssl_key(), "r")) == NULL)
+    {
+      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "Failed to open certificate key %s (%d: %s)", ssl_key(), errno, strerror(errno));
+      return false;
+    }
+    fclose(file);
+
     SSL_load_error_strings();
     SSL_library_init();
 
@@ -492,7 +522,7 @@ bool gearman_universal_st::init_ssl()
     if ((_ctx_ssl= SSL_CTX_new(TLS_client_method())) == NULL)
 #endif
     {
-      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "CyaTLSv1_client_method() failed");
+      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "TLS_client_method() failed");
       return false;
     }
 
@@ -511,6 +541,12 @@ bool gearman_universal_st::init_ssl()
     if (SSL_CTX_use_PrivateKey_file(_ctx_ssl, ssl_key(), SSL_FILETYPE_PEM) != SSL_SUCCESS)
     {   
       gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "Failed to load certificate key %s", ssl_key());
+      return false;
+    }
+
+    if (SSL_CTX_check_private_key(_ctx_ssl) != SSL_SUCCESS)
+    {
+      gearman_universal_set_error(*this, GEARMAN_INVALID_ARGUMENT, GEARMAN_AT, "Failed to check private key");
       return false;
     }
 #endif // defined(HAVE_SSL) && HAVE_SSL

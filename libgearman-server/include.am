@@ -88,6 +88,7 @@ libgearman_server_libgearman_server_la_CXXFLAGS+= -DBUILDING_LIBGEARMAN
 
 libgearman_server_libgearman_server_la_LIBADD+= @LIBEVENT_LIB@
 libgearman_server_libgearman_server_la_LIBADD+= @PTHREAD_LIBS@
+libgearman_server_libgearman_server_la_LIBADD+= @LIBEVENT2_PTHREADS_LIB@
 libgearman_server_libgearman_server_la_LIBADD+= @BOOST_PROGRAM_OPTIONS_LIB@
 libgearman_server_libgearman_server_la_LIBADD+= @LIBM@
 libgearman_server_libgearman_server_la_LIBADD+= @lt_cv_dlopen_libs@

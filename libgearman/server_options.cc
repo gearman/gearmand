@@ -66,7 +66,11 @@ gearman_server_options_st::gearman_server_options_st(gearman_universal_st &unive
   _option{option_arg_size},
   next{nullptr},
   prev{nullptr},
+#if __GNUC__ == 4 && __GNUC_MINOR__ < 9
+  universal(universal_)
+#else
   universal{universal_}
+#endif
 {
   _option.append(option_arg, option_arg_size);
   if (universal.server_options_list)

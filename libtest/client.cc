@@ -81,7 +81,11 @@ void SimpleClient::init_ssl()
     SSL_load_error_strings();
     SSL_library_init();
 
-    if ((_ctx_ssl= SSL_CTX_new(TLSv1_client_method())) == NULL)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+    if ((_ctx_ssl= SSL_CTX_new(TLSv1_2_client_method())) == NULL)
+#else
+    if ((_ctx_ssl= SSL_CTX_new(TLS_client_method())) == NULL)
+#endif
     {
       FATAL("SSL_CTX_new error" == NULL);
     }
@@ -373,11 +377,12 @@ bool SimpleClient::message(const char* ptr, const size_t len)
                 write_size= SOCKET_ERROR;
                 break;
               }
+              /* fall-thru */
 
             case SSL_ERROR_SSL:
             default:
               {
-                char errorString[SSL_ERROR_SIZE];
+                char errorString[SSL_ERROR_SIZE]= { 0 };
                 ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
                 error(__FILE__, __LINE__, errorString);
                 close_socket();
@@ -494,11 +499,12 @@ bool SimpleClient::response(libtest::vchar_t& response_)
                 read_size= SOCKET_ERROR;
                 break;
               }
+              /* fall-thru */
 
             case SSL_ERROR_SSL:
             default:
               {
-                char errorString[SSL_ERROR_SIZE];
+                char errorString[SSL_ERROR_SIZE]= { 0 };
                 ERR_error_string_n(readErr, errorString, sizeof(errorString));
                 error(__FILE__, __LINE__, errorString);
                 return false;
@@ -589,6 +595,7 @@ bool SimpleClient::response(std::string& response_)
               {
                 break;
               }
+              /* fall-thru */
 
             case SSL_ERROR_SSL:
             default:

@@ -22,8 +22,8 @@ be able to handle multiple servers.
 * Added gearman_task_is_finished()
 * Improved SSL support.
 * Exceptions are now supported.
-* gearmand excepts its root CA via the environmental variable GEARMAND_PORT. 
-* libgearman will now except GEARMAND_CA_CERTIFICATE, GEARMAN_CLIENT_PEM, and GEARMAN_CLIENT_KEY
+* gearmand accepts its root CA via the environmental variable GEARMAND_PORT. 
+* libgearman will now accept GEARMAND_CA_CERTIFICATE, GEARMAN_CLIENT_PEM, and GEARMAN_CLIENT_KEY.
 
 1.1.8 Thu Jun  6 18:47:01 EDT 2013
 * Postgres test case now passes.
@@ -257,7 +257,7 @@ be able to handle multiple servers.
  * Check to make sure worker job results match assigned worker.
 
 0.12 Thu Feb 18 11:28:49 PST 2010
- * Fixed bug where memory loss occured if data was too large.
+ * Fixed bug where memory loss occurred if data was too large.
  * Added gearman_strerror().
  * Fixed bug where setting an option off in mass would not trip any triggers on the option (for both worker and client).
  * Options that are internal can no longer be set by external callers.

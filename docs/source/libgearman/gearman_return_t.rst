@@ -39,7 +39,7 @@ occurred. This should be used for testing loops.
 Possible values of :c:type:`gearman_return_t`:
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-.. c:type:: GEARMAN_SUCCESS
+.. c:type:`GEARMAN_SUCCESS`
 
   Success
 
@@ -185,7 +185,7 @@ value as return values to the calling client.
 
    Worker has sent an exception the client via :c:func:`gearman_job_send_exception`
 
-.. c:type:: GEARMAN_WORK_FAIL  
+.. c:type:`GEARMAN_WORK_FAIL`
 
    A task has failed, and the worker has exited with an error or it called :c:func:`gearman_job_send_fail`
 
@@ -203,7 +203,7 @@ WORKER TO CLIENT
 
 Any function defined by :c:func:`gearman_worker_define_function` may, and can only, return the following :c:type:`gearman_return_t` values.
 
-.. c:type:: GEARMAN_SUCCESS 
+.. c:type:`GEARMAN_SUCCESS`
 
    The function successfully completed the job.
 

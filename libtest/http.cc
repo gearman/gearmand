@@ -87,7 +87,10 @@ static size_t http_get_result_callback(void *ptr, size_t size, size_t nmemb, voi
   vchar_t *_body= (vchar_t*)data;
 
   _body->resize(size * nmemb);
-  memcpy(static_cast<void*>(&_body[0]), ptr, _body->size());
+  if (_body->size())
+  {
+    memcpy(static_cast<void*>(&_body[0]), ptr, _body->size());
+  }
 
   return _body->size();
 }
@@ -148,7 +151,7 @@ bool GET::execute()
 bool POST::execute()
 {
 #if defined(HAVE_LIBCURL) && HAVE_LIBCURL
-  if (HAVE_LIBCURL)
+  if (HAVE_LIBCURL && _body.size())
   {
     CURL *curl= curl_easy_init();;
 
@@ -175,7 +178,7 @@ bool POST::execute()
 bool TRACE::execute()
 {
 #if defined(HAVE_LIBCURL) && HAVE_LIBCURL
-  if (HAVE_LIBCURL)
+  if (HAVE_LIBCURL && _body.size())
   {
     CURL *curl= curl_easy_init();;
 

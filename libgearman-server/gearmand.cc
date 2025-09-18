@@ -239,6 +239,17 @@ gearmand_st *gearmand_create(gearmand_config_st *config,
     _exit(EXIT_FAILURE);
   }
 
+#ifdef HAVE_LIBEVENT2_PTHREADS
+  evthread_use_pthreads();
+#else
+#warn "HAVE_LIBEVENT2_PTHREADS not defined, can't initialize thread-support. This build will emit warnings and disable threads."
+  if (threads_arg > 0)
+  {
+    threads_arg= 0;
+    gearmand_log_warning("Threads disabled because this build could not locate libevent2 or its pthreads support.");
+  }
+#endif
+
   gearmand_st* gearmand= new (std::nothrow) gearmand_st(host_arg, threads_arg, backlog_arg, verbose_arg, exceptions_);
   if (gearmand == NULL)
   {

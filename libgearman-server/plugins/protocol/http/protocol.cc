@@ -62,8 +62,17 @@
  */
 #define GEARMAND_PROTOCOL_HTTP_DEFAULT_PORT "8080"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#elif defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#if __GNUC__ >= 7
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif /* __GNUC__ >= 7 */
+#endif
 
 class HTTPtext;
 
@@ -684,4 +693,8 @@ gearmand_error_t HTTP::start(gearmand_st *gearmand)
 } // namespace gearmand
 
 /** @} */
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined(__GNUC_)
 #pragma GCC diagnostic pop
+#endif

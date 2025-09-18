@@ -194,6 +194,15 @@ set_VENDOR_DISTRIBUTION ()
     opensuse*)
       VENDOR_DISTRIBUTION='opensuse'
       ;;
+    alpine)
+      VENDOR_DISTRIBUTION='alpine'
+      ;;
+    nixos)
+      VENDOR_DISTRIBUTION='nixos'
+      ;;
+    rocky)
+      VENDOR_DISTRIBUTION='rocky'
+      ;;
     *)
       die "attempt to set an invalid VENDOR_DISTRIBUTION=$dist"
       ;;
@@ -252,15 +261,24 @@ set_VENDOR_RELEASE ()
       ;;
     ubuntu)
       VENDOR_RELEASE="$release"
-      if [[ "x$VENDOR_RELEASE" == 'x12.04' ]]; then
+      if [[ "z$VENDOR_RELEASE" == 'z12.04' ]]; then
         VENDOR_RELEASE="precise"
-      elif [[ "x$VENDOR_RELEASE" == 'x12.10' ]]; then
+      elif [[ "z$VENDOR_RELEASE" == 'z12.10' ]]; then
         VENDOR_RELEASE="quantal"
-      elif [[ "x$VENDOR_RELEASE" == 'x13.04' ]]; then
+      elif [[ "z$VENDOR_RELEASE" == 'z13.04' ]]; then
         VENDOR_RELEASE="raring"
       fi
       ;;
     opensuse)
+      VENDOR_RELEASE="$release"
+      ;;
+    alpine)
+      VENDOR_RELEASE="$release"
+      ;;
+    nixos)
+      VENDOR_RELEASE="$release"
+      ;;
+    rocky)
       VENDOR_RELEASE="$release"
       ;;
     unknown)
@@ -273,13 +291,16 @@ set_VENDOR_RELEASE ()
 }
 
 
-#  Valid values are: apple, redhat, centos, canonical, oracle, suse
+#  Valid values are: alpine, apple, redhat, centos, canonical, oracle, suse
 set_VENDOR ()
 {
   local vendor
   vendor="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
 
   case $vendor in
+    alpine)
+      VENDOR='alpine'
+      ;;
     apple)
       VENDOR='apple'
       ;;
@@ -307,11 +328,17 @@ set_VENDOR ()
     debian)
       VENDOR='debian'
       ;;
+    nixos)
+      VENDOR='nixos'
+      ;;
     opensuse*)
       VENDOR='suse'
       ;;
     suse)
       VENDOR='suse'
+      ;;
+    rocky*)
+      VENDOR='rocky'
       ;;
     *)
       die "An attempt was made to set an invalid VENDOR=$vendor"
@@ -338,6 +365,10 @@ determine_target_platform ()
     local fedora_version
     fedora_version="$(awk ' { print $3 } ' < /etc/fedora-release)"
     set_VENDOR 'redhat' 'fedora' "$fedora_version"
+  elif [[ -f '/etc/sl-release' ]]; then
+    local sl_version
+    sl_version="$(awk ' { print $4 } ' < /etc/sl-release)"
+    set_VENDOR 'centos' 'rhel' "$sl_version"
   elif [[ -f '/etc/centos-release' ]]; then
     local centos_version
     centos_version="$(awk ' { print $7 } ' < /etc/centos-release)"
@@ -368,6 +399,10 @@ determine_target_platform ()
     # shellcheck disable=SC1091
     source '/etc/lsb-release'
     set_VENDOR 'canonical' "$DISTRIB_ID" "$DISTRIB_CODENAME"
+  elif [[ -f '/etc/alpine-release' ]]; then
+    local alpine_version
+    alpine_version="$(cat /etc/alpine-release)"
+    set_VENDOR 'alpine' 'alpine' "$alpine_version"
   fi
 
   rebuild_host_os
@@ -1777,7 +1812,7 @@ merge ()
 
     bzr push "$BRANCH"
   elif [[ -n "$VCS_CHECKOUT" ]]; then
-    die "Merge attempt occured, current VCS setup does not support this"
+    die "Merge attempt occurred, current VCS setup does not support this"
   fi
 }
 

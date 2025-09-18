@@ -222,6 +222,7 @@ gearmand_error_t _initialize(gearman_server_st& server, gearmand::plugins::queue
   queue->con= mysql_init(queue->con);
 
   mysql_options(queue->con, MYSQL_READ_DEFAULT_GROUP, "gearmand");
+  mysql_options(queue->con, MYSQL_OPT_RECONNECT, &my_true);
 
   if (!mysql_real_connect(queue->con,
                           queue->mysql_host.c_str(),
@@ -234,8 +235,6 @@ gearmand_error_t _initialize(gearman_server_st& server, gearmand::plugins::queue
 
     return GEARMAND_QUEUE_ERROR;
   }
-
-  mysql_options(queue->con, MYSQL_OPT_RECONNECT, &my_true);
 
   if (!(result= mysql_list_tables(queue->con, queue->mysql_table.c_str())))
   {
@@ -301,6 +300,8 @@ static gearmand_error_t _mysql_queue_add(gearman_server_st *, void *context,
 
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,"MySQL queue add: %.*s %.*s", (uint32_t) unique_size, (char *) unique,
                      (uint32_t) function_name_size, (char *) function_name);
+
+  mysql_ping(queue->con);
 
   bind[0].buffer_type= MYSQL_TYPE_STRING;
   bind[0].buffer= (char *)unique;
@@ -391,6 +392,8 @@ static gearmand_error_t _mysql_queue_done(gearman_server_st*, void *context,
 
   gearmand::plugins::queue::MySQL *queue= (gearmand::plugins::queue::MySQL *)context;
 
+  mysql_ping(queue->con);
+
   bind[0].buffer_type= MYSQL_TYPE_STRING;
   bind[0].buffer= (char *)unique;
   bind[0].buffer_length= unique_size;
@@ -459,6 +462,8 @@ static gearmand_error_t _mysql_queue_replay(gearman_server_st* server, void *con
   int query_buffer_length= snprintf(query_buffer, sizeof(query_buffer),
                                     "SELECT unique_key, function_name, data, priority, when_to_run FROM %s",
                                     queue->mysql_table.c_str());
+
+  mysql_ping(queue->con);
 
   if (mysql_real_query(queue->con, query_buffer, query_buffer_length))
   {

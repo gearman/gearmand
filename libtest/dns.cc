@@ -101,14 +101,14 @@ bool check_dns()
     return false;
   }
 
-  if (lookup("exist.gearman.info") == false)
+  if (lookup("www.google.com") == false)
   {
     return false;
   }
 
-  if (lookup("does_not_exist.gearman.info")) // This should fail, if it passes,...
+  if (lookup("does_not_exist.google.com")) // This should fail, if it passes,...
   {
-    fatal_assert("Your service provider sucks and is providing bogus DNS. You might be in an airport.");
+    fatal_assert("Your service provider is providing bogus DNS. You might be in an airport.");
   }
 
   return true;

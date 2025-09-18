@@ -788,6 +788,7 @@ gearman_job_st *gearman_worker_grab_job(gearman_worker_st *worker_shell,
                 continue;
               }
             }
+            /* fall-thru */
 
             case GEARMAN_WORKER_STATE_GRAB_JOB_SEND:
             if (worker->con->socket_descriptor_is_valid() == false)
@@ -825,6 +826,7 @@ gearman_job_st *gearman_worker_grab_job(gearman_worker_st *worker_shell,
 
             while (1)
             {
+              /* fall-thru */
               case GEARMAN_WORKER_STATE_GRAB_JOB_RECV:
                 assert(worker);
                 assert(worker->job());
@@ -897,6 +899,7 @@ gearman_job_st *gearman_worker_grab_job(gearman_worker_st *worker_shell,
             *ret_ptr= GEARMAN_NO_JOBS;
             break;
           }
+          /* fall-thru */
 
         case GEARMAN_WORKER_STATE_PRE_SLEEP:
           for (worker->con= (&worker->universal)->con_list; worker->con;
@@ -1129,6 +1132,7 @@ gearman_return_t gearman_worker_work(gearman_worker_st *worker_shell)
 
           worker->work_result_size= 0;
         }
+        /* fall-thru */
 
       case GEARMAN_WORKER_WORK_UNIVERSAL_FUNCTION:
         {
@@ -1161,6 +1165,7 @@ gearman_return_t gearman_worker_work(gearman_worker_st *worker_shell)
             break;
           }
         }
+        /* fall-thru */
 
       case GEARMAN_WORKER_WORK_UNIVERSAL_COMPLETE:
         {

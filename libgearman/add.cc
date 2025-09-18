@@ -218,8 +218,16 @@ gearman_task_st *add_task(Client& client,
     {
       task->unique_length= GEARMAN_MAX_UNIQUE_SIZE -1; // Leave space for NULL byte
     }
-
+/* We check to make sure there's space for the NULL above so this
+   warning does not apply */
+#pragma GCC diagnostic push
+#ifdef __GNUC__
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+#endif
     strncpy(task->unique, gearman_c_str(unique), GEARMAN_MAX_UNIQUE_SIZE);
+#pragma GCC diagnostic pop
     task->unique[task->unique_length]= 0;
   }
   else
@@ -420,8 +428,16 @@ gearman_task_st *add_reducer_task(Client* client,
     {
       task->unique_length= GEARMAN_MAX_UNIQUE_SIZE -1; // Leave space for NULL byte
     }
-
+/* We check to make sure there's space for the NULL above so this
+   warning does not apply */
+#pragma GCC diagnostic push
+#ifdef __GNUC__
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+#endif
     strncpy(task->unique, gearman_c_str(unique), GEARMAN_MAX_UNIQUE_SIZE);
+#pragma GCC diagnostic pop
     task->unique[task->unique_length]= 0;
   }
   else

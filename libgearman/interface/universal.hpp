@@ -46,6 +46,8 @@
 #include "libgearman/assert.hpp" 
 #include "libgearman/ssl.h"
 
+#include <cstring>
+
 enum universal_options_t
 {
   GEARMAN_UNIVERSAL_NON_BLOCKING,
@@ -70,13 +72,19 @@ struct gearman_universal_st : public error_st
     bool stop_wait_on_signal;
     bool no_new_data;
     bool _ssl;
+    struct gearman_vector_st *_ssl_ca_file;
+    struct gearman_vector_st *_ssl_certificate;
+    struct gearman_vector_st *_ssl_key;
 
     Options() :
       dont_track_packets{false},
       non_blocking{false},
       stop_wait_on_signal{false},
       no_new_data{false},
-      _ssl{false}
+      _ssl{false},
+      _ssl_ca_file{NULL},
+      _ssl_certificate{NULL},
+      _ssl_key{NULL}
     { }
   } options;
   gearman_verbose_t verbose;
@@ -220,6 +228,11 @@ struct gearman_universal_st : public error_st
 
   const char* ssl_ca_file() const
   {
+    if (options._ssl_ca_file && options._ssl_ca_file->size())
+    {
+      return options._ssl_ca_file->c_str();
+    }
+
     if (getenv("GEARMAND_CA_CERTIFICATE"))
     {
       return getenv("GEARMAND_CA_CERTIFICATE");
@@ -228,8 +241,27 @@ struct gearman_universal_st : public error_st
     return GEARMAND_CA_CERTIFICATE;
   }
 
+  void ssl_ca_file(const char* ssl_ca_file_)
+  {
+    gearman_string_free(options._ssl_ca_file);
+    size_t ssl_ca_file_size_ = 0;
+    if (ssl_ca_file_ && (ssl_ca_file_size_ = strlen(ssl_ca_file_)))
+    {
+      options._ssl_ca_file = gearman_string_create(NULL, ssl_ca_file_, ssl_ca_file_size_);
+    }
+    else
+    {
+      options._ssl_ca_file = NULL;
+    }
+  }
+
   const char* ssl_certificate() const
   {
+    if (options._ssl_certificate && options._ssl_certificate->size())
+    {
+      return options._ssl_certificate->c_str();
+    }
+
     if (getenv("GEARMAN_CLIENT_PEM"))
     {
       return getenv("GEARMAN_CLIENT_PEM");
@@ -238,14 +270,47 @@ struct gearman_universal_st : public error_st
     return GEARMAN_CLIENT_PEM;
   }
 
+  void ssl_certificate(const char *ssl_certificate_)
+  {
+    gearman_string_free(options._ssl_certificate);
+    size_t ssl_certificate_size_ = 0;
+    if (ssl_certificate_ && (ssl_certificate_size_ = strlen(ssl_certificate_)))
+    {
+      options._ssl_certificate = gearman_string_create(NULL, ssl_certificate_, ssl_certificate_size_);
+    }
+    else
+    {
+      options._ssl_certificate = NULL;
+    }
+  }
+
   const char* ssl_key() const
   {
+    if (options._ssl_key && options._ssl_key->size())
+    {
+      return options._ssl_key->c_str();
+    }
+
     if (getenv("GEARMAN_CLIENT_KEY"))
     {
       return getenv("GEARMAN_CLIENT_KEY");
     }
 
     return GEARMAN_CLIENT_KEY;
+  }
+
+  void ssl_key(const char *ssl_key_)
+  {
+    gearman_string_free(options._ssl_key);
+    size_t ssl_key_size_ = 0;
+    if (ssl_key_ && (ssl_key_size_ = strlen(ssl_key_)))
+    {
+      options._ssl_key = gearman_string_create(NULL, ssl_key_, ssl_key_size_);
+    }
+    else
+    {
+      options._ssl_key = NULL;
+    }
   }
 
 private:

@@ -61,8 +61,11 @@ using namespace libtest;
 #include <algorithm>
 #include <stdexcept>
 
-#ifndef __USE_GNU
-static char **environ= NULL;
+#if defined(__APPLE__) && __APPLE__
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron ())
+#elif !defined(_GNU_SOURCE)
+extern char **environ= NULL;
 #endif
 
 #ifndef FD_CLOEXEC
@@ -201,8 +204,8 @@ Application::error_t Application::run(const char *args[])
 
   fatal_assert(posix_spawnattr_setsigmask(&spawnattr, &mask) == 0);
 
-#if defined(POSIX_SPAWN_USEVFORK) || defined(__linux__)
-  // Use USEVFORK on linux
+#if defined(POSIX_SPAWN_USEVFORK) || defined(__GLIBC__)
+  // Use USEVFORK where appropriate
   flags |= POSIX_SPAWN_USEVFORK;
 #endif
 

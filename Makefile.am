@@ -50,6 +50,7 @@ include benchmark/include.am
 include bin/include.am
 include examples/include.am
 include gearmand/include.am
+include libboost/include.am
 include libgearman-server/include.am
 include libgearman/include.am
 include libgearman-1.0/include.am
@@ -68,7 +69,7 @@ TESTS += $(bin_PROGRAMS)
 TESTS += $(check_PROGRAMS)
 XFAIL_TESTS += $(bin_PROGRAMS)
 
-EXTRA_DIST+= HACKING
+EXTRA_DIST+= CONTRIBUTING.md
 EXTRA_DIST+= README.md
 EXTRA_DIST+= scripts/README.solaris
 

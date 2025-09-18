@@ -95,7 +95,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS HACKING THANKS README.md
+%doc AUTHORS COPYING NEWS CONTRIBUTING.md THANKS README.md
 %{_bindir}/gearadmin
 %{_bindir}/gearman
 %{_libdir}/libgearman.la
@@ -106,7 +106,7 @@ fi
 
 %files server
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS HACKING THANKS README.md
+%doc AUTHORS COPYING NEWS CONTRIBUTING.md THANKS README.md
 %{_mandir}/man8/gearmand.8.gz
 %{_sbindir}/gearmand
 /etc/rc.d/init.d/gearmand
@@ -115,7 +115,7 @@ fi
 
 %files devel
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS HACKING THANKS README.md
+%doc AUTHORS COPYING NEWS CONTRIBUTING.md THANKS README.md
 %{_includedir}/libgearman/gearman.h
 %{_includedir}/libgearman-1.0/actions.h
 %{_includedir}/libgearman-1.0/aggregator.h

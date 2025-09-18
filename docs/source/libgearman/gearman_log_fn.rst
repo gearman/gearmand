@@ -15,7 +15,7 @@ SYNOPSIS
 DESCRIPTION 
 -----------
 
-:c:type:gearman_log_fn is defined as::
+:c:type:`gearman_log_fn` is defined as::
 
   void (gearman_log_fn)(const char *line, gearman_verbose_t verbose, void *context)
 
@@ -30,7 +30,7 @@ HOME
 ----
 
 To find out more information please check:
-`http://gearman.info/ <http://gearman.info/>`_
+`https://gearman.org/gearmand/ <https://gearman.org/gearmand/>`_
 
 --------
 SEE ALSO

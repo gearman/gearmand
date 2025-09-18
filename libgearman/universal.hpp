@@ -57,6 +57,9 @@ void gearman_universal_set_timeout(gearman_universal_st &self, int timeout);
 
 int gearman_universal_timeout(gearman_universal_st &self);
 
+void gearman_universal_set_ssl(gearman_universal_st &self, bool ssl,
+    const char *ca_file, const char *certificate, const char *key_file);
+
 void gearman_universal_set_namespace(gearman_universal_st &self, const char *namespace_key, size_t namespace_key_size);
 
 gearman_return_t cancel_job(gearman_universal_st& universal,

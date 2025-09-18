@@ -50,6 +50,11 @@
 
 #include <event.h>
 
+#ifdef HAVE_LIBEVENT2
+#include <event2/event.h>
+#include <event2/thread.h>
+#endif
+
 #include <libgearman-1.0/visibility.h>
 #include <libgearman-1.0/protocol.h>
 

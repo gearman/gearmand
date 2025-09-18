@@ -222,7 +222,7 @@ void gearman_server_con_free(gearman_server_con_st *con)
 
   if (con->is_cleaned_up)
   {
-    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "con %llu is already cleaned-up. returning", con);
+    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "con %p is already cleaned-up. returning", con);
     return;
   }
   
@@ -334,7 +334,7 @@ void gearman_server_con_set_id(gearman_server_con_st *con,
 
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                      "identifier set to %.*s", 
-                     min_size, con->id);
+                     (uint32_t)min_size, con->id);
 }
 
 void gearman_server_con_free_worker(gearman_server_con_st *con,
@@ -692,7 +692,7 @@ gearmand_error_t gearman_server_con_add_job_timeout(gearman_server_con_st *con, 
           worker->timeout= 1000;
         }
 
-        gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Adding timeout on %s for %s (%dl)",
+        gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Adding timeout on %s for %s (%ld)",
                            job->function->function_name,
                            job->job_handle,
                            worker->timeout);
@@ -717,7 +717,9 @@ gearmand_error_t gearman_server_con_add_job_timeout(gearman_server_con_st *con, 
           and only set this one if it is longer than that one. */
 
         struct timeval timeout_tv = { 0 , 0 };
-        timeout_tv.tv_sec= worker->timeout;
+        time_t milliseconds= worker->timeout;
+        timeout_tv.tv_sec= milliseconds / 1000;
+        timeout_tv.tv_usec= (suseconds_t)((milliseconds % 1000) * 1000);
         timeout_add(con->timeout_event, &timeout_tv);
       }
       else if (con->timeout_event) // Delete the timer if it exists

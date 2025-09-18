@@ -38,7 +38,7 @@ HOME
 
 
 To find out more information please check:
-`http://gearman.info/ <http://gearman.info/>`_
+`https://gearman.org/gearmand/ <https://gearman.org/gearmand/>`_
 
 .. seealso::
   :manpage:`gearmand(8)` :manpage:`libgearman(3)` :manpage:`gearman_client_st(3)` :manpage:`gearman_job_handle_t(3)` :manpage:`gearman_continue(3`

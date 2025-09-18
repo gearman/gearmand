@@ -180,6 +180,13 @@ GEARMAN_API
 void gearman_worker_set_timeout(gearman_worker_st *worker, int timeout);
 
 /**
+ * See gearman_universal_set_ssl() for details.
+ */
+GEARMAN_API
+void gearman_worker_set_ssl(gearman_worker_st *worker, bool ssl,
+    const char *ca_file, const char *certificate, const char *key_file);
+
+/**
  * Get the application context for a worker.
  *
  * @param[in] worker Structure previously initialized with

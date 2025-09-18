@@ -546,6 +546,15 @@ void gearman_client_set_timeout(gearman_client_st *client_shell, int timeout)
   }
 }
 
+void gearman_client_set_ssl(gearman_client_st *client_shell, bool ssl,
+    const char *ca_file, const char *certificate, const char *key_file)
+{
+  if (client_shell && client_shell->impl())
+  {
+    gearman_universal_set_ssl(client_shell->impl()->universal, ssl, ca_file, certificate, key_file);
+  }
+}
+
 void *gearman_client_context(const gearman_client_st *client_shell)
 {
   if (client_shell and client_shell->impl())

@@ -49,6 +49,12 @@
 #include <cstdlib>
 #include <unistd.h>
 
+#if defined(__linux__)
+# define TRUE_CMD "/bin/true"
+#else
+# define TRUE_CMD "/usr/bin/true"
+#endif
+
 using namespace libtest;
 
 static std::string testing_service;
@@ -596,8 +602,8 @@ static test_return_t memcached_sasl_test(void *object)
 
 static test_return_t application_true_BINARY(void *)
 {
-  test_skip(0, access("/usr/bin/true", X_OK ));
-  Application true_app("/usr/bin/true");
+  test_skip(0, access(TRUE_CMD, X_OK ));
+  Application true_app(TRUE_CMD);
 
   ASSERT_EQ(Application::SUCCESS, true_app.run());
   ASSERT_EQ(Application::SUCCESS, true_app.join());
@@ -608,9 +614,9 @@ static test_return_t application_true_BINARY(void *)
 static test_return_t application_gdb_true_BINARY2(void *)
 {
   test_skip(0, access("/usr/bin/gdb", X_OK ));
-  test_skip(0, access("/usr/bin/true", X_OK ));
+  test_skip(0, access(TRUE_CMD, X_OK ));
 
-  Application true_app("/usr/bin/true");
+  Application true_app(TRUE_CMD);
   true_app.use_gdb(true);
 
   ASSERT_EQ(Application::SUCCESS, true_app.run());
@@ -622,9 +628,9 @@ static test_return_t application_gdb_true_BINARY2(void *)
 static test_return_t application_gdb_true_BINARY(void *)
 {
   test_skip(0, access("/usr/bin/gdb", X_OK ));
-  test_skip(0, access("/usr/bin/true", X_OK ));
+  test_skip(0, access(TRUE_CMD, X_OK ));
 
-  Application true_app("/usr/bin/true");
+  Application true_app(TRUE_CMD);
   true_app.use_gdb(true);
 
   const char *args[]= { "--fubar", 0 };
@@ -636,8 +642,8 @@ static test_return_t application_gdb_true_BINARY(void *)
 
 static test_return_t application_true_fubar_BINARY(void *)
 {
-  test_skip(0, access("/usr/bin/true", X_OK ));
-  Application true_app("/usr/bin/true");
+  test_skip(0, access(TRUE_CMD, X_OK ));
+  Application true_app(TRUE_CMD);
 
   const char *args[]= { "--fubar", 0 };
   ASSERT_EQ(Application::SUCCESS, true_app.run(args));
@@ -655,13 +661,23 @@ static test_return_t application_doesnotexist_BINARY(void *)
   true_app.will_fail();
 
   const char *args[]= { "--fubar", 0 };
-#if defined(__APPLE__) && __APPLE__
-  ASSERT_EQ(Application::INVALID_POSIX_SPAWN, true_app.run(args));
-#elif defined(__FreeBSD__) && __FreeBSD__
+#if ((defined(__APPLE__) && __APPLE__) || (defined(__FreeBSD__) && __FreeBSD__))
   ASSERT_EQ(Application::INVALID_POSIX_SPAWN, true_app.run(args));
 #else
-  ASSERT_EQ(Application::SUCCESS, true_app.run(args));
-  ASSERT_EQ(Application::INVALID_POSIX_SPAWN, true_app.join());
+  /* true_app.run(args) returns INVALID_POSIX_SPAWN here on Ubuntu 18.04, but
+     it returns SUCCESS on older Linux distributions such as Ubuntu 14.04 and
+     16.04, where one needs to follow up with true_app.join() to get
+     INVALID_POSIX_SPAWN. */
+  Application::error_t return_value = true_app.run(args);
+  if (return_value == Application::INVALID_POSIX_SPAWN)
+  {
+    ASSERT_EQ(Application::INVALID_POSIX_SPAWN, return_value);
+  }
+  else
+  {
+    ASSERT_EQ(Application::SUCCESS, return_value);
+    ASSERT_EQ(Application::INVALID_POSIX_SPAWN, true_app.join());
+  }
 #endif
 
   test_zero(true_app.stdout_result().size());
@@ -948,13 +964,13 @@ static test_return_t Timer_TEST(void *)
 
 static test_return_t lookup_true_TEST(void *)
 {
-  test_warn(libtest::lookup("exist.gearman.info"), "dns is not currently working");
+  test_warn(libtest::lookup("exist.gearman.org"), "dns is not currently working");
   return TEST_SUCCESS;
 }
 
 static test_return_t lookup_false_TEST(void *)
 {
-  SKIP_IF_(libtest::lookup("does_not_exist.gearman.info"),
+  SKIP_IF_(libtest::lookup("does_not_exist.gearman.org"),
            "Broken DNS server detected");
 
   return TEST_SUCCESS;

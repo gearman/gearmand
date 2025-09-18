@@ -126,7 +126,7 @@ AC_DEFUN([_ENABLE_LIBMEMCACHED], [
                LIBMEMCACHED_LIB="-lmemcached"
                AC_SUBST([LIBMEMCACHED_LIB])
                AS_IF([test "x$ax_cv_libmemcached_util" = "xyes"], [
-                     LIBMEMCACHED_UTIL_LIB="-lmemcached -lmemcachedutil"
+                     LIBMEMCACHED_UTIL_LIB="-lmemcachedutil -lmemcached"
                      AC_SUBST([LIBMEMCACHED_UTIL_LIB])
                      ])
                ],[

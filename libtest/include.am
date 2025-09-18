@@ -15,7 +15,7 @@ MASSIF_COMMAND= $(LIBTOOL_COMMAND) valgrind --tool=massif
 GDB_COMMAND= $(LIBTOOL_COMMAND) gdb -f -x libtest/run.gdb
 PTRCHECK_COMMAND= $(LIBTOOL_COMMAND) valgrind --tool=exp-ptrcheck --error-exitcode=1
 PAHOLE_COMMAND= $(LIBTOOL_COMMAND) --mode=execute pahole
-VALGRIND_SUPRESSION= $(LIBTOOL_COMMAND) valgrind --leak-check=full --show-reachable=yes --error-limit=no --gen-suppressions=all --log-file=minimalraw.log
+VALGRIND_SUPPRESSION= $(LIBTOOL_COMMAND) valgrind --leak-check=full --show-reachable=yes --error-limit=no --gen-suppressions=all --log-file=minimalraw.log
 
 export LIBTOOL_COMMAND
 export VALGRIND_COMMAND
@@ -30,8 +30,11 @@ valgrind:
 sgcheck:
 	@echo make check LOG_COMPILER="\"$(SGCHECK_EXEC_COMMAND)\""
 
-valgrind-supressions:
-	@echo make check LOG_COMPILER="\"$(VALGRIND_SUPRESSION)\""
+valgrind-suppressions:
+	@echo make check LOG_COMPILER="\"$(VALGRIND_SUPPRESSION)\""
+
+# Misspelling retained for historical reasons
+valgrind-supressions: valgrind-suppressions
 
 gdb:
 	@echo make check LOG_COMPILER="\"$(GDB_COMMAND)\""

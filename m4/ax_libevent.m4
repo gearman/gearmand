@@ -6,6 +6,7 @@
 #   AX_LIBEVENT([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]]) 
 #   AX_LIBEVENT2() 
 #   AX_LIBEVENT2_EVHTTP()
+#   AX_LIBEVENT2_PTHREADS()
 #
 # DESCRIPTION
 #
@@ -20,7 +21,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 5
+#serial 6
  
 AC_DEFUN([AX_LIBEVENT],
          [AC_PREREQ([2.63])dnl
@@ -126,3 +127,35 @@ AC_DEFUN([AX_LIBEVENT2_EVHTTP],
         [$1],
         [$2])
     ])dnl AX_LIBEVENT2_EVHTTP
+
+#
+AC_DEFUN([AX_LIBEVENT2_PTHREADS],
+    [AC_REQUIRE([AX_LIBEVENT2])
+    AC_CACHE_CHECK([test for a working libevent pthreads interface], [ax_cv_libevent2_pthreads],
+      [AX_SAVE_FLAGS
+      CFLAGS="-pthread $CFLAGS"
+      LIBS="-levent_pthreads -levent $LIBS"
+      AC_LANG_PUSH([C])
+      AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <event2/thread.h>
+          ]],[[
+          evthread_use_pthreads();
+          ]])],
+        [ax_cv_libevent2_pthreads=yes],
+        [ax_cv_libevent2_pthreads=no],
+        [AC_MSG_WARN([test program execution failed])])
+      AC_LANG_POP([C])
+      AX_RESTORE_FLAGS
+      ])
+
+    AS_IF([test "x$ax_cv_libevent2_pthreads" = "xyes"],
+        [AC_SUBST([LIBEVENT2_PTHREADS_LIB],[-levent_pthreads])
+        AC_DEFINE([HAVE_LIBEVENT2_PTHREADS],[1],[Define if evthread_use_pthreads is present in event2/thread.h.])],
+        [AC_DEFINE([HAVE_LIBEVENT2_PTHREADS],[0],[Define if evthread_use_pthreads is present in event2/thread.h.])])
+
+    AM_CONDITIONAL([HAVE_LIBEVENT2_PTHREADS],[test "x$ax_cv_libevent2_pthreads" = xyes])
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+    AS_IF([test "x$ax_cv_libevent2_pthreads" = xyes],
+        [$1],
+        [$2])
+    ])dnl AX_LIBEVENT2_PTHREADS

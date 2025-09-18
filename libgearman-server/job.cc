@@ -215,7 +215,7 @@ gearman_server_job_add_reducer(gearman_server_st *server,
     server->job_handle_count++;
     server_job->data= data;
     server_job->data_size= data_size;
-		server_job->when= when; 
+    server_job->when= when; 
 
     if (reducer_size)
     {
@@ -226,7 +226,7 @@ gearman_server_job_add_reducer(gearman_server_st *server,
     {
       server_job->reducer[0]= 0;
     }
-		
+
     server_job->unique_key= key;
     key= key % server->hashtable_buckets;
     GEARMAND_HASH_ADD(server->unique, key, server_job, unique_);

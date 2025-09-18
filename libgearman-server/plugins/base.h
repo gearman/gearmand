@@ -147,6 +147,11 @@ public:
     _store_on_shutdown= store_on_shutdown_;
   }
 
+  bool is_store_on_shutdown()
+  {
+    return _store_on_shutdown;
+  }
+
   bool has_error()
   {
     return _error_string.size();

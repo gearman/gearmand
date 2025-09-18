@@ -1,0 +1,186 @@
+name: GitHub Actions CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 6'  # Every Saturday at 7am
+
+jobs:
+  build:
+
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    container: ${{ matrix.config.container }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+#           - {name: 'ubuntu-14.04 gcc-4.8', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc-4.8', cxx: 'g++-4.8', tag: '4.8', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+#           - {name: 'ubuntu-14.04 gcc-4.9', os: ubuntu-latest, container: 'ubuntu:14.04', cc: 'gcc-4.9', cxx: 'g++-4.9', tag: '4.9', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+#           - {name: 'ubuntu-18.04 gcc-5', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-5', cxx: 'g++-5', tag: '5'}
+#           - {name: 'ubuntu-18.04 gcc-6', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-6', cxx: 'g++-6', tag: '6'}
+#           - {name: 'ubuntu-18.04 gcc-7', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-7', cxx: 'g++-7', tag: '7'}
+#           - {name: 'ubuntu-18.04 gcc-8', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-8', cxx: 'g++-8', tag: '8'}
+          - {name: 'ubuntu-20.04 gcc-9',  os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-9', cxx: 'g++-9', tag: '9'}
+          - {name: 'ubuntu-20.04 gcc-10', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-10', cxx: 'g++-10', tag: '10'}
+          - {name: 'ubuntu-20.04 gcc-11', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-11', cxx: 'g++-11', tag: '11', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'ubuntu-22.04 gcc-12', os: ubuntu-22.04, cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
+          - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
+          - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
+          - {name: 'ubuntu-25.04 gcc-15', os: ubuntu-latest, container: 'ubuntu:25.04', cc: 'gcc-15', cxx: 'g++-15', tag: '15', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'ubuntu-25.10 gcc-15', os: ubuntu-latest, container: 'ubuntu:25.04', cc: 'gcc-15', cxx: 'g++-15', tag: '15', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'alpine-3.18 gcc-12', os: ubuntu-latest, container: 'alpine:3.18', cc: 'gcc', cxx: 'g++', tag: '12'}
+          - {name: 'alpine-3.19 gcc-13', os: ubuntu-latest, container: 'alpine:3.19', cc: 'gcc', cxx: 'g++', tag: '13'}
+          - {name: 'alpine-3.20 gcc-13', os: ubuntu-latest, container: 'alpine:3.20', cc: 'gcc', cxx: 'g++', tag: '13'}
+          - {name: 'alpine-3.21 gcc-14', os: ubuntu-latest, container: 'alpine:3.21', cc: 'gcc', cxx: 'g++', tag: '14'}
+          - {name: 'alpine-3.22 gcc-14', os: ubuntu-latest, container: 'alpine:3.22', cc: 'gcc', cxx: 'g++', tag: '14'}
+
+    env:
+      CC: ${{ matrix.config.cc }}
+      CXX: ${{ matrix.config.cxx }}
+      CCVERSION: ${{ matrix.config.tag }}
+      GHA_CONTAINER: ${{ matrix.config.container }}
+      GHA_CONFIG_NAME: ${{ matrix.config.name }}
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+    steps:
+    - name: if running in a container, update and install sudo, git, and other basics
+      if: matrix.config.container != ''
+      run: |
+           case "${GHA_CONTAINER}" in
+              ubuntu*)
+                 apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2
+                 sudo apt-add-repository ppa:git-core/ppa
+                 sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
+                 ;;
+              alpine*)
+                 apk add --no-cache make gcc g++ autoconf automake m4 bash git libtool file py3-sphinx util-linux-dev libuuid libevent-dev gperf boost-dev openssl-dev
+                 ;;
+              *)
+                 ;;
+           esac
+    - name: override DNS to fix IP address for hostname in some Docker containers
+      if: matrix.config.container != ''
+      run: |
+           case "${GHA_CONTAINER}" in
+              ubuntu*)
+                 echo "==="
+                 echo "Before: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 echo "Removing localhost name from ::1 entry in /etc/hosts..."
+                 sed 's/^::1\s\s*localhost\s\(.*\)/::1 \1/' /etc/hosts > /tmp/hosts.temp
+                 cp /tmp/hosts.temp /etc/hosts
+                 rm /tmp/hosts.temp
+                 echo "After: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 ip addr
+                 echo "==="
+                 echo "'hostname -i' shows '$(hostname -i)'"
+                 echo "'hostname -s' shows '$(hostname -s)'"
+                 echo "'hostname -f' shows '$(hostname -f)'"
+                 ;;
+              alpine*)
+                 echo "==="
+                 echo "Before: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 echo "Removing ::1 entry from /etc/hosts using vi (the only way that works)..."
+                 echo $'0/::1\nddZZ' | vi /etc/hosts > /dev/null
+                 echo "After: /etc/hosts"
+                 cat /etc/hosts
+                 echo "==="
+                 ip addr
+                 echo "==="
+                 echo "'hostname -i' shows '$(hostname -i)'"
+                 echo "'hostname -s' shows '$(hostname -s)'"
+                 echo "'hostname -f' shows '$(hostname -f)'"
+                 ;;
+              *)
+                 ;;
+           esac
+    - name: configure toolchain (optional)
+      if: matrix.config.toolchain != ''
+      run: |
+           sudo apt-add-repository ${{ matrix.config.toolchain }}
+           sudo apt-get update
+           sudo apt-get -y install libtool
+    - uses: actions/checkout@v4
+    - name: set ownership of git repository in Docker containers
+      if: matrix.config.container != ''
+      run: |
+           chown -R $(id -u):$(id -g) .
+    - name: tweak multi_client_test.cc for container usage
+      if: matrix.config.container != ''
+      run: |
+           case "${GHA_CONTAINER}" in
+              ubuntu*)
+                 echo "==="
+                 echo "Before multi_client_test.cc:"
+                 grep push_port tests/libgearman-1.0/multi_client_test.cc
+                 echo "Changing multi_client_test.cc..."
+                 sed -i -e '0,/test->push_port.*libtest/ s/\(test.*push_port(\).*libtest.*\();\)/\1 19298 \2/' tests/libgearman-1.0/multi_client_test.cc
+                 sed -i -e '0,/test->push_port.*libtest/ s/\(test.*push_port(\).*libtest.*\();\)/\1 19300 \2/' tests/libgearman-1.0/multi_client_test.cc
+                 echo "After multi_client_test.cc:"
+                 grep push_port tests/libgearman-1.0/multi_client_test.cc
+                 echo "==="
+                 ;;
+              *)
+                 ;;
+           esac
+    - name: install dependencies
+      run: |
+           case "${GHA_CONFIG_NAME}" in
+              ubuntu*)
+                 sudo apt-get update && sudo apt-get -o Acquire::Retries=3 install -y libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common libhiredis-dev ${{ matrix.config.cc }} ${{ matrix.config.cxx }}
+                 ;;
+              *)
+                 ;;
+           esac
+    - name: bootstrap
+      run: |
+           if [ -n "$GHA_CONTAINER" ]; then
+              echo "container: $GHA_CONTAINER"
+           fi
+           if [ -f "/etc/lsb-release" ]; then
+              cat /etc/lsb-release
+           fi
+           ./bootstrap.sh -a
+    - name: configure
+      run: |
+           if [[ "${CC}" == gcc* ]] && [ "${CCVERSION}" -ge 9 ]; then
+              CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS"
+              export CXXFLAGS
+              echo "CXXFLAGS: $CXXFLAGS"
+           fi
+           ./configure --enable-ssl
+      shell: bash
+    - name: make
+      run: |
+           if [[ "${CC}" == gcc* ]] && [ "${CCVERSION}" -ge 9 ]; then
+              CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS"
+              export CXXFLAGS
+              echo "CXXFLAGS: $CXXFLAGS"
+           fi
+           ${CC} --version && make
+      shell: bash
+    - name: make test
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 4
+        command: make test
+    - name: check test-suite.log
+      if: success() || failure()
+      run: |
+           if [ -f "./test-suite.log" ]; then
+              cat ./test-suite.log
+           else
+              echo "No test-suite.log file found."
+           fi

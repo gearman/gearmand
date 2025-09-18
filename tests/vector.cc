@@ -201,13 +201,13 @@ static test_return_t bigger_resize_TEST(void*)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverflow"
-static test_return_t INT64_MAX_resize_TEST(void*)
+static test_return_t MAX_resize_TEST(void*)
 {
   const size_t max_block= 10 * GEARMAN_VECTOR_BLOCK_SIZE;
   for (size_t x= 0; x < 20; x++)
   {
     gearman_vector_st vec(random() % max_block);
-    ASSERT_FALSE(vec.resize(INT64_MAX));
+    ASSERT_FALSE(vec.resize(std::numeric_limits<size_t>::max() -1));
   }
 
   return TEST_SUCCESS;
@@ -542,7 +542,7 @@ test_st resize_TESTS[] ={
   { "smaller", 0, smaller_resize_TEST },
   { "bigger", 0, bigger_resize_TEST },
   { "random", 0, random_resize_TEST },
-  { "INT64_MAX", 0, INT64_MAX_resize_TEST },
+  { "INT64_MAX", 0, MAX_resize_TEST },
   { 0, 0, 0 }
 };
 

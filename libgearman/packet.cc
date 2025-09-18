@@ -250,7 +250,7 @@ void gearman_packet_free(gearman_packet_st *packet)
 #endif
 
   assert_msg(packet->universal, 
-             "Packet that is being freed has not been allocated, most likely this is do to freeing a gearman_task_st or other object twice");
+             "Packet that is being freed has not been allocated, most likely this is due to freeing a gearman_task_st or other object twice");
 
   if (gearman_is_allocated(packet))
   {

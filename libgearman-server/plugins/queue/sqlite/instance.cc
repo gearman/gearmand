@@ -432,6 +432,11 @@ gearmand_error_t Instance::done(gearman_server_st*,
                                    const char *function_name,
                                    size_t function_name_size)
 {
+  if (is_store_on_shutdown())
+  {
+    return GEARMAND_SUCCESS;
+  }
+
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                      "sqlite done: unique_key: %.*s, function_name: %.*s",
                      int(unique_size), (char*)unique,
@@ -593,6 +598,17 @@ gearmand_error_t Instance::replay_loop(gearman_server_st *server)
                                "failed to reset REPLAY prep statement: %s", sqlite3_errmsg(_db));
   }
 
+  /* truncate database now if in store_on_shutdown mode */
+  if (is_store_on_shutdown())
+  {
+    std::string query("DELETE FROM ");
+    query+= _table;
+    if (_sqlite_dispatch(query) == false) {
+      return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_QUEUE_ERROR,
+                                 "failed to truncate table: %s", sqlite3_errmsg(_db));
+    }
+  }
+
   if (row_count == 0)
   {
     return GEARMAND_SUCCESS;
@@ -603,5 +619,3 @@ gearmand_error_t Instance::replay_loop(gearman_server_st *server)
 
 } // namespace queue
 } // namespace gearmand
-
-

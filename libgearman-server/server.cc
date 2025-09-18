@@ -144,14 +144,15 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
     {
       return GEARMAND_MEMORY_ALLOCATION_FAILURE;
     }
+    /* fall-thru */
 
   case GEARMAN_COMMAND_SUBMIT_REDUCE_JOB_BACKGROUND:
     {
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                          "Received reduce submission, Partitioner: %.*s(%lu) Reducer: %.*s(%lu) Unique: %.*s(%lu) with %d arguments",
-                         packet->arg_size[0] -1, packet->arg[0], packet->arg_size[0] -1,
-                         packet->arg_size[2] -1, packet->arg[2], packet->arg_size[2] -1, // reducer
-                         packet->arg_size[1] -1, packet->arg[1], packet->arg_size[1] -1,
+                         (uint32_t)packet->arg_size[0] -1, packet->arg[0], packet->arg_size[0] -1,
+                         (uint32_t)packet->arg_size[2] -1, packet->arg[2], packet->arg_size[2] -1, // reducer
+                         (uint32_t)packet->arg_size[1] -1, packet->arg[1], packet->arg_size[1] -1,
                          (int)packet->argc);
       if (packet->arg_size[2] -1 > GEARMAN_UNIQUE_SIZE)
       {
@@ -199,9 +200,9 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       }
 
       gearmand_log_notice(GEARMAN_DEFAULT_LOG_PARAM,"accepted,%.*s,%.*s,%.*s",
-                          packet->arg_size[0] -1, packet->arg[0], // Function
-                          packet->arg_size[1] -1, packet->arg[1], // unique
-                          packet->arg_size[2] -1, packet->arg[2]); // reducer
+                          (uint32_t)packet->arg_size[0] -1, packet->arg[0], // Function
+                          (uint32_t)packet->arg_size[1] -1, packet->arg[1], // unique
+                          (uint32_t)packet->arg_size[2] -1, packet->arg[2]); // reducer
     }
     break;
 
@@ -250,26 +251,26 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
 
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                          "Received submission, function:%.*s unique:%.*s with %d arguments",
-                         packet->arg_size[0], packet->arg[0],
-                         packet->arg_size[1], packet->arg[1],
+                         (uint32_t)packet->arg_size[0], packet->arg[0],
+                         (uint32_t)packet->arg_size[1], packet->arg[1],
                          (int)packet->argc);
       int64_t when= 0;
       if (packet->command == GEARMAN_COMMAND_SUBMIT_JOB_EPOCH)
       {
         char *endptr;
-        // @note stroll will set errno if error, but it might also leave errno
+        // @note strtoll will set errno if error, but it might also leave errno
         // alone if none happens (so a previous call that sets it might cause
         // an error.
         errno= 0;
         when= strtoll((char *)packet->arg[2], &endptr, 10);
         if (errno)
         {
-          return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "strtoul(%ul)", when);
+          return gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "%s parsing epoch with strtoll(%ld)", strerror(errno), when);
         }
         gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, 
                            "Received EPOCH job submission, function:%.*s unique:%.*s with data for %jd at %jd, args %d",
-                           packet->arg_size[0], packet->arg[0],
-                           packet->arg_size[1], packet->arg[1],
+                           (uint32_t)packet->arg_size[0], packet->arg[0],
+                           (uint32_t)packet->arg_size[1], packet->arg[1],
                            when, time(NULL),
                            (int)packet->argc);
       }
@@ -318,8 +319,8 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       }
 
       gearmand_log_notice(GEARMAN_DEFAULT_LOG_PARAM,"accepted,%.*s,%.*s,%jd",
-                          packet->arg_size[0], packet->arg[0], // Function
-                          packet->arg_size[1], packet->arg[1], // Unique
+                          (uint32_t)packet->arg_size[0], packet->arg[0], // Function
+                          (uint32_t)packet->arg_size[1], packet->arg[1], // Unique
                           when);
     }
     break;
@@ -522,7 +523,8 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
 
   /* Worker requests. */
   case GEARMAN_COMMAND_CAN_DO:
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Registering function: %.*s", packet->arg_size[0], packet->arg[0]);
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Registering function: %.*s",
+                       (uint32_t)packet->arg_size[0], packet->arg[0]);
     if (gearman_server_worker_add(server_con, (char *)(packet->arg[0]),
                                   packet->arg_size[0], 0) == NULL)
     {
@@ -549,8 +551,8 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
         return gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "GEARMAN_COMMAND_CAN_DO_TIMEOUT:strtol: %s", strtol_buffer);
       }
 
-      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Registering function: %.*s with timeout %dl",
-                         packet->arg_size[0], packet->arg[0], timeout);
+      gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Registering function: %.*s with timeout %ld",
+                         (uint32_t)packet->arg_size[0], packet->arg[0], timeout);
 
       if (gearman_server_worker_add(server_con, (char *)(packet->arg[0]),
                                     packet->arg_size[0] - 1,
@@ -563,7 +565,7 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
     break;
 
   case GEARMAN_COMMAND_CANT_DO:
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Removing function: %.*s", packet->arg_size[0], packet->arg[0]);
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Removing function: %.*s", (uint32_t)packet->arg_size[0], packet->arg[0]);
     gearman_server_con_free_worker(server_con, (char *)(packet->arg[0]),
                                    packet->arg_size[0]);
     break;
@@ -629,10 +631,10 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       else if (packet->command == GEARMAN_COMMAND_GRAB_JOB_ALL and *server_job->reducer != '\0')
       {
         gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
-                           "Sending reduce submission, Partitioner: %.*s(%lu) Reducer: %.*s(%lu) Unique: %.*s(%lu) with data sized (%lu)" ,
-                           server_job->function->function_name_size, server_job->function->function_name, server_job->function->function_name_size,
-                           strlen(server_job->reducer), server_job->reducer, strlen(server_job->reducer),
-                           server_job->unique_length, server_job->unique, server_job->unique_length,
+                           "Sending reduce submission, Partitioner: %.*s(%lu) Reducer: %s(%lu) Unique: %.*s(%lu) with data sized (%lu)",
+                           (uint32_t)server_job->function->function_name_size, server_job->function->function_name, (unsigned long)server_job->function->function_name_size,
+                           server_job->reducer, (unsigned long)strlen(server_job->reducer),
+                           (uint32_t)server_job->unique_length, server_job->unique, (unsigned long)server_job->unique_length,
                            (unsigned long)server_job->data_size);
         /* 
           We found a runnable job, queue job assigned packet and take the job off the queue. 
@@ -665,7 +667,7 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       {
         gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                            "Sending GEARMAN_COMMAND_JOB_ASSIGN Function: %.*s(%lu) with data sized (%lu)" ,
-                           server_job->function->function_name_size, server_job->function->function_name, server_job->function->function_name_size,
+                           (uint32_t)server_job->function->function_name_size, server_job->function->function_name, server_job->function->function_name_size,
                            (unsigned long)server_job->data_size);
         /* Same, but without unique ID. */
         ret= gearman_server_io_packet_add(server_con, false,
@@ -817,8 +819,8 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
       }
 
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
-                         "Exception being sent for handle: %.*s",
-                         (size_t)strlen(server_job->job_handle), server_job->job_handle);
+                         "Exception being sent for handle: %s",
+                         server_job->job_handle);
 
       /* Queue the exception packet for all clients. */
       ret= _server_queue_work_data(server_job, packet, GEARMAN_COMMAND_WORK_EXCEPTION);

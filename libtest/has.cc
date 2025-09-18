@@ -73,7 +73,7 @@ bool has_libdrizzle(void)
 bool has_postgres_support(void)
 {
   char *getenv_ptr;
-  if (bool((getenv_ptr= getenv("POSTGES_IS_RUNNING_AND_SETUP"))))
+  if (bool((getenv_ptr= getenv("POSTGRES_IS_RUNNING_AND_SETUP"))))
   {
     (void)(getenv_ptr);
     if (HAVE_LIBPQ)
@@ -140,7 +140,7 @@ bool has_mysqld()
   return false;
 }
 
-static char memcached_binary_path[FILENAME_MAX];
+static char memcached_binary_path[FILENAME_MAX +1]= { 0 };
 
 static void initialize_memcached_binary_path()
 {

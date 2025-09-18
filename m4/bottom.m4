@@ -54,6 +54,8 @@ typedef unsigned long int ulong;
 #define MSG_DONTWAIT 0
 #endif // HAVE_MSG_DONTWAIT
 
+#include "libboost/config/workaround.hpp"
+
 ])
 
 ])dnl CONFIG_EXTRA

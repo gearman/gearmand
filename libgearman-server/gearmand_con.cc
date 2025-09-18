@@ -191,7 +191,7 @@ void _server_con_worker_list_append(gearman_server_worker_st *list,
 
 void destroy_gearman_server_job_st(gearman_server_job_st* arg)
 {
-  gearmand_debug("delete gearman_server_con_st");
+  gearmand_debug("delete gearman_server_job_st");
   delete arg;
 }
 

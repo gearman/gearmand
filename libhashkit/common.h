@@ -39,6 +39,7 @@
 
 #include "libhashkit/hashkitcon.h"
 
+#include <limits.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -46,10 +47,18 @@
 #include <math.h>
 
 #ifndef __WORDSIZE
-# ifdef __MINGW32__
+# if defined(__MINGW32__)
 #  define __WORDSIZE 32
-# endif
-#endif
+# elif defined(LONG_BITS)
+#  if (LONG_BITS == 32)
+#   define __WORDSIZE 32
+#  else
+#   define __WORDSIZE 64
+#  endif /* defined(LONG_BITS) */
+# else
+#  define __WORDSIZE 64
+# endif /* defined(__MINGW32__) */
+#endif /* __WORDSIZE */
 
 #include <libhashkit-1.0/hashkit.h>
 #include "libhashkit/algorithm.h"

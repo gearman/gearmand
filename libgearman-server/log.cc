@@ -504,7 +504,7 @@ gearmand_error_t gearmand_log_gai_error(const char *position, const char *functi
 {
   if (rc == EAI_SYSTEM)
   {
-    return gearmand_log_perror(position, function, errno, message);
+    return gearmand_log_perror(position, function, errno, "%s", message);
   }
 
   gearmand_log_error(position, function, "%s getaddrinfo(%s)", message, gai_strerror(rc));

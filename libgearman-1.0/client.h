@@ -172,6 +172,13 @@ GEARMAN_API
 void gearman_client_set_timeout(gearman_client_st *client, int timeout);
 
 /**
+ * See gearman_universal_set_ssl() for details.
+ */
+GEARMAN_API
+void gearman_client_set_ssl(gearman_client_st *client, bool ssl,
+    const char *ca_file, const char *certificate, const char *key_file);
+
+/**
  * Get the application context for a client.
  *
  * @param[in] client Structure previously initialized with

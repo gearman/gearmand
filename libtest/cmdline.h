@@ -153,7 +153,7 @@ public:
 
   const char* stdout_c_str() const
   {
-    return &_stdout_buffer[0];
+    return _stdout_buffer.size() ? &_stdout_buffer[0] : NULL;
   }
 
   libtest::vchar_t stderr_result() const
@@ -163,7 +163,7 @@ public:
 
   const char* stderr_c_str() const
   {
-    return &_stderr_buffer[0];
+    return _stderr_buffer.size() ? &_stderr_buffer[0] : NULL;
   }
 
   size_t stderr_result_length() const

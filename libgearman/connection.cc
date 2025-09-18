@@ -547,6 +547,7 @@ gearman_return_t gearman_connection_st::_send_packet(const gearman_packet_st& pa
 
     /* Flush buffer now so we can start writing directly from data buffer. */
     send_state= GEARMAN_CON_SEND_UNIVERSAL_FORCE_FLUSH;
+    /* fall-thru */
 
   case GEARMAN_CON_SEND_UNIVERSAL_FORCE_FLUSH:
     {
@@ -555,6 +556,7 @@ gearman_return_t gearman_connection_st::_send_packet(const gearman_packet_st& pa
       {
         return ret;
       }
+      /* fall-thru */
     }
 
     send_data_size= packet_arg.data_size;
@@ -580,6 +582,7 @@ gearman_return_t gearman_connection_st::_send_packet(const gearman_packet_st& pa
 
     send_buffer_ptr= (const char*)(size_t(packet_arg.data) +send_data_offset);
     send_state= GEARMAN_CON_SEND_UNIVERSAL_FLUSH_DATA;
+    /* fall-thru */
 
   case GEARMAN_CON_SEND_UNIVERSAL_FLUSH:
   case GEARMAN_CON_SEND_UNIVERSAL_FLUSH_DATA:
@@ -677,10 +680,12 @@ gearman_return_t gearman_connection_st::enable_ssl()
     if (SSL_set_fd(_ssl, fd) != SSL_SUCCESS)
     {
       close_socket();
-      char errorString[SSL_ERROR_SIZE];
+      char errorString[SSL_ERROR_SIZE]= { 0 };
       ERR_error_string_n(SSL_get_error(_ssl, 0), errorString, sizeof(errorString));
       return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, errorString);
     }
+
+    SSL_set_connect_state(_ssl);
   }
 #endif
 
@@ -705,6 +710,7 @@ gearman_return_t gearman_connection_st::flush()
           return ret;
         }
       }
+      /* fall-thru */
 
     case GEARMAN_CON_UNIVERSAL_CONNECT:
       if (fd != INVALID_SOCKET)
@@ -760,6 +766,7 @@ gearman_return_t gearman_connection_st::flush()
         case ENETUNREACH:
         case ETIMEDOUT:
           addrinfo_next= addrinfo_next->ai_next;
+          /* fall-thru */
 
           // We will treat this as an error but retry the address
         case EAGAIN:
@@ -780,6 +787,7 @@ gearman_return_t gearman_connection_st::flush()
       {
         break;
       }
+      /* fall-thru */
 
     case GEARMAN_CON_UNIVERSAL_CONNECTING:
       while (1)
@@ -821,6 +829,7 @@ gearman_return_t gearman_connection_st::flush()
       {
         break;
       }
+      /* fall-thru */
 
     case GEARMAN_CON_UNIVERSAL_CONNECTED:
       while (send_buffer_size != 0)
@@ -860,11 +869,12 @@ gearman_return_t gearman_connection_st::flush()
                 write_size= SOCKET_ERROR;
                 break;
               }
+            /* fall-thru */
 
             case SSL_ERROR_SSL:
             default:
               {
-                char errorString[80];
+                char errorString[SSL_ERROR_SIZE]= { 0 };
                 ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
                 close_socket();
                 return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);
@@ -986,6 +996,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
     }
 
     recv_state= GEARMAN_CON_RECV_UNIVERSAL_READ;
+    /* fall-thru */
 
   case GEARMAN_CON_RECV_UNIVERSAL_READ:
     while (1)
@@ -1056,6 +1067,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
 
     packet_arg.options.free_data= true;
     recv_state= GEARMAN_CON_RECV_STATE_READ_DATA;
+    /* fall-thru */
 
   case GEARMAN_CON_RECV_STATE_READ_DATA:
     while (recv_data_size)
@@ -1171,11 +1183,12 @@ size_t gearman_connection_st::recv_socket(void *data, size_t data_size, gearman_
             read_size= SOCKET_ERROR;
             break;
           }
+          /* fall-thru */
 
         case SSL_ERROR_SSL:
         default:
           {
-            char errorString[80];
+            char errorString[SSL_ERROR_SIZE]= { 0 };
             ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
             close_socket();
             return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);

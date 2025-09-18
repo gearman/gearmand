@@ -2,7 +2,7 @@
 Required C types
 ================
 
-.. highlightlang:: c
+.. highlight:: c
 
 Types
 -----
@@ -24,6 +24,6 @@ C Types Used
 
 .. c:type:: time_t
 
-.. c:type:: struct timespec
+.. c:type:: timespec
 
 .. c:type:: sasl_callback_t

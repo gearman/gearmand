@@ -73,7 +73,7 @@ SYNOPSIS
 
 .. option:: -v [ --verbose ] arg (=v)
 
-   Increase verbosity level by one.
+   Set verbosity level. Defaults to ERROR. Accepts FATAL, ALERT, CRITICAL, ERROR, WARNING, NOTICE, INFO, and DEBUG.
 
 .. option:: -V [ --version ]
 
@@ -282,7 +282,7 @@ HOME
 
 
 To find out more information please check:
-`http://gearman.info/ <http://gearman.info/>`_
+`https://gearman.org/gearmand/ <https://gearman.org/gearmand>`_
 
 
 --------

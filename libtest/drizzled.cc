@@ -183,7 +183,18 @@ public:
       libtest::vchar_t buffer;
       buffer.resize(1024);
       snprintf(&buffer[1024], buffer.size(), "--drizzle-protocol.port=%d", int(arg));
+/* The buffer is reading as 0 length but it was resized above, there's
+   probably a way to define buffer so this does't happen but for now
+   we'll disable the warning. */
+
+#pragma GCC diagnostic push
+#ifdef __GNUC__
+#if __GNUC__ > 10
+#pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+#endif
       app.add_option(&buffer[1024]);
+#pragma GCC diagnostic pop
     }
   }
 

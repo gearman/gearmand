@@ -55,7 +55,8 @@ void set_default_socket(const char *socket)
 {
   if (socket)
   {
-    strncpy(global_socket, socket, strlen(socket));
+    strncpy(global_socket, socket, sizeof(global_socket));
+    global_socket[sizeof(global_socket) -1]= '\0';
   }
 }
 

@@ -93,6 +93,7 @@ gearman_return_t _client_run_task(Task *task)
       task->created_id= task->con->created_id_next;
       task->con->created_id_next++;
     }
+    /* fall-thru */
 
   case GEARMAN_TASK_STATE_SUBMIT:
     while (1)
@@ -270,6 +271,7 @@ gearman_return_t _client_run_task(Task *task)
       {
         task->error_code(GEARMAN_SUCCESS);
         strncpy(task->unique, task->recv->arg[0], GEARMAN_MAX_UNIQUE_SIZE);
+        task->unique[GEARMAN_MAX_UNIQUE_SIZE -1]= '\0';
         if (atoi(static_cast<char *>(task->recv->arg[1])) == 0)
         {
           task->options.is_known= false;

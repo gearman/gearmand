@@ -44,8 +44,13 @@ The following list represents the current list of commands supported. You can is
 
 .. describe:: verbose
 
-   Change the verbose level of the server.
+   Return the verbose level of the server.
 
 .. describe:: version
    
    Version number of server.
+
+.. describe:: prioritystatus
+
+   Queued jobs status by priority.
+

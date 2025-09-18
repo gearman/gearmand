@@ -20,7 +20,7 @@ Link with -lgearman
 DESCRIPTION
 -----------
 
-:c:func:`gearman_client_add_task_background` creates a background task and adds it ito the given :c:type:`gearman_client_st`. Execution of the task does now begin until :c:func:`gearman_client_run_tasks` is called. 
+:c:func:`gearman_client_add_task_background` creates a background task and adds it ito the given :c:type:`gearman_client_st`. Execution of the task does not begin until :c:func:`gearman_client_run_tasks` is called.
 
 If the unique value is not set, then a unique will be assigned.
 
@@ -45,7 +45,7 @@ HOME
 ----
 
 To find out more information please check:
-`http://gearman.info/ <http://gearman.info/>`_
+`https://gearman.org/gearmand/ <https://gearman.org/gearmand/>`_
 
 
 .. seealso::

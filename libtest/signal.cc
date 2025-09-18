@@ -244,8 +244,8 @@ bool SignalThread::setup()
 {
   set_shutdown(SHUTDOWN_RUNNING);
 
-  const char * lock_name = random_lock_name().c_str();
-  lock = sem_open(lock_name, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0);
+  std::string lock_name = random_lock_name();
+  lock = sem_open(lock_name.c_str(), O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0);
   if (lock == SEM_FAILED)
   {
     Error << errno << ": " << strerror(errno)

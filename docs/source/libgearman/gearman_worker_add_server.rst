@@ -45,6 +45,6 @@ HOME
 ----
 
 To find out more information please check:
-`http://gearman.info/ <http://gearman.info/>`_
+`https://gearman.org/gearmand/ <https://gearman.org/gearmand/>`_
 
 .. seealso:: :program:`gearmand` :doc:`../libgearman`  :c:type:`gearman_worker_st`

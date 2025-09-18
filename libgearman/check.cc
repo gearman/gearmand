@@ -100,8 +100,8 @@ gearman_return_t CancelCheck::success(gearman_connection_st* con)
 
       return gearman_universal_set_error(_universal, maybe_server_error, GEARMAN_AT, "%s:%s %.*s:%.*s",
                                          con->host(), con->service(),
-                                         con->_packet.arg_size[0], con->_packet.arg[0],
-                                         con->_packet.arg_size[1], con->_packet.arg[1]
+                                         (uint32_t)con->_packet.arg_size[0], con->_packet.arg[0],
+                                         (uint32_t)con->_packet.arg_size[1], con->_packet.arg[1]
                                         );
     }
 
@@ -127,13 +127,13 @@ gearman_return_t OptionCheck::success(gearman_connection_st* con)
 
       return gearman_universal_set_error(_universal, maybe_server_error, GEARMAN_AT, "%s:%s Invalid option %.*s",
                                          con->host(), con->service(),
-                                         con->_packet.arg_size[0], con->_packet.arg[0]
+                                         (uint32_t)con->_packet.arg_size[0], con->_packet.arg[0]
                                         );
     }
 
     return gearman_universal_set_error(_universal, GEARMAN_INVALID_SERVER_OPTION, GEARMAN_AT, "%s:%s Invalid option %.*s",
                                        con->host(), con->service(),
-                                       con->_packet.arg_size[0], con->_packet.arg[0]
+                                       (uint32_t)con->_packet.arg_size[0], con->_packet.arg[0]
                                       );
   }
 

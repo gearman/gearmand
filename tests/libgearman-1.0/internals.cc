@@ -318,7 +318,7 @@ static test_return_t gearman_packet_give_data_test(void *)
   // @note Since this is a give data, ignore any errors that believe there is
   // an implicit memory leak.
   size_t data_size= test_literal_param_size("Mine!");
-  char *data= (char *)calloc(sizeof(char), data_size +1);
+  char *data= (char *)calloc(data_size +1, sizeof(char));
   ASSERT_TRUE(data);
   memcpy(data, "Mine!", data_size);
 
@@ -345,7 +345,7 @@ static test_return_t gearman_packet_take_data_test(void *)
   // Since this is a take data, ignore any errors that believe there is an
   // implicit memory leak.
   size_t data_size= test_literal_param_size("Mine!");
-  char *data= (char *)calloc(sizeof(char), data_size +1);
+  char *data= (char *)calloc(data_size +1, sizeof(char));
   ASSERT_TRUE(data);
   memcpy(data, "Mine!", data_size);
 

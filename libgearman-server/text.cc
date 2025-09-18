@@ -62,8 +62,8 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   if (packet->argc)
   {
     gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "text command %.*s %d arguments",
-                       packet->arg_size[0],  packet->arg[0],
-                       int(packet->argc));
+                       (uint32_t)packet->arg_size[0],  packet->arg[0],
+                       packet->argc);
   }
 
 #if 0
@@ -136,7 +136,7 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
           job_queued[priority] = 0;
           for (gearman_server_job_st *server_job= function->job_list[priority];
                server_job != NULL;
-               server_job= server_job->next)
+               server_job= server_job->function_next)
           {
             job_queued[priority]++;
           }
@@ -370,8 +370,8 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
   }
   else
   {
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Failed to find command %.*s(%" PRIu64 ")",
-                       packet->arg_size[0], packet->arg[0], 
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Failed to find command %.*s(%zu)",
+                       (uint32_t)packet->arg_size[0], packet->arg[0], 
                        packet->arg_size[0]);
     data.vec_printf(TEXT_ERROR_UNKNOWN_COMMAND, (int)packet->arg_size[0], (char *)(packet->arg[0]));
   }

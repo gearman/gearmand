@@ -10,11 +10,15 @@ SYNOPSIS
 
 .. c:type:: gearman_string_t
 
-.. c:macro:: size_t gearman_size(gearman_string_t)
+.. c:macro:: gearman_size(string)
 
-.. c:macro:: const char *gearman_c_str(gearman_string_t)
+   Returns the size of the string.
 
-Compile and link with -lgearman
+.. c:macro:: gearman_c_str(string)
+
+   Returns the C string representation.
+
+Compile and link with -lgearman.
 
 -----------
 DESCRIPTION

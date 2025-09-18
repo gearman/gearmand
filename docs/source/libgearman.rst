@@ -60,7 +60,7 @@ A number of constants have been provided for in the library.
  
 The default port used by gearmand(3).
 
-.. c:macro:: GEARMAN_DEFAULT_TCP_PORT
+.. c:macro:: GEARMAN_DEFAULT_TCP_SERVICE
  
 The default service used by gearmand(3).
 
