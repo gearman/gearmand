@@ -359,14 +359,34 @@ gearman_server_job_st * gearman_server_job_peek(gearman_server_con_st *server_co
 
 gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con)
 {
-  for (gearman_server_worker_st *server_worker= server_con->worker_list; server_worker; server_worker= server_worker->con_next)
+  /* Select jobs by global priority across all workers. This ensures a high
+     priority job on any worker is preferred to lower priority jobs on earlier
+     workers in the list. */
+  for (gearman_job_priority_t priority= GEARMAN_JOB_PRIORITY_HIGH;
+       priority != GEARMAN_JOB_PRIORITY_MAX;
+       priority= gearman_job_priority_t(int(priority) +1))
   {
-    if (server_worker->function and server_worker->function->job_count)
+    for (gearman_server_worker_st *server_worker= server_con->worker_list;
+         server_worker; server_worker= server_worker->con_next)
     {
+      if (server_worker->function == NULL || server_worker->function->job_count == 0)
+      {
+        continue;
+      }
+
+      /* Only consider workers that have jobs for this priority. */
+      if (server_worker->function->job_list[priority] == NULL)
+      {
+        continue;
+      }
+
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Jobs available for %.*s: %lu",
                          (int)server_worker->function->function_name_size, server_worker->function->function_name,
                          (unsigned long)(server_worker->function->job_count));
 
+      /* Preserve the original round-robin behavior: when we select a worker
+         to hand out a job, move it to the end of the connection's worker
+         list so subsequent selection is fair. */
       if (Server->flags.round_robin)
       {
         GEARMAND_LIST_DEL(server_con->worker, server_worker, con_)
@@ -375,16 +395,6 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
         if (server_con->worker_list == NULL)
         {
           server_con->worker_list= server_worker;
-        }
-      }
-
-      gearman_job_priority_t priority;
-      for (priority= GEARMAN_JOB_PRIORITY_HIGH; priority < GEARMAN_JOB_PRIORITY_LOW;
-           priority= gearman_job_priority_t(int(priority) +1))
-      {
-        if (server_worker->function->job_list[priority])
-        {
-          break;
         }
       }
 
