@@ -33,7 +33,7 @@ jobs:
           - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
           - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
           - {name: 'ubuntu-25.04 gcc-15', os: ubuntu-latest, container: 'ubuntu:25.04', cc: 'gcc-15', cxx: 'g++-15', tag: '15', toolchain: 'ppa:ubuntu-toolchain-r/test'}
-          - {name: 'ubuntu-25.10 gcc-15', os: ubuntu-latest, container: 'ubuntu:25.10', cc: 'gcc-15', cxx: 'g++-15', tag: '15', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'ubuntu-25.10 gcc-15', os: ubuntu-latest, container: 'ubuntu:25.10', cc: 'gcc-15', cxx: 'g++-15', tag: '15'}
           - {name: 'alpine-3.18 gcc-12', os: ubuntu-latest, container: 'alpine:3.18', cc: 'gcc', cxx: 'g++', tag: '12'}
           - {name: 'alpine-3.19 gcc-13', os: ubuntu-latest, container: 'alpine:3.19', cc: 'gcc', cxx: 'g++', tag: '13'}
           - {name: 'alpine-3.20 gcc-13', os: ubuntu-latest, container: 'alpine:3.20', cc: 'gcc', cxx: 'g++', tag: '13'}
