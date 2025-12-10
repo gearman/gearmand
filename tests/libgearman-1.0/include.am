@@ -28,6 +28,7 @@ t_client_SOURCES+= tests/libgearman-1.0/protocol.cc
 t_client_SOURCES+= tests/libgearman-1.0/server_options.cc 
 t_client_SOURCES+= tests/libgearman-1.0/task.cc 
 t_client_SOURCES+= tests/libgearman-1.0/unique.cc 
+t_client_SOURCES+= tests/libgearman-1.0/priority_test.cc
 t_client_SOURCES+= tests/workers/aggregator/cat.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react_chunk.cc

@@ -2457,6 +2457,9 @@ test_st limit_tests[] ={
   {0, 0, 0}
 };
 
+// Forward declaration for priority tests
+test_st *test_gearman_worker_priority(void);
+
 collection_st collection[] ={
   {"gearman_return_t", 0, 0, gearman_return_t_TESTS},
   {"init", 0, 0, gearman_client_st_init_TESTS},
@@ -2509,6 +2512,7 @@ collection_st collection[] ={
   {"regression2", reset_SETUP, 0, regression2_TESTS },
   {"gearman_worker_timeout()", default_v2_SETUP, 0, gearman_worker_timeout_TESTS },
   {"gearman_client_set_identifier()", default_v2_SETUP, 0, gearman_client_set_identifier_TESTS },
+  {"gearman_worker_priority", 0, 0, test_gearman_worker_priority() },
   {0, 0, 0, 0}
 };
 
