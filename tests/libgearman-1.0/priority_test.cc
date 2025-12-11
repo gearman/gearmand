@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Gearmand client and server library.
  *
  *  Copyright (C) 2011-2013 Data Differential, http://datadifferential.com/
@@ -74,9 +74,9 @@ static gearman_return_t priority_check_worker(gearman_job_st* job, void *context
 {
   const char* workload= (const char*)gearman_job_workload(job);
   size_t workload_size= gearman_job_workload_size(job);
-  
+
   std::vector<int>* priority_order= (std::vector<int>*)context;
-  
+
   // Convert workload to integer priority
   // For single priority tasks, it's just the number
   // For multiple tasks per priority, it's "priority_index", so we extract just the priority part
@@ -91,12 +91,12 @@ static gearman_return_t priority_check_worker(gearman_job_st* job, void *context
     priority = atoi(workload);
   }
   priority_order->push_back(priority);
-  
+
   if (gearman_failed(gearman_job_send_data(job, workload, workload_size)))
   {
     return GEARMAN_ERROR;
   }
-  
+
   return GEARMAN_SUCCESS;
 }
 
@@ -149,8 +149,29 @@ static test_return_t gearman_worker_priority_background_TEST(void *)
   ASSERT_TRUE(high_task);
   tasks.push_back(high_task);
 
-  // Delay to ensure all jobs are queued before starting the worker
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // Ensure all jobs are queued before starting the worker
+  bool all_tasks_queued = false;
+  int max_queue_attempts = 50; // Prevent infinite loop
+  int queue_attempts = 0;
+
+  while (!all_tasks_queued && queue_attempts < max_queue_attempts) {
+    all_tasks_queued = true; // Assume all queued unless we find one that isn't
+    for (std::vector<gearman_task_st *>::iterator iter = tasks.begin();
+         iter != tasks.end(); ++iter) {
+      if (!gearman_task_is_known(*iter)) {
+        all_tasks_queued = false; // At least one task is not yet known
+        break;
+      }
+    }
+
+    if (!all_tasks_queued) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      queue_attempts++;
+    }
+  }
+
+  // Verify that all tasks were successfully queued
+  ASSERT_TRUE(all_tasks_queued);
 
   // Start worker for background tasks
   gearman_function_t priority_check_TEST_FN = gearman_function_create(priority_check_worker);
@@ -163,7 +184,26 @@ static test_return_t gearman_worker_priority_background_TEST(void *)
                                                              0)); // timeout
 
   // Wait for worker to process all tasks
-  sleep(2);
+  // Check if tasks are still known (queued or running)
+  bool tasks_complete = false;
+  int max_attempts = 50; // Prevent infinite loop
+  int attempts = 0;
+
+  while (!tasks_complete && attempts < max_attempts) {
+    tasks_complete = true; // Assume complete unless we find a known task
+    for (std::vector<gearman_task_st *>::iterator iter = tasks.begin();
+         iter != tasks.end(); ++iter) {
+      if (gearman_task_is_known(*iter)) {
+        tasks_complete = false; // At least one task is still known
+        break;
+      }
+    }
+
+    if (!tasks_complete) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      attempts++;
+    }
+  }
 
   // Verify that tasks were processed in the correct priority order (HIGH, NORMAL, LOW)
   // which corresponds to values 2, 1, 0
@@ -185,7 +225,7 @@ static test_return_t gearman_worker_priority_background_TEST(void *)
 struct PriorityFunction {
   int priority;
   std::string function;
-  
+
   PriorityFunction(int p, const char* f) : priority(p), function(f) {}
 };
 
@@ -197,15 +237,15 @@ static void* priority_function_check_worker(gearman_job_st* job, void *context,
   const char *workload= (const char *)gearman_job_workload(job);
   size_t workload_size= gearman_job_workload_size(job);
   const char* function_name= gearman_job_function_name(job);
-  
+
   // Parse priority from workload (format: "priority_functionName")
   std::string workload_str(workload, workload_size);
   size_t underscore_pos= workload_str.find('_');
   int priority= atoi(workload_str.substr(0, underscore_pos).c_str());
-  
+
   // Add to execution order
   order->push_back(PriorityFunction(priority, function_name));
-  
+
   *result_size = 0;
   *ret_ptr = GEARMAN_SUCCESS;
   return NULL;
@@ -258,8 +298,26 @@ static test_return_t gearman_worker_priority_multiple_functions_TEST(void *)
   ASSERT_TRUE_(normal_task, "Normal priority task creation failed");
   tasks.push_back(normal_task);
 
-  // Delay to ensure all jobs are queued before starting the workers
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // Ensure all jobs are queued before starting the worker
+  bool all_tasks_queued = false;
+  int max_queue_attempts = 50; // Prevent infinite loop
+  int queue_attempts = 0;
+
+  while (!all_tasks_queued && queue_attempts < max_queue_attempts) {
+    all_tasks_queued = true; // Assume all queued unless we find one that isn't
+    for (std::vector<gearman_task_st *>::iterator iter = tasks.begin();
+         iter != tasks.end(); ++iter) {
+      if (!gearman_task_is_known(*iter)) {
+        all_tasks_queued = false; // At least one task is not yet known
+        break;
+      }
+    }
+
+    if (!all_tasks_queued) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      queue_attempts++;
+    }
+  }
 
   // Start a single worker connection for both function1 and function2
   gearman_worker_st *worker = gearman_worker_create(NULL);
