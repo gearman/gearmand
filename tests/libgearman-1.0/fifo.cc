@@ -161,5 +161,7 @@ test_return_t fifo_test(void *object)
             << recorder.buffer[2]
             << std::endl;
 
+  ASSERT_EQ(1, 0);
+
   return TEST_SUCCESS;
 }
