@@ -163,5 +163,5 @@ test_return_t fifo_test(void *object)
 
 extern "C" void get_world(libtest::Framework *framework)
 {
-  framework->create<Context>();
+  framework->template create<Context>();
 }
