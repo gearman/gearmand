@@ -41,8 +41,8 @@
 
 using namespace libtest;
 
-#include <cstring>
 #include <cassert>
+#include <iostream>
 
 #include <libgearman-1.0/gearman.h>
 
@@ -154,6 +154,12 @@ test_return_t fifo_test(void *object)
   ASSERT_EQ('1', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
   ASSERT_EQ('3', recorder.buffer[2]);
+
+  std::cerr << "fifo_test: FIFO packet order verified -> "
+            << recorder.buffer[0]
+            << recorder.buffer[1]
+            << recorder.buffer[2]
+            << std::endl;
 
   return TEST_SUCCESS;
 }
