@@ -29,6 +29,7 @@ t_client_SOURCES+= tests/libgearman-1.0/server_options.cc
 t_client_SOURCES+= tests/libgearman-1.0/task.cc 
 t_client_SOURCES+= tests/libgearman-1.0/unique.cc 
 t_client_SOURCES+= tests/libgearman-1.0/priority_test.cc
+t_client_SOURCES+= tests/libgearman-1.0/fifo.cc 
 t_client_SOURCES+= tests/workers/aggregator/cat.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react_chunk.cc
@@ -150,22 +151,3 @@ noinst_PROGRAMS+= t/1077917
 
 valgrind-1077917: t/1077917
 	@$(VALGRIND_COMMAND) --leak-check=full --show-reachable=yes --track-origins=yes t/1077917
-
-t_fifo_SOURCES=
-t_fifo_LDADD=
-t_fifo_CXXFLAGS=
-t_fifo_SOURCES+= tests/libgearman-1.0/fifo.cc
-t_fifo_LDADD+= ${LIBGEARMAN_1_0_CLIENT_LDADD}
-t_fifo_LDADD+= @PTHREAD_LIBS@
-t_fifo_CXXFLAGS+= @PTHREAD_CFLAGS@
-check_PROGRAMS+=t/fifo
-noinst_PROGRAMS+=t/fifo
-
-test-fifo: t/fifo gearmand/gearmand
-	@t/fifo
-
-gdb-fifo: t/fifo gearmand/gearmand
-	@$(GDB_COMMAND) t/fifo
-
-valgrind-fifo: t/fifo gearmand/gearmand
-	@$(VALGRIND_COMMAND) t/fifo
