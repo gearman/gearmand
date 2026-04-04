@@ -155,7 +155,7 @@ test_return_t fifo_test(void *object)
   ASSERT_EQ('2', recorder.buffer[1]);
   ASSERT_EQ('3', recorder.buffer[2]);
 
-  std::cerr << "fifo_test: FIFO packet order verified -> "
+  std::cout << "fifo_test: FIFO packet order verified -> "
             << recorder.buffer[0]
             << recorder.buffer[1]
             << recorder.buffer[2]
