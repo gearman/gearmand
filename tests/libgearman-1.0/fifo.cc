@@ -50,6 +50,8 @@ using namespace libtest;
 #include <tests/start_worker.h>
 
 #include "libgearman/client.hpp"
+#include "libgearman/worker.hpp"
+using namespace org::gearmand;
 
 static struct OrderRecorder
 {
@@ -108,9 +110,8 @@ test_return_t fifo_test(void *object)
                       gearman_worker_options_t());
   ASSERT_TRUE(worker_handle);
 
-  /* Client that will submit the batch of tasks. Note: the Client class lives
-     in namespace org::gearmand::libgearman. */
-  org::gearmand::libgearman::Client client(context->port());
+  /* Client that will submit the batch of tasks. */
+  libgearman::Client client(context->port());
 
   /* Reset the shared recorder before submitting tasks. */
   recorder.pos= 0;
@@ -155,13 +156,4 @@ test_return_t fifo_test(void *object)
   ASSERT_EQ('3', recorder.buffer[2]);
 
   return TEST_SUCCESS;
-}
-
-/* ====================================================================
-   Required for standalone test binary (provides get_world for libtest)
-   ==================================================================== */
-
-extern "C" void get_world(libtest::Framework *framework)
-{
-  framework->create(new Context());
 }
