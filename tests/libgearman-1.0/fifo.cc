@@ -101,13 +101,13 @@ test_return_t fifo_test(void *object)
   /* Start a background worker that will echo the workload (required so
      the client receives results and can fire complete callbacks). */
   gearman_function_t echo_fn= gearman_function_create(fifo_echo_worker);
-  struct worker_handle_st *worker_handle=
+  std::unique_ptr<worker_handle_st> worker_handle(
     test_worker_start(context->port(),
                       NULL,
                       function_name,
                       echo_fn,
                       NULL,
-                      gearman_worker_options_t());
+                      gearman_worker_options_t()));
   ASSERT_TRUE(worker_handle);
 
   /* Client that will submit the batch of tasks. */
@@ -143,9 +143,7 @@ test_return_t fifo_test(void *object)
   gearman_return_t ret= gearman_client_run_tasks(&client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  /* Shutdown the worker. */
-  worker_handle->shutdown();
-  delete worker_handle;
+  /* No manual shutdown or delete needed - unique_ptr handles it. */
 
   /* === FIFO ASSERTION === */
   /* Before the packet.cc patch: would be "321" (LIFO). */
@@ -161,7 +159,7 @@ test_return_t fifo_test(void *object)
             << recorder.buffer[2]
             << std::endl;
 
-  ASSERT_EQ(1, 0);
+  ASSERT_TRUE(1 == 0);
 
   return TEST_SUCCESS;
 }
