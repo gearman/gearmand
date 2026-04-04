@@ -108,7 +108,8 @@ test_return_t fifo_test(void *object)
                       echo_fn,
                       NULL,
                       gearman_worker_options_t()));
-  ASSERT_TRUE(worker_handle);
+
+  ASSERT_TRUE(worker_handle.get() != NULL);
 
   /* Client that will submit the batch of tasks. */
   libgearman::Client client(context->port());
@@ -143,7 +144,7 @@ test_return_t fifo_test(void *object)
   gearman_return_t ret= gearman_client_run_tasks(&client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  /* No manual shutdown or delete needed - unique_ptr handles it. */
+  /* No manual shutdown() or delete - unique_ptr cleans up automatically. */
 
   /* === FIFO ASSERTION === */
   /* Before the packet.cc patch: would be "321" (LIFO). */
