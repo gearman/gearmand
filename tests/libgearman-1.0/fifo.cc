@@ -160,7 +160,7 @@ test_return_t fifo_test(void *object)
             << recorder.buffer[2]
             << std::endl;
 
-  ASSERT_TRUE(1 == 0);
+//   ASSERT_TRUE(1 == 0); // temporary debug line - remove for final PR
 
   return TEST_SUCCESS;
 }
