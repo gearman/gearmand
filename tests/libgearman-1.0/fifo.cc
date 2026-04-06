@@ -49,10 +49,6 @@ using namespace libtest;
 #include <tests/context.h>
 #include <tests/start_worker.h>
 
-#include "libgearman/client.hpp"
-#include "libgearman/worker.hpp"
-using namespace org::gearmand;
-
 static struct OrderRecorder
 {
   char buffer[4];
@@ -101,24 +97,25 @@ test_return_t fifo_test(void *object)
   /* Start a background worker that will echo the workload (required so
      the client receives results and can fire complete callbacks). */
   gearman_function_t echo_fn= gearman_function_create(fifo_echo_worker);
-  std::unique_ptr<worker_handle_st> worker_handle(
-    test_worker_start(context->port(),
-                      NULL,
-                      function_name,
-                      echo_fn,
-                      NULL,
-                      gearman_worker_options_t()));
+  worker_handle_st *worker_handle = test_worker_start(context->port(),
+                                                      NULL,
+                                                      function_name,
+                                                      echo_fn,
+                                                      NULL,
+                                                      gearman_worker_options_t());
+  ASSERT_TRUE(worker_handle != NULL);
 
-  ASSERT_TRUE(worker_handle.get() != NULL);
-
-  /* Client that will submit the batch of tasks. */
-  libgearman::Client client(context->port());
+  /* Use plain C API (exactly like every test in client_test.cc) so we avoid
+     the libgearman::Client C++ wrapper and its Boost shared_ptr destructor
+     that was triggering the assertion during teardown. */
+  gearman_client_st *client = gearman_client_create(NULL);
+  ASSERT_TRUE(client != NULL);
 
   /* Reset the shared recorder before submitting tasks. */
   recorder.pos= 0;
 
   /* Register the client-level complete callback. */
-  gearman_client_set_complete_fn(&client, fifo_complete);
+  gearman_client_set_complete_fn(client, fifo_complete);
 
   /* Submit tasks in FIFO order using the exact API path that populates
      gearman_universal_st::packet_list (the code changed in packet.cc). */
@@ -127,7 +124,7 @@ test_return_t fifo_test(void *object)
   {
     gearman_return_t rc;
     gearman_task_st* task=
-      gearman_client_add_task(&client,
+      gearman_client_add_task(client,
                               NULL,         /* let library allocate task */
                               NULL,         /* not used */
                               function_name,
@@ -141,14 +138,10 @@ test_return_t fifo_test(void *object)
 
   /* This is where the packet-list ordering matters: run_tasks() walks
      the list and sends packets in the order they were inserted. */
-  gearman_return_t ret= gearman_client_run_tasks(&client);
+  gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  /* No manual shutdown() or delete - unique_ptr cleans up automatically. */
-
-  /* === FIFO ASSERTION === */
-  /* Before the packet.cc patch: would be "321" (LIFO). */
-  /* After the patch: must be "123" (FIFO). */
+  /* === FIFO verification === */
   ASSERT_EQ(3, recorder.pos);
   ASSERT_EQ('1', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
@@ -161,6 +154,10 @@ test_return_t fifo_test(void *object)
             << std::endl;
 
 //   ASSERT_TRUE(1 == 0); // temporary debug line - remove for final PR
+
+  /* Explicit cleanup (exactly like every other test in client_test.cc) */
+  gearman_client_free(client);
+  test_worker_shutdown(worker_handle);
 
   return TEST_SUCCESS;
 }
