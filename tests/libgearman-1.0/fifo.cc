@@ -105,9 +105,6 @@ test_return_t fifo_test(void *object)
                                                       gearman_worker_options_t());
   ASSERT_TRUE(worker_handle != NULL);
 
-  /* Use plain C API (exactly like every test in client_test.cc) so we avoid
-     the libgearman::Client C++ wrapper and its Boost shared_ptr destructor
-     that was triggering the assertion during teardown. */
   gearman_client_st *client = gearman_client_create(NULL);
   ASSERT_TRUE(client != NULL);
 
@@ -155,9 +152,9 @@ test_return_t fifo_test(void *object)
 
 //   ASSERT_TRUE(1 == 0); // temporary debug line - remove for final PR
 
-  /* Explicit cleanup (exactly like every other test in client_test.cc) */
+  /* Explicit cleanup following the pattern of client_test.cc::loop_test */
   gearman_client_free(client);
-  test_worker_shutdown(worker_handle);
+  delete worker_handle;
 
   return TEST_SUCCESS;
 }
