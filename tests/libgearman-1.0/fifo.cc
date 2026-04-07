@@ -43,6 +43,7 @@ using namespace libtest;
 
 #include <cassert>
 #include <iostream>
+#include <memory>
 
 #include <libgearman-1.0/gearman.h>
 
@@ -94,15 +95,15 @@ test_return_t fifo_test(void *object)
 
   const char *function_name= "fifo_echo";
 
-  /* Start a background worker that will echo the workload (required so
-     the client receives results and can fire complete callbacks). */
-  gearman_function_t echo_fn= gearman_function_create(fifo_echo_worker);
-  worker_handle_st *worker_handle = test_worker_start(context->port(),
-                                                      NULL,
-                                                      function_name,
-                                                      echo_fn,
-                                                      NULL,
-                                                      gearman_worker_options_t());
+  /* Exactly the same pattern used by every other test in client_test.cc */
+  gearman_function_t echo_fn = gearman_function_create(fifo_echo_worker);
+  std::unique_ptr<worker_handle_st> worker_handle(
+    test_worker_start(context->port(),
+                      NULL,
+                      function_name,
+                      echo_fn,
+                      NULL,
+                      gearman_worker_options_t()));
   ASSERT_TRUE(worker_handle != NULL);
 
   gearman_client_st *client = gearman_client_create(NULL);
@@ -154,7 +155,7 @@ test_return_t fifo_test(void *object)
 
   /* Explicit cleanup following the pattern of client_test.cc::loop_test */
   gearman_client_free(client);
-  delete worker_handle;
+  /* unique_ptr destructor runs here and calls the correct shutdown logic */
 
   return TEST_SUCCESS;
 }
