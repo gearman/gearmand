@@ -4,10 +4,6 @@
 
 RST_FILES= $(shell find $(top_builddir)/docs/source -type f -name '*.rst')
 
-# Build rule for documentation
-$(dist_man_MANS): $(RST_FILES)
-	@cp docs/build/$@ $@
-
 dist_man_MANS+= man/gearadmin.1
 dist_man_MANS+= man/gearman.1
 
@@ -166,3 +162,29 @@ dist_man_MANS+= man/gearman_worker_unregister_all.3
 dist_man_MANS+= man/gearman_worker_wait.3
 dist_man_MANS+= man/gearman_worker_work.3
 dist_man_MANS+= man/libgearman.3
+
+# Build man pages automatically in VCS checkouts only.
+man-stamp: $(RST_FILES) docs/Makefile
+if IS_VCS_CHECKOUT
+	@echo "Building man pages..."
+	$(MAKE) -C docs man
+	$(MKDIR_P) man
+	touch $@
+else
+	@:
+endif
+
+# Single rule for all man pages (conditional recipe).
+# In a VCS checkout, copy from Sphinx build area.
+# In a released tarball, do nothing (files are already present).
+$(dist_man_MANS): man-stamp
+if IS_VCS_CHECKOUT
+	@cp docs/build/$@ $@
+else
+	@:
+endif
+
+MAINTAINERCLEANFILES += man-stamp
+
+# Guarantee the stamp runs before any dist target (including dist-rpm).
+$(DIST_ARCHIVES): man-stamp
