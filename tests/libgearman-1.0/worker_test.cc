@@ -1191,6 +1191,161 @@ static test_return_t gearman_client_job_status_is_known_TEST(void *)
   return TEST_SUCCESS;
 }
 
+static test_return_t set_worker_load_test(void *)
+{
+  gearman_universal_st universal;
+  universal.timeout= 3000;
+
+  gearman_connection_st *connection;
+  ASSERT_TRUE(connection= gearman_connection_create(universal, NULL, default_port()));
+
+  const void *args[1];
+  size_t args_size[1];
+  gearman_packet_st packet;
+
+  /* Register a function so the connection is treated as a worker. */
+  args[0]= "load_test_func";
+  args_size[0]= strlen("load_test_func");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_CAN_DO,
+                                       args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  /* Send SET_WORKER_LOAD — server should silently accept it (no response). */
+  args[0]= "1.50";
+  args_size[0]= strlen("1.50");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_SET_WORKER_LOAD,
+                                       args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  /* GRAB_JOB triggers a response (NO_JOB); if SET_WORKER_LOAD caused an error
+     the server would have closed the connection or returned GEARMAN_COMMAND_ERROR. */
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_GRAB_JOB,
+                                       NULL, NULL, 0));
+  ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  gearman_return_t ret;
+  connection->receiving(packet, ret, false);
+  ASSERT_EQ(GEARMAN_SUCCESS, ret);
+  ASSERT_EQ(GEARMAN_COMMAND_NO_JOB, packet.command);
+
+  gearman_packet_free(&packet);
+  delete connection;
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t load_aware_dispatch_test(void *)
+{
+  gearman_universal_st universal;
+  universal.timeout= 2000;
+
+  gearman_connection_st *worker1;
+  ASSERT_TRUE(worker1= gearman_connection_create(universal, NULL, default_port()));
+
+  gearman_connection_st *worker2;
+  ASSERT_TRUE(worker2= gearman_connection_create(universal, NULL, default_port()));
+
+  const void *args[1];
+  size_t args_size[1];
+  gearman_packet_st packet;
+
+  /* Worker1: register, report high load, then sleep. */
+  args[0]= "load_dispatch_func";
+  args_size[0]= strlen("load_dispatch_func");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_CAN_DO, args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker1->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  args[0]= "2.00";
+  args_size[0]= strlen("2.00");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_SET_WORKER_LOAD, args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker1->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_PRE_SLEEP, NULL, NULL, 0));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker1->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  /* Worker2: register, report low load, then sleep. */
+  args[0]= "load_dispatch_func";
+  args_size[0]= strlen("load_dispatch_func");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_CAN_DO, args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker2->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  args[0]= "0.50";
+  args_size[0]= strlen("0.50");
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_SET_WORKER_LOAD, args, args_size, 1));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker2->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_PRE_SLEEP, NULL, NULL, 0));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker2->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  /* Submit a job — server should wake worker2 (load=0.50) not worker1 (load=2.00). */
+  {
+    libgearman::Client client(libtest::default_port());
+    gearman_job_handle_t job_handle;
+    ASSERT_EQ(GEARMAN_SUCCESS,
+              gearman_client_do_background(&client, "load_dispatch_func",
+                                           NULL, NULL, 0, job_handle));
+  }
+
+  /* Worker2 must receive NOOP. */
+  gearman_return_t ret;
+  worker2->receiving(packet, ret, false);
+  ASSERT_EQ(GEARMAN_SUCCESS, ret);
+  ASSERT_EQ(GEARMAN_COMMAND_NOOP, packet.command);
+  gearman_packet_free(&packet);
+
+  /* Worker2 grabs the job and gets JOB_ASSIGN. */
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, packet, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_GRAB_JOB, NULL, NULL, 0));
+  ASSERT_EQ(GEARMAN_SUCCESS, worker2->send_packet(packet, true));
+  gearman_packet_free(&packet);
+
+  worker2->receiving(packet, ret, false);
+  ASSERT_EQ(GEARMAN_SUCCESS, ret);
+  ASSERT_EQ(GEARMAN_COMMAND_JOB_ASSIGN, packet.command);
+  gearman_packet_free(&packet);
+
+  /* Worker1 must NOT have received a NOOP — confirm with a short timeout. */
+  gearman_universal_set_timeout(universal, 500);
+  worker1->receiving(packet, ret, false);
+  ASSERT_EQ(GEARMAN_TIMEOUT, ret);
+  /* No packet was received (timeout), so nothing to free. */
+
+  delete worker1;
+  delete worker2;
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t abandoned_worker_test(void *)
 {
   gearman_job_handle_t job_handle;
@@ -1862,7 +2017,7 @@ static test_return_t worker_connect_too_multiple_server_TEST(void *)
 
 static void *world_create(server_startup_st& servers, test_return_t&)
 {
-  const char *argv[]= { "--job-retries=30", NULL };
+  const char *argv[]= { "--job-retries=30", "--worker-wakeup=1", NULL };
   ASSERT_TRUE(server_startup(servers, "gearmand", libtest::default_port(), argv));
 
   second_port= libtest::get_free_port();
@@ -1912,6 +2067,8 @@ test_st worker_TESTS[] ={
   {"check worker's connection to multiple servers", 0, worker_connect_too_multiple_server_TEST },
   {"echo_max", 0, echo_max_test },
   {"abandoned_worker", 0, abandoned_worker_test },
+  {"set_worker_load", 0, set_worker_load_test },
+  {"load_aware_dispatch", 0, load_aware_dispatch_test },
   {0, 0, 0}
 };
 

@@ -391,34 +391,75 @@ gearmand_error_t gearman_server_job_queue(gearman_server_job_st *job)
   /* Queue NOOP for possible sleeping workers. */
   if (job->function->worker_list != NULL)
   {
-    gearman_server_worker_st *worker= job->function->worker_list;
     uint32_t noop_sent= 0;
 
-    do
+    /* When limiting wakeups, prefer the sleeping worker with the lowest reported
+       system load so that jobs are steered toward the least-loaded machine. */
+    if (Server->worker_wakeup > 0)
     {
-      if (worker->con->is_sleeping && ! (worker->con->is_noop_sent))
+      gearman_server_worker_st *best= NULL;
+      gearman_server_worker_st *scan= job->function->worker_list;
+      do
       {
-        gearmand_error_t ret= gearman_server_io_packet_add(worker->con, false,
+        if (scan->con->is_sleeping && !(scan->con->is_noop_sent))
+        {
+          if (best == NULL ||
+              (scan->con->system_load >= 0.0f &&
+               (best->con->system_load < 0.0f || scan->con->system_load < best->con->system_load)))
+          {
+            best= scan;
+          }
+        }
+        scan= scan->function_next;
+      }
+      while (scan != job->function->worker_list);
+
+      if (best != NULL)
+      {
+        gearmand_error_t ret= gearman_server_io_packet_add(best->con, false,
                                                            GEARMAN_MAGIC_RESPONSE,
                                                            GEARMAN_COMMAND_NOOP, NULL);
         if (gearmand_failed(ret))
         {
-          gearmand_log_gerror_warn(GEARMAN_DEFAULT_LOG_PARAM, ret, "Failed to send NOOP packet to %s:%s", worker->con->host(), worker->con->port());
+          gearmand_log_gerror_warn(GEARMAN_DEFAULT_LOG_PARAM, ret, "Failed to send NOOP packet to %s:%s", best->con->host(), best->con->port());
         }
         else
         {
-          worker->con->is_noop_sent= true;
+          best->con->is_noop_sent= true;
           noop_sent++;
         }
       }
-
-      worker= worker->function_next;
     }
-    while (worker != job->function->worker_list &&
-           (Server->worker_wakeup == 0 ||
-            noop_sent < Server->worker_wakeup));
 
-    job->function->worker_list= worker;
+    /* Wake remaining workers (worker_wakeup == 0 means wake all) using round-robin. */
+    if (Server->worker_wakeup == 0 || noop_sent < Server->worker_wakeup)
+    {
+      gearman_server_worker_st *worker= job->function->worker_list;
+      do
+      {
+        if (worker->con->is_sleeping && !(worker->con->is_noop_sent))
+        {
+          gearmand_error_t ret= gearman_server_io_packet_add(worker->con, false,
+                                                             GEARMAN_MAGIC_RESPONSE,
+                                                             GEARMAN_COMMAND_NOOP, NULL);
+          if (gearmand_failed(ret))
+          {
+            gearmand_log_gerror_warn(GEARMAN_DEFAULT_LOG_PARAM, ret, "Failed to send NOOP packet to %s:%s", worker->con->host(), worker->con->port());
+          }
+          else
+          {
+            worker->con->is_noop_sent= true;
+            noop_sent++;
+          }
+        }
+        worker= worker->function_next;
+      }
+      while (worker != job->function->worker_list &&
+             (Server->worker_wakeup == 0 ||
+              noop_sent < Server->worker_wakeup));
+
+      job->function->worker_list= worker;
+    }
   }
 
   /* Queue the job to be run. */

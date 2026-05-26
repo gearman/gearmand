@@ -675,6 +675,7 @@ gearmand_error_t gearmand_con_create(gearmand_st *gearmand, int& fd,
       GEARMAND_LIST__DEL(free_dcon, dcon);
       GEARMAND_LIST__ADD(gearmand->free_dcon, dcon);
     }
+    (void)free_dcon_count;
   }
 
   gearmand->thread_add_next= gearmand->thread_add_next->next;

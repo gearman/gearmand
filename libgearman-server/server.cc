@@ -911,6 +911,16 @@ gearmand_error_t gearman_server_run_command(gearman_server_con_st *server_con,
                               packet->arg_size[0]);
     break;
 
+  case GEARMAN_COMMAND_SET_WORKER_LOAD:
+    if (packet->arg_size[0] > 0 && packet->arg_size[0] < 32)
+    {
+      char buf[32];
+      memcpy(buf, packet->arg[0], packet->arg_size[0]);
+      buf[packet->arg_size[0]]= '\0';
+      server_con->system_load= (float)atof(buf);
+    }
+    break;
+
   case GEARMAN_COMMAND_TEXT:
     return server_run_text(server_con, packet);
 

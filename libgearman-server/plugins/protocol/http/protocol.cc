@@ -158,6 +158,7 @@ public:
     case GEARMAN_COMMAND_JOB_ASSIGN_ALL:
     case GEARMAN_COMMAND_GET_STATUS_UNIQUE:
     case GEARMAN_COMMAND_STATUS_RES_UNIQUE:
+    case GEARMAN_COMMAND_SET_WORKER_LOAD:
     case GEARMAN_COMMAND_MAX:
       gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                          "Bad packet command: gearmand_command_t:%s", 

@@ -148,6 +148,7 @@ struct gearman_server_con_st
   bool is_exceptions{};
   bool is_dead{};
   bool is_noop_sent{};
+  float system_load{-1.0f}; /* -1 = not yet reported by worker */
   bool is_cleaned_up{};
   gearmand_error_t ret{};
   bool io_list{};

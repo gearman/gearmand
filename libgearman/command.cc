@@ -101,12 +101,13 @@ gearman_command_info_st gearmand_command_info_list[GEARMAN_COMMAND_MAX]=
   { "GEARMAN_GRAB_JOB_ALL", GEARMAN_COMMAND_GRAB_JOB_ALL, 0, false  },
   { "GEARMAN_JOB_ASSIGN_ALL", GEARMAN_COMMAND_JOB_ASSIGN_ALL,   4, true  },
   { "GEARMAN_GET_STATUS_UNIQUE", GEARMAN_COMMAND_GET_STATUS_UNIQUE, 1, false },
-  { "GEARMAN_STATUS_RES_UNIQUE", GEARMAN_COMMAND_STATUS_RES_UNIQUE, 6, false }
+  { "GEARMAN_STATUS_RES_UNIQUE", GEARMAN_COMMAND_STATUS_RES_UNIQUE, 6, false },
+  { "GEARMAN_SET_WORKER_LOAD",   GEARMAN_COMMAND_SET_WORKER_LOAD,   1, false }
 };
 
 const char *gearman_strcommand(gearman_command_t command)
 {
-  if ((command >= GEARMAN_COMMAND_TEXT) and (command <= GEARMAN_COMMAND_STATUS_RES_UNIQUE))
+  if ((command >= GEARMAN_COMMAND_TEXT) and (command < GEARMAN_COMMAND_MAX))
   {
     const char* str=  gearmand_command_info_list[command].name;
 
@@ -120,7 +121,7 @@ const char *gearman_strcommand(gearman_command_t command)
 
 const char *gearman_enum_strcommand(gearman_command_t command)
 {
-  if ((command >= GEARMAN_COMMAND_TEXT) and (command <= GEARMAN_COMMAND_STATUS_RES_UNIQUE))
+  if ((command >= GEARMAN_COMMAND_TEXT) and (command < GEARMAN_COMMAND_MAX))
   {
     return gearmand_command_info_list[command].name;
   }
