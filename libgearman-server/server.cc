@@ -78,7 +78,7 @@ static gearmand_error_t _server_error_packet(const char *position_, const char *
   const char* error_code_string= gearman_strerror(client_return_code);
   error_code_string+= 8;
 
-  gearmand_log_warning(position_, func_, "%s:%.*s", gearman_strerror(client_return_code), int(error_string_length), error_string);
+  gearmand_log_error(position_, func_, "%s:%.*s", gearman_strerror(client_return_code), int(error_string_length), error_string);
 
   return gearman_server_io_packet_add(server_con, false, GEARMAN_MAGIC_RESPONSE,
                                       GEARMAN_COMMAND_ERROR, error_code_string,
