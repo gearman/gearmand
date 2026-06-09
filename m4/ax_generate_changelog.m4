@@ -1,5 +1,5 @@
 # ===========================================================================
-#   http://www.gnu.org/software/autoconf-archive/ax_generate_changelog.html
+#  https://www.gnu.org/software/autoconf-archive/ax_generate_changelog.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -52,7 +52,7 @@
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 1
+#serial 3
 
 AC_DEFUN([AX_GENERATE_CHANGELOG],[
 	# Find git, defaulting to the 'missing' script so the user gets a nice
@@ -73,7 +73,7 @@ GENERATE_CHANGELOG_RULES='
 #  - CHANGELOG_GIT_DIR: .git directory to use. (Default: $(top_srcdir)/.git)
 
 # git-specific
-CHANGELOG_GIT_FLAGS ?= --stat -M -C --name-status --no-color
+CHANGELOG_GIT_FLAGS ?= --stat -M -C --name-status --no-color --no-decorate
 CHANGELOG_GIT_DIR ?= $(top_srcdir)/.git
 
 ifeq ($(CHANGELOG_START),)

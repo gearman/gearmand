@@ -1,6 +1,6 @@
-# ===========================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_cxx_header_stdcxx_98.html
-# ===========================================================================
+# ============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_cxx_header_stdcxx_98.html
+# ============================================================================
 #
 # SYNOPSIS
 #
@@ -19,72 +19,66 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 7
+#serial 8
 
 AU_ALIAS([AC_CXX_HEADER_STDCXX_98], [AX_CXX_HEADER_STDCXX_98])
 AC_DEFUN([AX_CXX_HEADER_STDCXX_98], [
-    AC_CACHE_CHECK([for ISO C++ 98 include files], [ax_cv_cxx_stdcxx_98], [
-      AC_LANG_PUSH([C++])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([
-#include <cassert>
-#include <cctype>
-#include <cerrno>
-#include <cfloat>
-#include <ciso646>
-#include <climits>
-#include <clocale>
-#include <cmath>
-#include <csetjmp>
-#include <csignal>
-#include <cstdarg>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
+  AC_CACHE_CHECK(for ISO C++ 98 include files,
+  ax_cv_cxx_stdcxx_98,
+  [AC_LANG_PUSH([C++])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <cassert>
+    #include <cctype>
+    #include <cerrno>
+    #include <cfloat>
+    #include <ciso646>
+    #include <climits>
+    #include <clocale>
+    #include <cmath>
+    #include <csetjmp>
+    #include <csignal>
+    #include <cstdarg>
+    #include <cstddef>
+    #include <cstdio>
+    #include <cstdlib>
+    #include <cstring>
+    #include <ctime>
 
-#include <algorithm>
-#include <bitset>
-#include <complex>
-#include <deque>
-#include <exception>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <ios>
-#include <iosfwd>
-#include <iostream>
-#include <istream>
-#include <iterator>
-#include <limits>
-#include <list>
-#include <locale>
-#include <map>
-#include <memory>
-#include <new>
-#include <numeric>
-#include <ostream>
-#include <queue>
-#include <set>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
-#include <streambuf>
-#include <string>
-#include <typeinfo>
-#include <utility>
-#include <valarray>
-#include <vector>
-      ], [
-      int x 
-      ]), [ax_cv_cxx_stdcxx_98=yes ], [ax_cv_cxx_stdcxx_98=no ]
-      ])
-
-    AC_LANG_POP
-
-    ])
-
+    #include <algorithm>
+    #include <bitset>
+    #include <complex>
+    #include <deque>
+    #include <exception>
+    #include <fstream>
+    #include <functional>
+    #include <iomanip>
+    #include <ios>
+    #include <iosfwd>
+    #include <iostream>
+    #include <istream>
+    #include <iterator>
+    #include <limits>
+    #include <list>
+    #include <locale>
+    #include <map>
+    #include <memory>
+    #include <new>
+    #include <numeric>
+    #include <ostream>
+    #include <queue>
+    #include <set>
+    #include <sstream>
+    #include <stack>
+    #include <stdexcept>
+    #include <streambuf>
+    #include <string>
+    #include <typeinfo>
+    #include <utility>
+    #include <valarray>
+    #include <vector>
+  ]], [[]])],[ax_cv_cxx_stdcxx_98=yes],[ax_cv_cxx_stdcxx_98=no])
+  AC_LANG_POP([C++])
+  ])
   if test "$ax_cv_cxx_stdcxx_98" = yes; then
     AC_DEFINE(STDCXX_98_HEADERS,,[Define if ISO C++ 1998 header files are present. ])
   fi
