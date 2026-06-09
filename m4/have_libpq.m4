@@ -7,7 +7,9 @@ AC_DEFUN([AX_HAVE_LIBPQ],[
       [ac_cv_libpq="$enableval"],
       [ac_cv_libpq="yes"])
 
-  AC_REQUIRE([AX_LIB_POSTGRESQL])
+  dnl Call with explicit ACTION-IF-NOT-FOUND so PostgreSQL stays optional;
+  dnl AC_REQUIRE cannot forward arguments to AX_LIB_POSTGRESQL.
+  AX_LIB_POSTGRESQL([],[],[AC_MSG_WARN([PostgreSQL not found, building without libpq support])])
 
   AS_IF([test "x$ac_cv_libpq" = "xyes" -a "x$found_postgresql" = "xyes"],
     [
