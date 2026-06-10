@@ -128,8 +128,13 @@ struct gearmand_log_info_st
   {
     if (opt_file)
     {
-      char buffer[GEARMAN_MAX_ERROR_SIZE];
-      int buffer_length= snprintf(buffer, GEARMAN_MAX_ERROR_SIZE, "%7s %s\n", gearmand_verbose_name(verbose), mesg);
+      char buffer[GEARMAN_MAX_ERROR_SIZE * 2 + 16];
+      int buffer_length= snprintf(buffer, sizeof(buffer), "%7s %s\n", gearmand_verbose_name(verbose), mesg);
+      if (buffer_length < 0 || buffer_length >= (int)sizeof(buffer))
+      {
+        error::perror("Log buffer truncation detected.");
+        return;
+      }
       if (::write(file(), buffer, buffer_length) == -1)
       {
         error::perror("Could not write to log file.");
