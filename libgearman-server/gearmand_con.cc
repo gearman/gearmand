@@ -635,7 +635,6 @@ gearmand_error_t gearmand_con_create(gearmand_st *gearmand, int& fd,
   }
   else
   {
-    uint32_t free_dcon_count;
     gearmand_con_st *free_dcon_list= NULL;
 
     int pthread_error;
@@ -645,9 +644,7 @@ gearmand_error_t gearmand_con_create(gearmand_st *gearmand, int& fd,
 
       /* Take the free connection structures back to reuse. */
       free_dcon_list= dcon->thread->free_dcon_list;
-      free_dcon_count= dcon->thread->free_dcon_count;
       dcon->thread->free_dcon_list= NULL;
-      dcon->thread->free_dcon_count= 0;
 
       if ((pthread_error= pthread_mutex_unlock(&(dcon->thread->lock))))
       {
@@ -672,7 +669,7 @@ gearmand_error_t gearmand_con_create(gearmand_st *gearmand, int& fd,
     while (free_dcon_list != NULL)
     {
       dcon= free_dcon_list;
-      GEARMAND_LIST__DEL(free_dcon, dcon);
+      free_dcon_list= dcon->next;
       GEARMAND_LIST__ADD(gearmand->free_dcon, dcon);
     }
   }
