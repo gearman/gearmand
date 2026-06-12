@@ -422,6 +422,7 @@ gearmand_error_t gearman_server_job_queue(gearman_server_job_st *job)
   }
 
   /* Queue the job to be run. */
+  job->function_next= NULL;
   if (job->function->job_list[job->priority] == NULL)
   {
     job->function->job_list[job->priority]= job;
