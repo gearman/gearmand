@@ -696,25 +696,31 @@ gearmand_error_t gearman_server_con_add_job_timeout(gearman_server_con_st *con, 
                            job->function->function_name,
                            job->job_handle,
                            worker->timeout);
-        if (con->timeout_event == NULL)
         {
           gearmand_con_st *dcon= con->con.context;
-          con->timeout_event= (struct event *)malloc(sizeof(struct event)); // libevent POD
           if (con->timeout_event == NULL)
           {
-            return gearmand_merror("malloc(sizeof(struct event)", struct event, 1);
+            con->timeout_event= (struct event *)malloc(sizeof(struct event)); // libevent POD
+            if (con->timeout_event == NULL)
+            {
+              return gearmand_merror("malloc(sizeof(struct event)", struct event, 1);
+            }
           }
+          else
+          {
+            /* Deactivate before reinitializing so the new job arg takes effect. */
+            timeout_del(con->timeout_event);
+          }
+          /* Always reinitialize to update the job pointer in the callback arg.
+             Reusing the event without calling timeout_set() here would leave the
+             arg pointing to a stale job from a previous assignment, causing the
+             timeout callback to act on the wrong job (double-requeue / self-loop). */
           timeout_set(con->timeout_event, _server_job_timeout, job);
           if (event_base_set(dcon->thread->base, con->timeout_event) == -1)
           {
             gearmand_perror(errno, "event_base_set");
           }
         }
-
-        /* XXX Right now, if a worker has diff timeouts for functions I think
-          this will overwrite any existing timeouts on that event. One
-          solution to that would be to record the timeout from last time,
-          and only set this one if it is longer than that one. */
 
         struct timeval timeout_tv = { 0 , 0 };
         time_t milliseconds= worker->timeout;

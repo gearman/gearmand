@@ -1858,6 +1858,80 @@ static test_return_t worker_connect_too_multiple_server_TEST(void *)
   return TEST_SUCCESS;
 }
 
+/* Regression test for GitHub issue #301.
+ *
+ * When a worker registers with CAN_DO_TIMEOUT and the server fires the timeout
+ * for job J1, the job is requeued with j1->worker = NULL.  If the same worker
+ * connection then picks up a second job J2, gearman_server_con_add_job_timeout()
+ * must update the libevent timeout callback arg to J2.  Before the fix, the
+ * event struct was reused without calling timeout_set(), so the arg still
+ * pointed to J1.  When the timer fired it called _server_job_timeout(J1) on an
+ * already-requeued job, appending J1 to the pending queue a second time and
+ * creating a self-loop (J1->function_next == J1) that caused an infinite loop
+ * and a complete gearmand hang.
+ */
+static gearman_return_t issue_301_slow_first_worker(gearman_job_st *job, void *context)
+{
+  (void)job;
+  int *count = static_cast<int*>(context);
+
+  if (*count == 0)
+  {
+    /* First invocation: sleep longer than the 1000 ms server-side timeout so
+       that _server_job_timeout fires and requeues this job. */
+    libtest::dream(1, 500000); // 1.5 s
+  }
+  (*count)++;
+
+  return GEARMAN_SUCCESS;
+}
+
+static test_return_t issue_301_server_job_timeout_stale_ptr_TEST(void *)
+{
+  int call_count = 0;
+
+  char fn[GEARMAN_FUNCTION_MAX_SIZE];
+  snprintf(fn, sizeof(fn), "_%s%d", __func__, int(random()));
+
+  /* Submit two background jobs so the worker processes multiple jobs on the
+     same connection: J1 (which will time out) and J2 (grabbed afterwards). */
+  libgearman::Client client(libtest::default_port());
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_client_do_background(&client, fn, NULL, NULL, 0, NULL));
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_client_do_background(&client, fn, NULL, NULL, 0, NULL));
+
+  /* Register with a 1000 ms server-side timeout (sends CAN_DO_TIMEOUT). */
+  libgearman::Worker worker(libtest::default_port());
+  gearman_function_t worker_fn= gearman_function_create(issue_301_slow_first_worker);
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_worker_define_function(&worker, fn, strlen(fn),
+                                          worker_fn,
+                                          1000, /* CAN_DO_TIMEOUT ms */
+                                          &call_count));
+
+  /* Poll timeout longer than the server timeout so gearman_worker_work()
+     does not give up before the server fires. */
+  gearman_worker_set_timeout(&worker, 4000);
+
+  /* Drive the worker until both background jobs have been executed.
+     The first run sleeps 1.5 s, triggering the server timeout and requeue.
+     Subsequent runs complete quickly.  Allow extra iterations for the
+     requeued job and any error returns from the JOB_NOT_FOUND response. */
+  for (int i = 0; i < 8 && call_count < 2; i++)
+  {
+    gearman_worker_work(&worker);
+  }
+
+  /* If the bug is present gearmand is now stuck in an infinite loop; the
+     echo call below will time out and the test will fail/hang. */
+  libgearman::Client ping(libtest::default_port());
+  gearman_client_set_timeout(&ping, 2000);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_echo(&ping, test_literal_param("ping")));
+
+  return TEST_SUCCESS;
+}
+
 /*********************** World functions **************************************/
 
 static void *world_create(server_startup_st& servers, test_return_t&)
@@ -1912,6 +1986,7 @@ test_st worker_TESTS[] ={
   {"check worker's connection to multiple servers", 0, worker_connect_too_multiple_server_TEST },
   {"echo_max", 0, echo_max_test },
   {"abandoned_worker", 0, abandoned_worker_test },
+  {"issue#301: server job timeout stale pointer", 0, issue_301_server_job_timeout_stale_ptr_TEST },
   {0, 0, 0}
 };
 
