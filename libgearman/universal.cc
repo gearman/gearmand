@@ -404,7 +404,7 @@ gearman_return_t gearman_wait(gearman_universal_st& universal)
     }
 
 #if 0
-    perror("shudown read");
+    perror("shutdown read");
 #endif
     // @todo figure out what happens in an error
   }
@@ -625,10 +625,10 @@ static gearman_return_t connection_loop(gearman_universal_st& universal,
     gearman_packet_st *packet_ptr= con->receiving(con->_packet, ret, true);
     if (packet_ptr == NULL)
     {
-      if (ret != GEARMAN_NOT_CONNECTED and ret != GEARMAN_LOST_CONNECTION)
-      {
-        assert(&con->_packet == universal.packet_list);
-      }
+//       if (ret != GEARMAN_NOT_CONNECTED and ret != GEARMAN_LOST_CONNECTION)
+//       {
+//         assert(&con->_packet == universal.packet_list); // TODO: Should this be packet_list_tail?
+//       }
       con->options.packet_in_use= false;
       break;
     }
@@ -761,9 +761,9 @@ gearman_return_t cancel_job(gearman_universal_st& universal,
 
 void gearman_free_all_packets(gearman_universal_st &universal)
 {
-  while (universal.packet_list)
+  while (universal.packet_list_tail)
   {
-    gearman_packet_free(universal.packet_list);
+    gearman_packet_free(universal.packet_list_tail);
   }
 }
 

@@ -105,6 +105,7 @@ static test_return_t clone_test(void *)
     ASSERT_EQ(destination.timeout,  gear.timeout);
     ASSERT_EQ(destination.con_list,  gear.con_list);
     ASSERT_EQ(destination.packet_list,  gear.packet_list);
+    ASSERT_EQ(destination.packet_list_tail,  gear.packet_list_tail);
     ASSERT_EQ(destination.pfds,  gear.pfds);
     ASSERT_EQ(destination.log_fn,  gear.log_fn);
     ASSERT_EQ(destination.log_context,  gear.log_context);

@@ -2457,6 +2457,15 @@ test_st limit_tests[] ={
   {0, 0, 0}
 };
 
+// Forward declaration for fifo test
+test_return_t fifo_test(void*);
+
+test_st fifo_TESTS[] ={
+  {"fifo packet order", 0, fifo_test },
+  {0, 0, 0}
+};
+
+
 // Forward declaration for priority tests
 test_st *test_gearman_worker_priority(void);
 
@@ -2507,6 +2516,7 @@ collection_st collection[] ={
   {"fork", fork_SETUP, 0, client_fork_TESTS },
   {"loop", 0, 0, loop_TESTS},
   {"limits", 0, 0, limit_tests },
+  {"fifo", 0, 0, fifo_TESTS},
   {"client-logging", pre_logging, 0, tests_log_TESTS },
   {"regression", 0, 0, regression_tests},
   {"regression2", reset_SETUP, 0, regression2_TESTS },

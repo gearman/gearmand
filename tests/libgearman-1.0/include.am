@@ -13,7 +13,6 @@ LIBGEARMAN_1_0_CLIENT_LDADD+= tests/libstartworker.la
 t_client_CXXFLAGS=
 t_client_SOURCES=
 t_client_LDADD=
-
 t_client_CXXFLAGS+= @PTHREAD_CFLAGS@
 t_client_SOURCES+= tests/libgearman-1.0/client_test.cc 
 t_client_SOURCES+= tests/libgearman-1.0/do.cc 
@@ -29,6 +28,7 @@ t_client_SOURCES+= tests/libgearman-1.0/server_options.cc
 t_client_SOURCES+= tests/libgearman-1.0/task.cc 
 t_client_SOURCES+= tests/libgearman-1.0/unique.cc 
 t_client_SOURCES+= tests/libgearman-1.0/priority_test.cc
+t_client_SOURCES+= tests/libgearman-1.0/fifo.cc 
 t_client_SOURCES+= tests/workers/aggregator/cat.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react_chunk.cc
@@ -47,7 +47,6 @@ noinst_PROGRAMS+=t/client
 t_multi_client_CXXFLAGS=
 t_multi_client_SOURCES=
 t_multi_client_LDADD=
-
 t_multi_client_SOURCES+= tests/libgearman-1.0/multi_client_test.cc 
 t_multi_client_LDADD+= ${LIBGEARMAN_1_0_CLIENT_LDADD}
 check_PROGRAMS+= t/multi_client
@@ -81,9 +80,8 @@ t_signal_wait_LDADD+= libgearman/libgearmancore.la
 check_PROGRAMS+= t/signal_wait
 noinst_PROGRAMS+= t/signal_wait
 
-t_worker_LDADD=
 t_worker_SOURCES=
-
+t_worker_LDADD=
 t_worker_SOURCES+= libgearman/command.cc
 t_worker_SOURCES+= tests/libgearman-1.0/worker_test.cc
 t_worker_SOURCES+= tests/workers/v2/call_exception.cc
@@ -109,7 +107,6 @@ gdb-signal-wait: t/signal_wait
 
 helgrind-internals: t/internals gearmand/gearmand
 	@$(HELGRIND_COMMAND) t/internals
-
 
 valgrind-internals: t/internals gearmand/gearmand
 	@$(VALGRIND_COMMAND) t/internals

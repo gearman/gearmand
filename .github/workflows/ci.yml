@@ -47,6 +47,7 @@ jobs:
       GHA_CONTAINER: ${{ matrix.config.container }}
       GHA_CONFIG_NAME: ${{ matrix.config.name }}
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
     - name: if running in a container, update and install sudo, git, and other basics
@@ -54,7 +55,7 @@ jobs:
       run: |
            case "${GHA_CONTAINER}" in
               ubuntu*)
-                 apt-get -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2
+                 apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2
                  sudo apt-add-repository ppa:git-core/ppa
                  sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
                  ;;

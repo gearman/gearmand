@@ -188,13 +188,18 @@ gearman_packet_st *gearman_packet_create(gearman_universal_st &universal,
 
   // dont_track_packets == false
   {
-    if (universal.packet_list != nullptr)
+    packet.next = nullptr;
+    packet.prev = universal.packet_list_tail;
+
+    if (universal.packet_list_tail != nullptr)
     {
-      universal.packet_list->prev= &packet;
+      universal.packet_list_tail->next= &packet;
     }
-    packet.next= universal.packet_list;
-    packet.prev= nullptr;
-    universal.packet_list= &packet;
+    else
+    {
+      universal.packet_list= &packet;    // first packet
+    }
+    universal.packet_list_tail= &packet;
     universal.packet_count++;
   }
 
@@ -544,22 +549,58 @@ void gearman_packet_st::reset()
 
   free__data();
 
-  if (universal and universal->packet_list)
+  if (universal)
   {
-    if (universal->packet_list == this)
+    gearman_packet_st *p = this->prev;
+    gearman_packet_st *n = this->next;
+
+    if (p == nullptr)
     {
-      universal->packet_list= next;
+      universal->packet_list = n;      // removing head (or only packet)
+    }
+    else
+    {
+      p->next = n;
     }
 
-    if (prev)
+    if (n == nullptr)
     {
-      prev->next= next;
+      universal->packet_list_tail = p; // removing tail (or only packet)
+    }
+    else
+    {
+      n->prev = p;
     }
 
-    if (next)
+    if (universal->packet_list == nullptr)
     {
-      next->prev= prev;
+      universal->packet_list_tail = nullptr;
     }
+
+//     if (universal->packet_list == this)
+//     {
+//       universal->packet_list= next;
+//     }
+
+//     if (universal->packet_list_tail == this)
+//     {
+//       universal->packet_list_tail= prev;
+//     }
+
+//     if (prev)
+//     {
+//       prev->next= next;
+//     }
+
+//     if (next)
+//     {
+//       next->prev= prev;
+//     }
+
+//     if (universal->packet_list == nullptr)
+//     {
+//       universal->packet_list_tail = nullptr;
+//     }
 
     universal->packet_count--;
   }
