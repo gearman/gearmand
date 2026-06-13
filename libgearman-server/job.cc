@@ -274,6 +274,9 @@ gearman_server_job_add_reducer(gearman_server_st *server,
                                  server_job->function->function_name_size);
       }
 
+      /* The caller's packet still has free_data=true and will free data.
+         Null out here to prevent double-free in gearman_server_job_free. */
+      server_job->data= NULL;
       gearman_server_job_free(server_job);
       return NULL;
     }
