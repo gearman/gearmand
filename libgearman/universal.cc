@@ -404,7 +404,7 @@ gearman_return_t gearman_wait(gearman_universal_st& universal)
     }
 
 #if 0
-    perror("shudown read");
+    perror("shutdown read");
 #endif
     // @todo figure out what happens in an error
   }
