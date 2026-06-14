@@ -179,13 +179,8 @@ static void thread_runner(context_st* con)
       continue;
     }
 
-    if (ret == GEARMAN_SHUTDOWN)
+    if (ret == GEARMAN_SHUTDOWN or ret == GEARMAN_SHUTDOWN_GRACEFUL)
     {
-      gearman_return_t unreg_ret;
-      if (gearman_failed((unreg_ret= gearman_worker_unregister_all(&worker))))
-      {
-        Error << "Failed to unregister " << gearman_strerror(unreg_ret);
-      }
       continue;
     }
 
