@@ -34,6 +34,13 @@
 #   warranty.
 
 #serial 8
+#
+# LOCAL MODIFICATION (gearmand): replaced the bash-specific
+#   ((enable_jobserver++))
+# arithmetic with the POSIX-portable
+#   enable_jobserver=`expr "${CPU_COUNT:-1}" + 1`
+# to support shells where /bin/sh is not bash.  The ${CPU_COUNT:-1} default
+# also prevents a bare -j with no number if AX_COUNT_CPUS returns empty.
 
 AC_DEFUN([AX_AM_JOBSERVER], [
     AC_REQUIRE([AX_COUNT_CPUS])
