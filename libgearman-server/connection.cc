@@ -185,10 +185,10 @@ void gearman_server_con_attempt_free(gearman_server_con_st *con)
 
   if (Server->flags.threaded)
   {
+    con->is_dead= true;
     if (!(con->proc_removed) and !(Server->proc_shutdown))
     {
       gearman_server_con_delete_timeout(con);
-      con->is_dead= true;
       con->is_sleeping= false;
       con->is_exceptions= Gearmand()->_exceptions;
       con->is_noop_sent= false;
@@ -197,7 +197,7 @@ void gearman_server_con_attempt_free(gearman_server_con_st *con)
   }
   else
   {
-    gearman_server_con_free(con); 
+    gearman_server_con_free(con);
   }
 }
 
@@ -465,14 +465,15 @@ gearman_server_con_st * gearman_server_con_to_be_freed_next(gearman_server_threa
 
 void gearman_server_con_io_add(gearman_server_con_st *con)
 {
-  if (con->io_list)
-  {
-    return;
-  }
-
   int lock_error;
   if ((lock_error= pthread_mutex_lock(&con->thread->lock)) == 0)
   {
+    if (con->io_list)
+    {
+      pthread_mutex_unlock(&con->thread->lock);
+      return;
+    }
+
     GEARMAND_LIST_ADD(con->thread->io, con, io_);
     con->io_list= true;
 

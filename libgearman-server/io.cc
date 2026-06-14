@@ -896,7 +896,7 @@ gearmand_error_t gearmand_io_set_revents(gearman_server_con_st *con, short reven
 {
   gearmand_io_st *connection= &con->con;
 
-  if (revents != 0)
+  if (revents != 0 && !connection->options.ready)
   {
     connection->options.ready= true;
     GEARMAND_LIST_ADD(connection->universal->ready_con, connection, ready_);
