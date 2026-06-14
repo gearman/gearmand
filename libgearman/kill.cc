@@ -87,7 +87,11 @@ gearman_return_t gearman_kill(const gearman_id_t handle, const gearman_signal_t 
     break;
 
   case GEARMAN_SIGNAL_KILL:
-    if (close(handle.write_fd) == 0)
+    // Write a signal byte rather than closing the write end of the pipe.
+    // Closing it externally causes a double-close: the universal destructor
+    // calls close_wakeup() which also closes wakeup_fd[1], and if the fd was
+    // reused between the two closes the wrong descriptor gets closed (crash).
+    if (write(handle.write_fd, "1", 1) == 1)
     {
       return GEARMAN_SUCCESS;
     }

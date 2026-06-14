@@ -814,13 +814,15 @@ static test_return_t hostname_resolution(void *)
 
   ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_error_code(&client));
 
-#if defined(__FreeBSD__) && __FreeBSD__
-  ASSERT_EQ(GEARMAN_TIMEOUT,
-               gearman_client_echo(&client, test_literal_param("foo")));
-#else
-  ASSERT_EQ(GEARMAN_COULD_NOT_CONNECT,
-               gearman_client_echo(&client, test_literal_param("foo")));
-#endif
+  // Without a timeout, poll(-1) blocks until the OS TCP-SYN retry limit is
+  // exhausted (30+ min on a DROP-firewalled port).  5 s is enough to get a
+  // fast ECONNREFUSED on a port that actively rejects and also to bound the
+  // wait when the port is silently dropped.
+  gearman_client_set_timeout(&client, 5000);
+
+  gearman_return_t rc= gearman_client_echo(&client, test_literal_param("foo"));
+  // Port 12345 is not a gearman server: expect connection refused or timeout.
+  ASSERT_TRUE(rc == GEARMAN_COULD_NOT_CONNECT or rc == GEARMAN_TIMEOUT);
 
   return TEST_SUCCESS;
 }
