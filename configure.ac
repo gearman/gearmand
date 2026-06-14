@@ -101,6 +101,10 @@ m4_include([m4/drizzled.m4])
 WITH_LIBDRIZZLE
 
 AX_LIB_SQLITE3
+dnl ax_lib_sqlite3 serial >=19 no longer resets WANT_SQLITE3 on failure;
+dnl use SQLITE3_VERSION (only set on success) as the actual-found indicator.
+AS_IF([test "x${WANT_SQLITE3}" = "xyes" -a "x${SQLITE3_VERSION}" = "x"],
+      [WANT_SQLITE3="no"])
 AS_IF([test "x${WANT_SQLITE3}" = "xyes"],
       [AC_DEFINE([HAVE_LIBSQLITE3],[1],[Have the SQLITE3 library])],
       [AC_DEFINE([HAVE_LIBSQLITE3],[0],[Have the SQLITE3 library])])

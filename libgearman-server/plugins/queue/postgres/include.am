@@ -14,10 +14,10 @@ noinst_HEADERS+= libgearman-server/plugins/queue/postgres/queue.h
 if HAVE_LIBPQ
 
 libgearman_server_libgearman_server_la_SOURCES+= libgearman-server/plugins/queue/postgres/queue.cc
-libgearman_server_libgearman_server_la_LIBADD+= $(POSTGRESQL_LDFLAGS)
-libgearman_server_libgearman_server_la_CXXFLAGS+= $(POSTGRESQL_CFLAGS)
+libgearman_server_libgearman_server_la_LIBADD+= $(POSTGRESQL_LDFLAGS) $(POSTGRESQL_LIBS)
+libgearman_server_libgearman_server_la_CXXFLAGS+= $(POSTGRESQL_CPPFLAGS)
 
-gearmand_gearmand_LDADD+= $(POSTGRESQL_LDFLAGS)
+gearmand_gearmand_LDADD+= $(POSTGRESQL_LDFLAGS) $(POSTGRESQL_LIBS)
 
 endif
 

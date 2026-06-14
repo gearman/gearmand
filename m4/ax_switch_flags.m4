@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_switch_flags.html
+#     https://www.gnu.org/software/autoconf-archive/ax_switch_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -27,6 +27,7 @@
 # LICENSE
 #
 #   Copyright (c) 2009 Filippo Giunchedi <filippo@esaurito.net>
+#   Copyright (c) 2011 The Board of Trustees of the Leland Stanford Junior University
 #   Copyright (c) 2011 Russ Allbery <rra@stanford.edu>
 #   Copyright (c) 2013 Bastien ROUCARIES <roucaries.bastien+autoconf@gmail.com>
 #
@@ -35,12 +36,12 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 2
+#serial 6
 
 AC_DEFUN([AX_SWITCH_FLAGS], [
+  m4_if($1, [], [m4_fatal([$0: namespace is empty])])
   AC_REQUIRE(AX_SAVE_FLAGS)
   AC_REQUIRE(AX_RESTORE_FLAGS)
-  AS_IF([test "X$1" = "X"], AC_MSG_ERROR(newnamespace is empty)]
   AX_SAVE_FLAGS($1[])
   AX_RESTORE_FLAGS($2[])
 ])

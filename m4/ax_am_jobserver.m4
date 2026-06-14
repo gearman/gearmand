@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_am_jobserver.html
+#     https://www.gnu.org/software/autoconf-archive/ax_am_jobserver.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -33,7 +33,14 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 7
+#serial 8
+#
+# LOCAL MODIFICATION (gearmand): replaced the bash-specific
+#   ((enable_jobserver++))
+# arithmetic with the POSIX-portable
+#   enable_jobserver=`expr "${CPU_COUNT:-1}" + 1`
+# to support shells where /bin/sh is not bash.  The ${CPU_COUNT:-1} default
+# also prevents a bare -j with no number if AX_COUNT_CPUS returns empty.
 
 AC_DEFUN([AX_AM_JOBSERVER], [
     AC_REQUIRE([AX_COUNT_CPUS])
@@ -44,8 +51,7 @@ AC_DEFUN([AX_AM_JOBSERVER], [
                         yes: enable one more than CPU count
     ],, [enable_jobserver=m4_ifval([$1],[$1],[yes])])
     if test "x$enable_jobserver" = "xyes"; then
-        enable_jobserver=$CPU_COUNT
-        ((enable_jobserver++))
+        enable_jobserver=`expr "${CPU_COUNT:-1}" + 1`
     fi
     m4_pattern_allow(AM_MAKEFLAGS)
     if test "x$enable_jobserver" != "xno"; then
