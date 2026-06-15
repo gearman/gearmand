@@ -139,7 +139,7 @@ test_return_t fifo_test(void *object)
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  /* === FIFO verification: wrong === */
+  /* === LIFO verification (FIXME) === */
   ASSERT_EQ(3, recorder.pos);
   ASSERT_EQ('3', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
@@ -149,9 +149,7 @@ test_return_t fifo_test(void *object)
             << recorder.buffer[0]
             << recorder.buffer[1]
             << recorder.buffer[2]
-            << std::endl;
-
-//   ASSERT_TRUE(1 == 0); // temporary debug line - remove for final PR
+            << std::endl; /* FIXME */
 
   /* Explicit cleanup following the pattern of client_test.cc::loop_test */
   gearman_client_free(client);
