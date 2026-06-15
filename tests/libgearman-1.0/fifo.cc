@@ -139,13 +139,13 @@ test_return_t fifo_test(void *object)
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  /* === FIFO verification === */
+  /* === FIFO verification: wrong === */
   ASSERT_EQ(3, recorder.pos);
-  ASSERT_EQ('1', recorder.buffer[0]);
+  ASSERT_EQ('3', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
-  ASSERT_EQ('3', recorder.buffer[2]);
+  ASSERT_EQ('1', recorder.buffer[2]);
 
-  std::cout << "fifo_test: FIFO packet order verified -> "
+  std::cout << "fifo_test: LIFO packet order verified -> "
             << recorder.buffer[0]
             << recorder.buffer[1]
             << recorder.buffer[2]
