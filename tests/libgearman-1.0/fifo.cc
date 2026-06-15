@@ -59,13 +59,13 @@ static struct OrderRecorder
 static gearman_return_t fifo_echo_worker(gearman_job_st* job, void* /*context_arg*/)
 {
   /* Echo the workload back as the result (required for the client's
-     complete callback to receive the original "1"/"2"/"3" strings). */
-  return gearman_job_send_complete(job,
-                                   gearman_job_workload(job),
-                                   gearman_job_workload_size(job));
+     workload callback to receive the original "1"/"2"/"3" strings). */
+  return gearman_job_send_data(job,
+                               gearman_job_workload(job),
+                               gearman_job_workload_size(job));
 }
 
-static gearman_return_t fifo_complete(gearman_task_st *task)
+static gearman_return_t fifo_workload(gearman_task_st *task)
 {
   if (recorder.pos < 3)
   {
@@ -85,7 +85,7 @@ static gearman_return_t fifo_complete(gearman_task_st *task)
     This directly exercises the packet linked-list change for issue #395.
     Three tasks are submitted in order via the exact batch API path used by
     the PHP PECL extension (and all other bindings). Completion order is
-    recorded via the client-level complete callback. After the patch the
+    recorded via the client-level workload callback. After the patch the
     order must be "123"; before the patch it would be "321". */
 
 test_return_t fifo_test(void *object)
@@ -112,8 +112,8 @@ test_return_t fifo_test(void *object)
   /* Reset the shared recorder before submitting tasks. */
   recorder.pos= 0;
 
-  /* Register the client-level complete callback. */
-  gearman_client_set_complete_fn(client, fifo_complete);
+  /* Register the client-level workload callback. */
+  gearman_client_set_workload_fn(client, fifo_workload);
 
   /* Submit tasks in FIFO order using the exact API path that populates
      gearman_universal_st::packet_list (the code changed in packet.cc). */
