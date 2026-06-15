@@ -60,9 +60,9 @@ static gearman_return_t fifo_echo_worker(gearman_job_st* job, void* /*context_ar
 {
   /* Echo the workload back as the result (required for the client's
      complete callback to receive the original "1"/"2"/"3" strings). */
-  return gearman_job_send_data(job,
-                               gearman_job_workload(job),
-                               gearman_job_workload_size(job));
+  return gearman_job_send_complete(job,
+                                   gearman_job_workload(job),
+                                   gearman_job_workload_size(job));
 }
 
 static gearman_return_t fifo_complete(gearman_task_st *task)
