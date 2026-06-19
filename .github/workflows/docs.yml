@@ -54,7 +54,7 @@ jobs:
           python3-sphinx
 
     - name: Clone Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Bootstrap
       run: |
