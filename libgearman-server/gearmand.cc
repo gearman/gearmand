@@ -907,6 +907,41 @@ static void _listen_event(int event_fd, short events __attribute__ ((unused)), v
     {
       gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "%s:%s setsockopt(SO_KEEPALIVE)", host, port_str);
     }
+    else if (SOL_TCP)
+    {
+#if defined(TCP_KEEPIDLE) && TCP_KEEPIDLE
+      if (Gearmand()->socketopt().keepalive_idle() != -1)
+      {
+        int optval= Gearmand()->socketopt().keepalive_idle();
+        if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval)) == -1)
+        {
+          gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "%s:%s setsockopt(TCP_KEEPIDLE)", host, port_str);
+        }
+      }
+#endif
+
+#if defined(TCP_KEEPINTVL) && TCP_KEEPINTVL
+      if (Gearmand()->socketopt().keepalive_interval() != -1)
+      {
+        int optval= Gearmand()->socketopt().keepalive_interval();
+        if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval)) == -1)
+        {
+          gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "%s:%s setsockopt(TCP_KEEPINTVL)", host, port_str);
+        }
+      }
+#endif
+
+#if defined(TCP_KEEPCNT) && TCP_KEEPCNT
+      if (Gearmand()->socketopt().keepalive_count() != -1)
+      {
+        int optval= Gearmand()->socketopt().keepalive_count();
+        if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval)) == -1)
+        {
+          gearmand_log_perror(GEARMAN_DEFAULT_LOG_PARAM, errno, "%s:%s setsockopt(TCP_KEEPCNT)", host, port_str);
+        }
+      }
+#endif
+    }
   }
 
   gearmand_error_t ret= gearmand_con_create(Gearmand(), fd, host, port_str, port);
