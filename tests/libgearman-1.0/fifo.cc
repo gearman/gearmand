@@ -49,11 +49,11 @@ using namespace libtest;
 
 #include <tests/start_worker.h>
 
-static struct OrderRecorder
+struct OrderRecorder
 {
   char buffer[4];
   int pos;
-} recorder;
+};
 
 static gearman_return_t fifo_echo_worker(gearman_job_st* job, void* /*context_arg*/)
 {
@@ -66,14 +66,10 @@ static gearman_return_t fifo_echo_worker(gearman_job_st* job, void* /*context_ar
 
 static gearman_return_t fifo_workload(gearman_task_st *task)
 {
-  if (recorder.pos < 3)
+  OrderRecorder *recorder= (OrderRecorder *)gearman_task_context(task);
+  if (recorder and recorder->pos < 3)
   {
-    const void *data= gearman_task_data(task);
-    size_t size= gearman_task_data_size(task);
-    if (data && size == 1)
-    {
-      recorder.buffer[recorder.pos++]= *static_cast<const char *>(data);
-    }
+    recorder->buffer[recorder->pos++]= *(char*)gearman_task_data(task);
   }
   return GEARMAN_SUCCESS;
 }
@@ -106,11 +102,11 @@ test_return_t fifo_test(void *)
   gearman_client_st *client = gearman_client_create(NULL);
   ASSERT_TRUE(client != NULL);
 
+  /* Local instance of recorder structure. */
+  OrderRecorder recorder= {0, {0}};
+
   gearman_return_t rc= gearman_client_add_server(client, "localhost", libtest::default_port());
   ASSERT_EQ(GEARMAN_SUCCESS, rc);
-
-  /* Reset the shared recorder before submitting tasks. */
-  recorder.pos= 0;
 
   /* Submit tasks in FIFO order using the exact API path that populates
      gearman_universal_st::packet_list (the code changed in packet.cc). */
@@ -123,7 +119,7 @@ test_return_t fifo_test(void *)
     gearman_task_st* task=
       gearman_client_add_task(client,
                               NULL,         /* let library allocate task */
-                              NULL,         /* not used */
+                              &recorder,    /* pass context to callback */
                               function_name,
                               NULL,         /* unique */
                               job_data[i],
@@ -149,6 +145,7 @@ test_return_t fifo_test(void *)
   ASSERT_EQ('3', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
   ASSERT_EQ('1', recorder.buffer[2]);
+  ASSERT_EQ('0', recorder.buffer[0]); /* INTENTIONAL FAIL */
 
   std::cout << "fifo_test: LIFO task order verified -> "
             << recorder.buffer[0]
