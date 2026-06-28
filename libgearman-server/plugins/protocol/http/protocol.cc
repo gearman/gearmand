@@ -88,6 +88,7 @@ public:
     _sent_header(false),
     _background(false),
     _keep_alive(false),
+    _http_11(false),
     _http_response(gearmand::protocol::httpd::HTTP_OK)
   {
   }
@@ -192,66 +193,82 @@ public:
                        gearman_strcommand(packet->command),
                        gearmand::protocol::httpd::response(response()));
 
+    const char *http_version= _http_11 ? "HTTP/1.1" : "HTTP/1.0";
+    const char *connection_header= _http_11 ? "Connection: close\r\n" : "";
+
     size_t pack_size= 0;
     if (_sent_header == false)
     {
       if (response() != gearmand::protocol::httpd::HTTP_OK)
       {
         pack_size= (size_t)snprintf((char *)send_buffer, send_buffer_size,
-                                    "HTTP/1.0 %u %s\r\n"
+                                    "%s %u %s\r\n"
                                     "Server: Gearman/" PACKAGE_VERSION "\r\n"
+                                    "%s"
                                     "Content-Length: 0\r\n"
                                     "\r\n",
-                                    unsigned(response()), gearmand::protocol::httpd::response(response()));
+                                    http_version,
+                                    unsigned(response()), gearmand::protocol::httpd::response(response()),
+                                    connection_header);
       }
       else if (method() == gearmand::protocol::httpd::HEAD)
       {
         pack_size= (size_t)snprintf((char *)send_buffer, send_buffer_size,
-                                    "HTTP/1.0 200 OK\r\n"
+                                    "%s 200 OK\r\n"
                                     "X-Gearman-Job-Handle: %.*s\r\n"
                                     "Content-Length: %" PRIu64 "\r\n"
                                     "Server: Gearman/" PACKAGE_VERSION "\r\n"
+                                    "%s"
                                     "\r\n",
+                                    http_version,
                                     packet->command == GEARMAN_COMMAND_JOB_CREATED ?  (int)packet->arg_size[0] : (int)packet->arg_size[0] - 1,
                                     (const char *)packet->arg[0],
-                                    (uint64_t)packet->data_size);
+                                    (uint64_t)packet->data_size,
+                                    connection_header);
       }
       else if (method() == gearmand::protocol::httpd::TRACE)
       {
         pack_size= (size_t)snprintf((char *)send_buffer, send_buffer_size,
-                                    "HTTP/1.0 200 OK\r\n"
+                                    "%s 200 OK\r\n"
                                     "Server: Gearman/" PACKAGE_VERSION "\r\n"
                                     "Connection: close\r\n"
                                     "Content-Type: message/http\r\n"
-                                    "\r\n");
+                                    "\r\n",
+                                    http_version);
       }
       else if (method() == gearmand::protocol::httpd::POST)
       {
         pack_size= (size_t)snprintf((char *)send_buffer, send_buffer_size,
-                                    "HTTP/1.0 200 OK\r\n"
+                                    "%s 200 OK\r\n"
                                     "X-Gearman-Job-Handle: %.*s\r\n"
                                     "X-Gearman-Command: %s\r\n"
                                     "Content-Length: %" PRIu64 "\r\n"
                                     "Server: Gearman/" PACKAGE_VERSION "\r\n"
+                                    "%s"
                                     "\r\n",
+                                    http_version,
                                     packet->command == GEARMAN_COMMAND_JOB_CREATED ?  int(packet->arg_size[0]) : int(packet->arg_size[0] - 1),
-                                    (const char *)packet->arg[0], // Job handle
+                                    (const char *)packet->arg[0],
                                     gearman_strcommand(packet->command),
-                                    (uint64_t)packet->data_size); // Content-length
+                                    (uint64_t)packet->data_size,
+                                    connection_header);
       }
       else
       {
         pack_size= (size_t)snprintf((char *)send_buffer, send_buffer_size,
-                                    "HTTP/1.0 200 OK\r\n"
+                                    "%s 200 OK\r\n"
                                     "X-Gearman-Job-Handle: %.*s\r\n"
                                     "X-Gearman-Command: %s\r\n"
                                     "Content-Length: %" PRIu64 "\r\n"
                                     "Server: Gearman/" PACKAGE_VERSION "\r\n"
+                                    "%s"
                                     "\r\n",
+                                    http_version,
                                     packet->command == GEARMAN_COMMAND_JOB_CREATED ?  int(packet->arg_size[0]) : int(packet->arg_size[0] - 1),
                                     (const char *)packet->arg[0],
                                     gearman_strcommand(packet->command),
-                                    (uint64_t)packet->data_size); // Content-length
+                                    (uint64_t)packet->data_size,
+                                    connection_header);
       }
 
       _sent_header= true;
@@ -396,10 +413,11 @@ public:
     }
 
     size_t version_size= request_size - size_t(version - request);
-    if (version_size == 8 and 
+    if (version_size == 8 and
         strncmp(version, "HTTP/1.1", 8) == 0)
     {
       set_keep_alive(true);
+      _http_11= true;
     }
     else if (version_size == 8 and 
              strncmp(version, "HTTP/1.0", 8) == 0)
@@ -610,6 +628,7 @@ public:
     _sent_header= false;
     _background= false;
     _keep_alive= false;
+    _http_11= false;
     content.clear();
     _method= gearmand::protocol::httpd::TRACE;
     _http_response= gearmand::protocol::httpd::HTTP_OK;
@@ -643,6 +662,7 @@ private:
   bool _sent_header;
   bool _background;
   bool _keep_alive;
+  bool _http_11;
   std::string global_port;
   gearmand::protocol::httpd::response_t _http_response;
   std::vector<char> content;

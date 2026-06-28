@@ -206,14 +206,53 @@ test_st HEAD_TESTS[] ={
   { 0, 0, 0 }
 };
 
+static test_return_t regression_http_version_10_TEST(void *)
+{
+  Application curl("/usr/bin/curl");
+  curl.add_option("--http1.0");
+  curl.add_option("--include");
+  curl.add_option("--silent");
+  curl.add_option(host_url);
+
+  ASSERT_EQ(Application::SUCCESS, curl.run());
+  ASSERT_EQ(Application::SUCCESS, curl.join());
+
+  const char *output= curl.stdout_c_str();
+  ASSERT_TRUE(output != NULL);
+  ASSERT_TRUE(strncmp(output, "HTTP/1.0", 8) == 0);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t regression_http_version_11_TEST(void *)
+{
+  Application curl("/usr/bin/curl");
+  curl.add_option("--http1.1");
+  curl.add_option("--include");
+  curl.add_option("--silent");
+  curl.add_option(host_url);
+
+  ASSERT_EQ(Application::SUCCESS, curl.run());
+  ASSERT_EQ(Application::SUCCESS, curl.join());
+
+  const char *output= curl.stdout_c_str();
+  ASSERT_TRUE(output != NULL);
+  ASSERT_TRUE(strncmp(output, "HTTP/1.1", 8) == 0);
+  ASSERT_TRUE(strstr(output, "Connection: close") != NULL);
+
+  return TEST_SUCCESS;
+}
+
 test_st regression_TESTS[] ={
+  { "issue#391 HTTP/1.0 request gets HTTP/1.0 response", 0, regression_http_version_10_TEST },
+  { "issue#391 HTTP/1.1 request gets HTTP/1.1 response", 0, regression_http_version_11_TEST },
   { 0, 0, 0 }
 };
 
 collection_st collection[] ={
   { "curl", check_for_curl, 0, curl_TESTS },
   { "GET", check_for_libcurl, 0, GET_TESTS },
-  { "regression", 0, 0, regression_TESTS },
+  { "regression", check_for_curl, 0, regression_TESTS },
   { 0, 0, 0, 0 }
 };
 
