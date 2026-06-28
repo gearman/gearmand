@@ -92,7 +92,7 @@ test_return_t fifo_test(void *)
 {
   const char *function_name= "fifo_echo";
 
-  /* Exactly the same pattern used by every other test in client_test.cc */
+  /* Exactly the same pattern used by other tests in client_test.cc */
   gearman_function_t echo_fn = gearman_function_create(fifo_echo_worker);
   std::unique_ptr<worker_handle_st> worker_handle(
     test_worker_start(libtest::default_port(),
@@ -112,14 +112,14 @@ test_return_t fifo_test(void *)
   /* Reset the shared recorder before submitting tasks. */
   recorder.pos= 0;
 
-  /* Register the client-level workload callback. */
-  gearman_client_set_workload_fn(client, fifo_workload);
-
   /* Submit tasks in FIFO order using the exact API path that populates
      gearman_universal_st::packet_list (the code changed in packet.cc). */
   const char *job_data[3]= {"1", "2", "3"};
   for (int i= 0; i < 3; ++i)
   {
+    /* Register the client-level workload callback. */
+    gearman_client_set_data_fn(client, fifo_workload);
+
     gearman_task_st* task=
       gearman_client_add_task(client,
                               NULL,         /* let library allocate task */
@@ -137,6 +137,12 @@ test_return_t fifo_test(void *)
      the list and sends tasks in the order they were inserted. */
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
+
+  std::cout << "fifo_test: task order results -> "
+            << recorder.buffer[0]
+            << recorder.buffer[1]
+            << recorder.buffer[2]
+            << std::endl; /* TEMPORARY */
 
   /* === LIFO verification (FIXME) === */
   ASSERT_EQ(3, recorder.pos);
