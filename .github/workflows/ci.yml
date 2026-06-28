@@ -28,7 +28,7 @@ jobs:
 #           - {name: 'ubuntu-18.04 gcc-8', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-8', cxx: 'g++-8', tag: '8'}
           - {name: 'ubuntu-20.04 gcc-9',  os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-9', cxx: 'g++-9', tag: '9'}
           - {name: 'ubuntu-20.04 gcc-10', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-10', cxx: 'g++-10', tag: '10'}
-          - {name: 'ubuntu-20.04 gcc-11', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-11', cxx: 'g++-11', tag: '11', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'ubuntu-22.04 gcc-11', os: ubuntu-22.04, cc: 'gcc-11', cxx: 'g++-12', tag: '12'}
           - {name: 'ubuntu-22.04 gcc-12', os: ubuntu-22.04, cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
           - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
           - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
@@ -56,9 +56,7 @@ jobs:
       run: |
            case "${GHA_CONTAINER}" in
               ubuntu*)
-                 apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2
-                 sudo apt-add-repository ppa:git-core/ppa
-                 sudo apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git
+                 apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install tzdata sudo apt-transport-https make apt-file software-properties-common libssl-dev build-essential autotools-dev autoconf automake pkgconf iproute2 git
                  ;;
               alpine*)
                  apk add --no-cache make gcc g++ autoconf automake m4 bash git libtool file py3-sphinx util-linux-dev libuuid libevent-dev gperf boost-dev openssl-dev curl
@@ -109,8 +107,9 @@ jobs:
            esac
     - name: configure toolchain (optional)
       if: matrix.config.toolchain != ''
+      shell: bash
       run: |
-           sudo apt-add-repository ${{ matrix.config.toolchain }}
+           for i in 1 2 3 4 5; do sudo apt-add-repository -y ${{ matrix.config.toolchain }} && break || sleep 15; done
            sudo apt-get update
            sudo apt-get -y install libtool
     - uses: actions/checkout@v7
@@ -200,11 +199,12 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: install dependencies
+      shell: bash
       run: |
-           sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+           for i in 1 2 3 4 5; do sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test && break || sleep 15; done
            sudo apt-get update && sudo apt-get -o Acquire::Retries=3 install -y \
              libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common \
-             libhiredis-dev libsqlite3-dev \
+             libhiredis-dev libsqlite3-dev curl \
              gcc-15 g++-15
     - name: bootstrap
       run: ./bootstrap.sh -a
@@ -246,11 +246,12 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: install dependencies
+      shell: bash
       run: |
-           sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+           for i in 1 2 3 4 5; do sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test && break || sleep 15; done
            sudo apt-get update && sudo apt-get -o Acquire::Retries=3 install -y \
              libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common \
-             libhiredis-dev libtokyocabinet-dev \
+             libhiredis-dev libtokyocabinet-dev curl \
              gcc-15 g++-15
     - name: bootstrap
       run: ./bootstrap.sh -a
@@ -312,11 +313,12 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: install dependencies
+      shell: bash
       run: |
-           sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+           for i in 1 2 3 4 5; do sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test && break || sleep 15; done
            sudo apt-get update && sudo apt-get -o Acquire::Retries=3 install -y \
              libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common \
-             libhiredis-dev libpq-dev \
+             libhiredis-dev libpq-dev curl \
              gcc-15 g++-15
     - name: bootstrap
       run: ./bootstrap.sh -a
