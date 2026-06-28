@@ -157,6 +157,22 @@ void initialize_postgres()
  */
 static void _libpq_notice_processor(void *arg, const char *message);
 
+static gearmand_error_t _libpq_ensure_connection(gearmand::plugins::queue::Postgres *queue)
+{
+  if (PQstatus(queue->con) != CONNECTION_OK)
+  {
+    gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "libpq connection lost, attempting reset");
+    PQreset(queue->con);
+    if (PQstatus(queue->con) != CONNECTION_OK)
+    {
+      return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_QUEUE_ERROR,
+                                 "PQreset: %s", PQerrorMessage(queue->con));
+    }
+    gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "libpq connection restored");
+  }
+  return GEARMAND_SUCCESS;
+}
+
 /* Queue callback functions. */
 static gearmand_error_t _libpq_add(gearman_server_st *server, void *context,
                                    const char *unique, size_t unique_size,
@@ -281,6 +297,11 @@ static gearmand_error_t _libpq_add(gearman_server_st*, void *context,
 
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "libpq add: %.*s", (uint32_t)unique_size, (char *)unique);
 
+  if (gearmand_failed(_libpq_ensure_connection(queue)))
+  {
+    return GEARMAND_QUEUE_ERROR;
+  }
+
   PGresult *result= PQexecParams(queue->con, queue->insert().c_str(),
                                  gearmand_array_size(param_lengths),
                                  NULL, param_values, param_lengths, param_formats, 0);
@@ -309,26 +330,26 @@ static gearmand_error_t _libpq_done(gearman_server_st*, void *context,
                                     const char *function_name,
                                     size_t function_name_size)
 {
-  (void)function_name_size;
   gearmand::plugins::queue::Postgres *queue= (gearmand::plugins::queue::Postgres *)context;
-  PGresult *result;
 
   gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "libpq done: %.*s", (uint32_t)unique_size, (char *)unique);
 
-  std::string query;
-  query.reserve(function_name_size +unique_size + 80);
-  query+= "DELETE FROM ";
-  query+= queue->table;
-  query+= " WHERE unique_key='";
-  query+= (const char *)unique;
-  query+= "' AND function_name='";
-  query+= (const char *)function_name;
-  query+= "'";
+  if (gearmand_failed(_libpq_ensure_connection(queue)))
+  {
+    return GEARMAND_QUEUE_ERROR;
+  }
 
-  result= PQexec(queue->con, query.c_str());
+  std::string query= "DELETE FROM " + queue->table + " WHERE unique_key=$1 AND function_name=$2";
+
+  const char *param_values[]= { unique, function_name };
+  int param_lengths[]= { (int)unique_size, (int)function_name_size };
+  int param_formats[]= { 0, 0 };
+
+  PGresult *result= PQexecParams(queue->con, query.c_str(), 2, NULL,
+                                 param_values, param_lengths, param_formats, 0);
   if (result == NULL || PQresultStatus(result) != PGRES_COMMAND_OK)
   {
-    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "PQexec:%s", PQerrorMessage(queue->con));
+    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "PQexecParams:%s", PQerrorMessage(queue->con));
     PQclear(result);
     return GEARMAND_QUEUE_ERROR;
   }
@@ -345,6 +366,11 @@ static gearmand_error_t _libpq_replay(gearman_server_st *server, void *context,
   gearmand::plugins::queue::Postgres *queue= (gearmand::plugins::queue::Postgres *)context;
 
   gearmand_info("libpq replay start");
+
+  if (gearmand_failed(_libpq_ensure_connection(queue)))
+  {
+    return GEARMAND_QUEUE_ERROR;
+  }
 
   std::string query("SELECT unique_key,function_name,priority,data,when_to_run FROM " + queue->table);
 
