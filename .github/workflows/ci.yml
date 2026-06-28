@@ -28,7 +28,7 @@ jobs:
 #           - {name: 'ubuntu-18.04 gcc-8', os: ubuntu-latest, container: 'ubuntu:18.04', cc: 'gcc-8', cxx: 'g++-8', tag: '8'}
           - {name: 'ubuntu-20.04 gcc-9',  os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-9', cxx: 'g++-9', tag: '9'}
           - {name: 'ubuntu-20.04 gcc-10', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-10', cxx: 'g++-10', tag: '10'}
-          - {name: 'ubuntu-20.04 gcc-11', os: ubuntu-latest, container: 'ubuntu:20.04', cc: 'gcc-11', cxx: 'g++-11', tag: '11', toolchain: 'ppa:ubuntu-toolchain-r/test'}
+          - {name: 'ubuntu-22.04 gcc-11', os: ubuntu-22.04, cc: 'gcc-11', cxx: 'g++-12', tag: '12'}
           - {name: 'ubuntu-22.04 gcc-12', os: ubuntu-22.04, cc: 'gcc-12', cxx: 'g++-12', tag: '12'}
           - {name: 'ubuntu-24.04 gcc-13', os: ubuntu-24.04, cc: 'gcc-13', cxx: 'g++-13', tag: '13'}
           - {name: 'ubuntu-24.04 gcc-14', os: ubuntu-24.04, cc: 'gcc-14', cxx: 'g++-14', tag: '14'}
