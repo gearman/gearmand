@@ -1,6 +1,6 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
- *  Test that libgearman packets are sent to server in FIFO order.
+ *  Test that libgearman tasks are sent to server in FIFO order.
  *
  *  Copyright (C) 2026 Edward J. Sabol
  *  All rights reserved.
@@ -47,7 +47,6 @@ using namespace libtest;
 
 #include <libgearman-1.0/gearman.h>
 
-#include <tests/context.h>
 #include <tests/start_worker.h>
 
 static struct OrderRecorder
@@ -79,26 +78,24 @@ static gearman_return_t fifo_workload(gearman_task_st *task)
   return GEARMAN_SUCCESS;
 }
 
-/** Test that verifies gearman_packet_create() now builds a FIFO queue
+/** Test that verifies gearman_client_add_task() builds a FIFO queue
     (append-to-tail) instead of LIFO (prepend-to-head).
 
-    This directly exercises the packet linked-list change for issue #395.
+    This directly exercises the task linked-list change for issue #395.
     Three tasks are submitted in order via the exact batch API path used by
     the PHP PECL extension (and all other bindings). Completion order is
-    recorded via the client-level workload callback. After the patch the
-    order must be "123"; before the patch it would be "321". */
+    recorded via the client-level workload callback. After the changes in
+    GitHub PR #395, the order must be "123"; before, it would have been
+    "321". */
 
 test_return_t fifo_test(void *object)
 {
-  Context *context= (Context *)object;
-  ASSERT_TRUE(context);
-
   const char *function_name= "fifo_echo";
 
   /* Exactly the same pattern used by every other test in client_test.cc */
   gearman_function_t echo_fn = gearman_function_create(fifo_echo_worker);
   std::unique_ptr<worker_handle_st> worker_handle(
-    test_worker_start(context->port(),
+    test_worker_start(libtest::default_port(),
                       NULL,
                       function_name,
                       echo_fn,
@@ -108,6 +105,9 @@ test_return_t fifo_test(void *object)
 
   gearman_client_st *client = gearman_client_create(NULL);
   ASSERT_TRUE(client != NULL);
+
+  gearman_return_t rc= gearman_client_add_server(client, "localhost", libtest::default_port());
+  ASSERT_EQ(GEARMAN_SUCCESS, rc);
 
   /* Reset the shared recorder before submitting tasks. */
   recorder.pos= 0;
@@ -134,8 +134,8 @@ test_return_t fifo_test(void *object)
     ASSERT_EQ(GEARMAN_SUCCESS, rc);
   }
 
-  /* This is where the packet-list ordering matters: run_tasks() walks
-     the list and sends packets in the order they were inserted. */
+  /* This is where the task-list ordering matters: run_tasks() walks
+     the list and sends tasks in the order they were inserted. */
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
@@ -145,7 +145,7 @@ test_return_t fifo_test(void *object)
   ASSERT_EQ('2', recorder.buffer[1]);
   ASSERT_EQ('1', recorder.buffer[2]);
 
-  std::cout << "fifo_test: LIFO packet order verified -> "
+  std::cout << "fifo_test: LIFO task order verified -> "
             << recorder.buffer[0]
             << recorder.buffer[1]
             << recorder.buffer[2]
