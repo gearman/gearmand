@@ -103,7 +103,7 @@ test_return_t fifo_test(void *)
   ASSERT_TRUE(client != NULL);
 
   /* Local instance of recorder structure. */
-  OrderRecorder recorder= {0, {0}};
+  OrderRecorder recorder= { 0 };
 
   gearman_return_t rc= gearman_client_add_server(client, "localhost", libtest::default_port());
   ASSERT_EQ(GEARMAN_SUCCESS, rc);
