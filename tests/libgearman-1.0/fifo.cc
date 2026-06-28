@@ -85,10 +85,10 @@ static gearman_return_t fifo_workload(gearman_task_st *task)
     Three tasks are submitted in order via the exact batch API path used by
     the PHP PECL extension (and all other bindings). Completion order is
     recorded via the client-level workload callback. After the changes in
-    GitHub PR #395, the order must be "123"; before, it would have been
+    GitHub PR #435, the order must be "123"; before, it would have been
     "321". */
 
-test_return_t fifo_test(void *object)
+test_return_t fifo_test(void *)
 {
   const char *function_name= "fifo_echo";
 
@@ -120,7 +120,6 @@ test_return_t fifo_test(void *object)
   const char *job_data[3]= {"1", "2", "3"};
   for (int i= 0; i < 3; ++i)
   {
-    gearman_return_t rc;
     gearman_task_st* task=
       gearman_client_add_task(client,
                               NULL,         /* let library allocate task */
