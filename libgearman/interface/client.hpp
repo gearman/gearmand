@@ -69,6 +69,7 @@ struct Client
   struct gearman_connection_st *con;
   gearman_task_st *task;
   gearman_task_st *task_list;
+  gearman_task_st *task_list_tail;
   gearman_task_context_free_fn *task_context_free_fn;
   gearman_universal_st universal;
   struct gearman_actions_t actions;
@@ -84,6 +85,7 @@ struct Client
     con(NULL),
     task(NULL),
     task_list(NULL),
+    task_list_tail(NULL),
     task_context_free_fn(NULL),
     actions(gearman_actions_default()),
     _shell(shell_)

@@ -100,6 +100,11 @@ void gearman_task_free(gearman_task_st *task_shell)
           task->client->task_list= task->next;
         }
 
+        if (task->client->task_list_tail == task_shell)
+        {
+          task->client->task_list_tail= task->prev;
+        }
+
         if (task->prev)
         {
           task->prev->impl()->next= task->next;
