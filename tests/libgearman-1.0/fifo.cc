@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Test that libgearman tasks are sent to server in FIFO order.
  *
  *  Copyright (C) 2026 Edward J. Sabol
@@ -135,26 +135,18 @@ test_return_t fifo_test(void *)
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-  std::cout << "fifo_test: task order results -> "
-            << recorder.buffer[0]
-            << recorder.buffer[1]
-            << recorder.buffer[2]
-            << std::endl; /* TEMPORARY */
+//   std::cout << "fifo_test: task order results -> "
+//             << recorder.buffer[0]
+//             << recorder.buffer[1]
+//             << recorder.buffer[2]
+//             << std::endl;
 
   /* === LIFO verification (FIXME) === */
   ASSERT_EQ(3, recorder.pos);
   ASSERT_EQ('3', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
   ASSERT_EQ('1', recorder.buffer[2]);
-  ASSERT_EQ('0', recorder.buffer[0]); /* INTENTIONAL FAIL */
 
-  std::cout << "fifo_test: LIFO task order verified -> "
-            << recorder.buffer[0]
-            << recorder.buffer[1]
-            << recorder.buffer[2]
-            << std::endl; /* FIXME */
-
-  /* Explicit cleanup following the pattern of client_test.cc::loop_test */
   gearman_client_free(client);
   /* unique_ptr destructor runs here and calls the correct shutdown logic */
 
