@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- *
+ * 
  *  Test that libgearman tasks are sent to server in FIFO order.
  *
  *  Copyright (C) 2026 Edward J. Sabol
@@ -42,7 +42,6 @@
 using namespace libtest;
 
 #include <cassert>
-#include <iostream>
 #include <memory>
 
 #include <libgearman-1.0/gearman.h>
@@ -109,14 +108,13 @@ test_return_t fifo_test(void *)
   gearman_return_t rc= gearman_client_add_server(client, "localhost", libtest::default_port());
   ASSERT_EQ(GEARMAN_SUCCESS, rc);
 
-  /* Submit tasks in FIFO order using the exact API path that populates
-     gearman_universal_st::packet_list (the code changed in packet.cc). */
+  /* Register the client-level workload callback. */
+  gearman_client_set_data_fn(client, fifo_workload);
+
+  /* Submit tasks in 1-2-3 order. */
   const char *job_data[3]= {"1", "2", "3"};
   for (int i= 0; i < 3; ++i)
   {
-    /* Register the client-level workload callback. */
-    gearman_client_set_data_fn(client, fifo_workload);
-
     gearman_task_st* task=
       gearman_client_add_task(client,
                               NULL,         /* let library allocate task */
@@ -135,17 +133,11 @@ test_return_t fifo_test(void *)
   gearman_return_t ret= gearman_client_run_tasks(client);
   ASSERT_EQ(GEARMAN_SUCCESS, ret);
 
-//   std::cout << "fifo_test: task order results -> "
-//             << recorder.buffer[0]
-//             << recorder.buffer[1]
-//             << recorder.buffer[2]
-//             << std::endl;
-
-  /* === LIFO verification (FIXME) === */
+  /* === FIFO verification === */
   ASSERT_EQ(3, recorder.pos);
-  ASSERT_EQ('3', recorder.buffer[0]);
+  ASSERT_EQ('1', recorder.buffer[0]);
   ASSERT_EQ('2', recorder.buffer[1]);
-  ASSERT_EQ('1', recorder.buffer[2]);
+  ASSERT_EQ('3', recorder.buffer[2]);
 
   gearman_client_free(client);
   /* unique_ptr destructor runs here and calls the correct shutdown logic */
