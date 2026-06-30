@@ -2380,6 +2380,7 @@ test_st gearman_execute_tests[] ={
   {"gearman_execute()", 0, gearman_execute_test },
   {"gearman_execute() epoch", 0, gearman_execute_epoch_test },
   {"gearman_execute() epoch and test gearman_job_handle_t", 0, gearman_execute_epoch_check_job_handle_test },
+  {"gearman_execute() epoch wakeup timer fires for sleeping worker", 0, gearman_execute_epoch_wakeup_test },
   {"gearman_execute(GEARMAN_TIMEOUT)", 0, gearman_execute_timeout_test },
   {"gearman_execute() background", 0, gearman_execute_bg_test },
   {"gearman_execute() multiple background", 0, gearman_execute_multile_bg_test },
