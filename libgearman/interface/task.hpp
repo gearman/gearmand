@@ -129,7 +129,7 @@ struct Task
       if (client_->task_list_tail != NULL)
       {
         // List is not empty: append to tail
-        prev= client_->task_list_tail->impl();
+        prev= client_->task_list_tail;
         client_->task_list_tail->impl()->next= _shell;
       }
       else
