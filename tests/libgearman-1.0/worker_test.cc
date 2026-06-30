@@ -542,7 +542,7 @@ static test_return_t job_order_TEST(void *)
   std::vector<gearman_task_st*> tasks;
   const long order_seed= __LINE__;
   uint32_t spaces= 0;
-  for (long x= order_seed +10; x != order_seed; --x)
+  for (long x= order_seed +1; x != order_seed +11; ++x)
   {
     gearman_return_t ret;
     char buffer[30];
