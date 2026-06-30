@@ -366,17 +366,24 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
        priority != GEARMAN_JOB_PRIORITY_MAX;
        priority= gearman_job_priority_t(int(priority) +1))
   {
-    for (gearman_server_worker_st *server_worker= server_con->worker_list;
-         server_worker; server_worker= server_worker->con_next)
+    /* Use an explicit while loop so we can save con_next before the
+       round-robin list mutation sets it to NULL on the moved worker. */
+    gearman_server_worker_st *server_worker= server_con->worker_list;
+    while (server_worker)
     {
+      /* Must be read before any list mutation below. */
+      gearman_server_worker_st *next_worker= server_worker->con_next;
+
       if (server_worker->function == NULL || server_worker->function->job_count == 0)
       {
+        server_worker= next_worker;
         continue;
       }
 
       /* Only consider workers that have jobs for this priority. */
       if (server_worker->function->job_list[priority] == NULL)
       {
+        server_worker= next_worker;
         continue;
       }
 
@@ -396,21 +403,23 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
         {
           server_con->worker_list= server_worker;
         }
+        /* After the append server_worker->con_next is NULL (it is the new
+           tail). next_worker, saved above, carries the original successor. */
       }
 
       gearman_server_job_st *server_job= server_worker->function->job_list[priority];
       gearman_server_job_st *previous_job= server_job;
-  
+
       int64_t current_time= (int64_t)time(NULL);
-  
+
       while (server_job and server_job->when != 0 and server_job->when > current_time)
       {
         previous_job= server_job;
-        server_job= server_job->function_next;  
+        server_job= server_job->function_next;
       }
-  
+
       if (server_job)
-      { 
+      {
         if (server_job->function->job_list[priority] == server_job)
         {
           // If it's the head of the list, advance it
@@ -421,7 +430,7 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
           // Otherwise, just remove the item from the list
           previous_job->function_next= server_job->function_next;
         }
-        
+
         // If it's the tail of the list, move the tail back.
         // When the list is now empty (single-item case), previous_job still
         // points at the removed job, so set job_end to NULL instead.
@@ -441,9 +450,11 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
           gearman_server_job_free(server_job);
           return gearman_server_job_take(server_con);
         }
-        
+
         return server_job;
       }
+
+      server_worker= next_worker;
     }
   }
   

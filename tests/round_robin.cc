@@ -15,6 +15,7 @@ using namespace libtest;
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <memory>
 #include <unistd.h>
 
@@ -156,7 +157,95 @@ static test_return_t queue_worker(void *object)
   return TEST_SUCCESS;
 }
 
-struct Limit 
+/* ---------------------------------------------------------------------------
+ * round_robin_epoch_does_not_block_regular_TEST
+ *
+ * Regression test for the con_next loop-exit bug in gearman_server_job_take().
+ *
+ * When round-robin is enabled, the inner worker loop moves the chosen worker
+ * to the tail of the list (GEARMAND_LIST_DEL + _server_con_worker_list_append).
+ * After the append, server_worker->con_next is NULL.  If the moved worker's
+ * function has only future-epoch jobs (none runnable right now), the loop
+ * used to advance via the now-NULL con_next and exit early, skipping all
+ * remaining workers -- including any with immediately runnable regular jobs.
+ *
+ * This test registers one worker for two functions (epoch function first),
+ * submits a far-future epoch job to the first function and an immediately
+ * runnable job to the second, then verifies the regular job is dispatched.
+ * On the unfixed code gearman_client_do() would time out; on fixed code it
+ * returns GEARMAN_SUCCESS promptly.
+ * -------------------------------------------------------------------------*/
+
+static gearman_return_t rr_epoch_noop_WORKER(gearman_job_st *job, void *)
+{
+  (void)job;
+  return GEARMAN_SUCCESS;
+}
+
+static gearman_return_t rr_regular_echo_WORKER(gearman_job_st *job, void *)
+{
+  gearman_job_send_data(job,
+                        gearman_job_workload(job),
+                        gearman_job_workload_size(job));
+  return GEARMAN_SUCCESS;
+}
+
+static test_return_t round_robin_epoch_does_not_block_regular_TEST(void *object)
+{
+  Context *context= (Context *)object;
+  ASSERT_TRUE(context);
+
+  /* Submit a far-future epoch job to "rr_epoch_fn" before the worker
+     connects, so the server has a non-runnable job at the head of that
+     function's NORMAL priority queue when the first GRAB_JOB arrives. */
+  libgearman::Client client(context->port());
+  gearman_task_attr_t epoch_attr=
+    gearman_task_attr_init_epoch(time(NULL) + 3600, GEARMAN_JOB_PRIORITY_NORMAL);
+  gearman_argument_t empty= gearman_argument_make(0, 0, NULL, 0);
+  gearman_task_st *epoch_task= gearman_execute(&client,
+                                               test_literal_param("rr_epoch_fn"),
+                                               NULL, 0,
+                                               &epoch_attr, &empty, NULL);
+  ASSERT_TRUE(epoch_task);
+  gearman_task_free(epoch_task);
+
+  /* Start a background worker registered for both functions.  "rr_epoch_fn"
+     is registered first so it appears first in server_con->worker_list,
+     which is the condition that triggers the con_next early-exit bug. */
+  libgearman::Worker w(context->port());
+  gearman_function_t epoch_fn= gearman_function_create(rr_epoch_noop_WORKER);
+  gearman_function_t regular_fn= gearman_function_create(rr_regular_echo_WORKER);
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_worker_define_function(&w,
+                                           test_literal_param("rr_epoch_fn"),
+                                           epoch_fn, 0, NULL));
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_worker_define_function(&w,
+                                           test_literal_param("rr_regular_fn"),
+                                           regular_fn, 0, NULL));
+  std::unique_ptr<worker_handle_st> handle(worker_run(w));
+  ASSERT_TRUE(handle.get());
+
+  /* Submit a regular foreground job to "rr_regular_fn" and wait for the
+     result.  With the bug the worker spins (NO_JOB -> PRE_SLEEP -> NOOP ->
+     repeat) and gearman_client_do() times out.  With the fix the worker
+     advances past the epoch function and dispatches the regular job. */
+  gearman_client_set_timeout(&client, 5000);
+  gearman_return_t rc;
+  size_t result_len;
+  void *result= gearman_client_do(&client, "rr_regular_fn", NULL,
+                                  test_literal_param("ping"),
+                                  &result_len, &rc);
+  free(result);
+
+  handle->shutdown();
+
+  ASSERT_EQ(GEARMAN_SUCCESS, rc);
+
+  return TEST_SUCCESS;
+}
+
+struct Limit
 {
   uint32_t _count;
   uint32_t _expected;
@@ -366,6 +455,7 @@ static bool world_destroy(void *object)
 test_st round_robin_TESTS[] ={
   {"add", 0, queue_add },
   {"worker", 0, queue_worker },
+  {"epoch job does not block regular job dispatch", 0, round_robin_epoch_does_not_block_regular_TEST },
   {0, 0, 0}
 };
 
