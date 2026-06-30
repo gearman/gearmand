@@ -51,5 +51,9 @@ struct gearman_server_function_st
   gearman_server_worker_st *worker_list;
   struct gearman_server_job_st *job_list[GEARMAN_JOB_PRIORITY_MAX];
   gearman_server_job_st *job_end[GEARMAN_JOB_PRIORITY_MAX];
+  /* One-shot libevent timer that fires when the earliest epoch job becomes
+     runnable, waking sleeping workers.  NULL when no timer is pending. */
+  struct event *epoch_wakeup_timer;
+  int64_t epoch_next_wakeup;
 };
 

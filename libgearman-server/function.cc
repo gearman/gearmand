@@ -109,6 +109,8 @@ static gearman_server_function_st* gearman_server_function_create(gearman_server
          sizeof(gearman_server_job_st *) * GEARMAN_JOB_PRIORITY_MAX);
   memset(function->job_end, 0,
          sizeof(gearman_server_job_st *) * GEARMAN_JOB_PRIORITY_MAX);
+  function->epoch_wakeup_timer= NULL;
+  function->epoch_next_wakeup= 0;
   GEARMAND_HASH__ADD(server->function, function_key, function);
   return function;
 }
@@ -140,6 +142,12 @@ void gearman_server_function_free(gearman_server_st *server, gearman_server_func
   function_key= _server_function_hash(function->function_name, function->function_name_size);
   function_key= function_key % GEARMAND_DEFAULT_HASH_SIZE;
   GEARMAND_HASH__DEL(server->function, function_key, function);
+  if (function->epoch_wakeup_timer != NULL)
+  {
+    timeout_del(function->epoch_wakeup_timer);
+    free(function->epoch_wakeup_timer);
+    function->epoch_wakeup_timer= NULL;
+  }
   delete [] function->function_name;
   delete function;
 }

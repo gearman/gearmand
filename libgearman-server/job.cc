@@ -46,6 +46,7 @@
 #include "gear_config.h"
 #include "libgearman-server/common.h"
 #include <string.h>
+#include <time.h>
 
 #include <libgearman-server/queue.h>
 
@@ -97,6 +98,127 @@ static gearman_server_job_st * _server_job_get_unique(gearman_server_st *server,
 }
 
 /** @} */
+
+/*
+ * Epoch-job wakeup timer helpers
+ *
+ * When a SUBMIT_JOB_EPOCH job is queued with a future `when` timestamp, no
+ * worker can run it until that time arrives.  The initial NOOP sent by
+ * gearman_server_job_queue() causes workers to GRAB_JOB, get nothing back,
+ * and return to PRE_SLEEP.  After that the workers are sleeping but no event
+ * will wake them again — unless we schedule a libevent timer.
+ *
+ * _schedule_epoch_wakeup() arms (or re-arms) a per-function one-shot timer
+ * for the earliest pending epoch `when`.  _epoch_wakeup_cb() fires in the
+ * libevent thread, sends NOOPs, and chains a new timer for any remaining
+ * epoch jobs in the function's queue.
+ */
+static void _epoch_wakeup_cb(int, short, void *arg);
+
+static void _schedule_epoch_wakeup(gearman_server_function_st *function, int64_t when)
+{
+  if (Gearmand()->base == NULL)
+  {
+    return;
+  }
+
+  int64_t now= (int64_t)time(NULL);
+  if (when <= now)
+  {
+    return;
+  }
+
+  /* Leave existing timer if it already fires at or before `when`. */
+  if (function->epoch_wakeup_timer != NULL && function->epoch_next_wakeup <= when)
+  {
+    return;
+  }
+
+  /* Cancel any existing (later) timer. */
+  if (function->epoch_wakeup_timer != NULL)
+  {
+    timeout_del(function->epoch_wakeup_timer);
+    free(function->epoch_wakeup_timer);
+    function->epoch_wakeup_timer= NULL;
+    function->epoch_next_wakeup= 0;
+  }
+
+  function->epoch_wakeup_timer= (struct event *)malloc(sizeof(struct event));
+  if (function->epoch_wakeup_timer == NULL)
+  {
+    gearmand_merror("malloc", struct event, 0);
+    return;
+  }
+
+  timeout_set(function->epoch_wakeup_timer, _epoch_wakeup_cb, function);
+  if (event_base_set(Gearmand()->base, function->epoch_wakeup_timer) == -1)
+  {
+    gearmand_perror(errno, "event_base_set epoch_wakeup_timer");
+    free(function->epoch_wakeup_timer);
+    function->epoch_wakeup_timer= NULL;
+    return;
+  }
+
+  struct timeval tv= { (time_t)(when - now), 0 };
+  timeout_add(function->epoch_wakeup_timer, &tv);
+  function->epoch_next_wakeup= when;
+}
+
+static void _epoch_wakeup_cb(int, short, void *arg)
+{
+  gearman_server_function_st *function= (gearman_server_function_st *)arg;
+
+  free(function->epoch_wakeup_timer);
+  function->epoch_wakeup_timer= NULL;
+  function->epoch_next_wakeup= 0;
+
+  /* Send NOOPs to sleeping workers so they will GRAB_JOB again. */
+  if (function->worker_list != NULL)
+  {
+    gearman_server_worker_st *worker= function->worker_list;
+    uint32_t noop_sent= 0;
+    do
+    {
+      if (worker->con->is_sleeping && !(worker->con->is_noop_sent))
+      {
+        gearmand_error_t ret= gearman_server_io_packet_add(worker->con, false,
+                                                           GEARMAN_MAGIC_RESPONSE,
+                                                           GEARMAN_COMMAND_NOOP, NULL);
+        if (gearmand_failed(ret))
+        {
+          gearmand_log_gerror_warn(GEARMAN_DEFAULT_LOG_PARAM, ret,
+                                   "Failed to send NOOP to %s:%s",
+                                   worker->con->host(), worker->con->port());
+        }
+        else
+        {
+          worker->con->is_noop_sent= true;
+          noop_sent++;
+        }
+      }
+      worker= worker->function_next;
+    }
+    while (worker != function->worker_list &&
+           (Server->worker_wakeup == 0 || noop_sent < Server->worker_wakeup));
+  }
+
+  /* Find the next earliest epoch job still pending and chain a new timer. */
+  int64_t next_when= 0;
+  for (int p= 0; p < GEARMAN_JOB_PRIORITY_MAX; p++)
+  {
+    for (gearman_server_job_st *j= function->job_list[p]; j != NULL; j= j->function_next)
+    {
+      if (j->when > 0 && (next_when == 0 || j->when < next_when))
+      {
+        next_when= j->when;
+      }
+    }
+  }
+  if (next_when > 0)
+  {
+    _schedule_epoch_wakeup(function, next_when);
+  }
+}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -437,6 +559,13 @@ gearmand_error_t gearman_server_job_queue(gearman_server_job_st *job)
 
   job->function->job_end[job->priority]= job;
   job->function->job_count++;
+
+  /* For epoch jobs not yet runnable, schedule a timer so sleeping workers
+     are woken exactly when the job becomes available. */
+  if (job->when > 0 && job->when > (int64_t)time(NULL))
+  {
+    _schedule_epoch_wakeup(job->function, job->when);
+  }
 
   return GEARMAND_SUCCESS;
 }
