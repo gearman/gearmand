@@ -422,10 +422,13 @@ gearman_server_job_st *gearman_server_job_take(gearman_server_con_st *server_con
           previous_job->function_next= server_job->function_next;
         }
         
-        // If it's the tail of the list, move the tail back
+        // If it's the tail of the list, move the tail back.
+        // When the list is now empty (single-item case), previous_job still
+        // points at the removed job, so set job_end to NULL instead.
         if (server_job->function->job_end[priority] == server_job)
         {
-          server_job->function->job_end[priority]= previous_job;
+          server_job->function->job_end[priority]=
+            (server_job->function->job_list[priority] == NULL) ? NULL : previous_job;
         }
         server_job->function->job_count--;
 
