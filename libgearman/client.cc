@@ -1590,8 +1590,10 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
             client->con->options.packet_in_use= true;
 
             /* We have a packet, see which task it belongs to. */
-            for (client->task= client->task_list; client->task;
-                 client->task= client->task->impl()->next)
+            /* Traverse from tail to head to safely resolve anonymous
+               JOB_CREATED sequences. */
+            for (client->task= client->task_list_tail; client->task;
+                 client->task= client->task->impl()->prev)
             {
               if (client->task->impl()->con != client->con)
               {
