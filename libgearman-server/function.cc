@@ -151,4 +151,22 @@ void gearman_server_function_free(gearman_server_st *server, gearman_server_func
   delete [] function->function_name;
   delete function;
 }
+
+void gearman_server_function_cancel_epoch_timers(gearman_server_st *server)
+{
+  for (uint32_t function_key= 0; function_key < GEARMAND_DEFAULT_HASH_SIZE; function_key++)
+  {
+    for (gearman_server_function_st *function= server->function_hash[function_key];
+         function != NULL; function= function->next)
+    {
+      if (function->epoch_wakeup_timer != NULL)
+      {
+        timeout_del(function->epoch_wakeup_timer);
+        free(function->epoch_wakeup_timer);
+        function->epoch_wakeup_timer= NULL;
+        function->epoch_next_wakeup= 0;
+      }
+    }
+  }
+}
 #pragma GCC diagnostic pop

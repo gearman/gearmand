@@ -1125,6 +1125,14 @@ static void _clear_events(gearmand_st *gearmand)
   _wakeup_clear(gearmand);
 
   /*
+    Pending epoch-job wakeup timers are also registered on this event_base;
+    left alone they keep the main loop alive until they fire, which can
+    delay shutdown arbitrarily long (e.g. hours, for a job scheduled far in
+    the future). Cancel them so the loop can exit now.
+  */
+  gearman_server_function_cancel_epoch_timers(&(gearmand->server));
+
+  /*
     If we are not threaded, tell the fake thread to shutdown now to clear
     connections. Otherwise we will never exit the libevent loop.
   */
