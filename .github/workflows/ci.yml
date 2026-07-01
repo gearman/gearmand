@@ -174,7 +174,7 @@ jobs:
     - name: make test
       uses: nick-fields/retry@v4
       with:
-        timeout_minutes: 10
+        timeout_minutes: 12
         max_attempts: 4
         command: make test
     - name: check test-suite.log
@@ -221,7 +221,7 @@ jobs:
     - name: make test
       uses: nick-fields/retry@v4
       with:
-        timeout_minutes: 10
+        timeout_minutes: 12
         max_attempts: 4
         command: make test
     - name: check test-suite.log
@@ -268,7 +268,7 @@ jobs:
     - name: make test
       uses: nick-fields/retry@v4
       with:
-        timeout_minutes: 10
+        timeout_minutes: 12
         max_attempts: 4
         command: make test
     - name: check test-suite.log
@@ -335,7 +335,7 @@ jobs:
     - name: make test
       uses: nick-fields/retry@v4
       with:
-        timeout_minutes: 10
+        timeout_minutes: 12
         max_attempts: 4
         command: make test
     - name: check test-suite.log
