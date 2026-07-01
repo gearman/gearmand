@@ -493,7 +493,7 @@ bool gearman_task_is_finished(const gearman_task_st *task_shell)
 {
   if (task_shell and task_shell->impl())
   {
-    task_shell->impl()->is_finished();
+    return task_shell->impl()->is_finished();
   }
 
   return false;

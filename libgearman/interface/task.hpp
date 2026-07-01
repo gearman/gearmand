@@ -126,7 +126,8 @@ struct Task
 
     // Add the task to the client
     {
-      next= NULL;  // New tail always has no next
+      // New task always has no next
+      // next has been initialized to NULL in the member-initializer list
       if (client_->task_list_tail != NULL)
       {
         // List is not empty: append to tail
