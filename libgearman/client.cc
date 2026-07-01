@@ -1598,6 +1598,11 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
                 continue;
               }
 
+              if (!gearman_task_is_active(client->task))
+              {
+                continue;
+              }
+
               if (client->con->_packet.command == GEARMAN_COMMAND_JOB_CREATED)
               {
                 if (client->task->impl()->created_id != client->con->created_id)
