@@ -208,6 +208,8 @@ static void _epoch_wakeup_cb(int, short, void *arg)
     }
     while (worker != function->worker_list &&
            (Server->worker_wakeup == 0 || noop_sent < Server->worker_wakeup));
+
+    function->worker_list= worker;
   }
 
   /* Find the next earliest epoch job still pending and chain a new timer. */
