@@ -107,6 +107,10 @@ struct gearman_server_st
   pthread_mutex_t proc_lock{};
   pthread_cond_t proc_cond{};
   pthread_t proc_id{};
+  /* Guards epoch_wakeup_timer/epoch_next_wakeup on every gearman_server_function_st,
+     since those are armed/torn down from the proc thread, per-connection IO threads,
+     and the main event thread. */
+  pthread_mutex_t epoch_lock{};
   char job_handle_prefix[GEARMAND_JOB_HANDLE_SIZE];
   uint32_t hashtable_buckets{};
   gearman_server_job_st **job_hash{nullptr};

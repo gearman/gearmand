@@ -128,9 +128,12 @@ static void _schedule_epoch_wakeup(gearman_server_function_st *function, int64_t
     return;
   }
 
+  gearman_server_epoch_lock(Server);
+
   /* Leave existing timer if it already fires at or before `when`. */
   if (function->epoch_wakeup_timer != NULL && function->epoch_next_wakeup <= when)
   {
+    gearman_server_epoch_unlock(Server);
     return;
   }
 
@@ -147,6 +150,7 @@ static void _schedule_epoch_wakeup(gearman_server_function_st *function, int64_t
   if (function->epoch_wakeup_timer == NULL)
   {
     gearmand_merror("malloc", struct event, 0);
+    gearman_server_epoch_unlock(Server);
     return;
   }
 
@@ -156,21 +160,25 @@ static void _schedule_epoch_wakeup(gearman_server_function_st *function, int64_t
     gearmand_perror(errno, "event_base_set epoch_wakeup_timer");
     free(function->epoch_wakeup_timer);
     function->epoch_wakeup_timer= NULL;
+    gearman_server_epoch_unlock(Server);
     return;
   }
 
   struct timeval tv= { (time_t)(when - now), 0 };
   timeout_add(function->epoch_wakeup_timer, &tv);
   function->epoch_next_wakeup= when;
+  gearman_server_epoch_unlock(Server);
 }
 
 static void _epoch_wakeup_cb(int, short, void *arg)
 {
   gearman_server_function_st *function= (gearman_server_function_st *)arg;
 
+  gearman_server_epoch_lock(Server);
   free(function->epoch_wakeup_timer);
   function->epoch_wakeup_timer= NULL;
   function->epoch_next_wakeup= 0;
+  gearman_server_epoch_unlock(Server);
 
   /* Send NOOPs to sleeping workers so they will GRAB_JOB again. */
   if (function->worker_list != NULL)

@@ -142,18 +142,21 @@ void gearman_server_function_free(gearman_server_st *server, gearman_server_func
   function_key= _server_function_hash(function->function_name, function->function_name_size);
   function_key= function_key % GEARMAND_DEFAULT_HASH_SIZE;
   GEARMAND_HASH__DEL(server->function, function_key, function);
+  gearman_server_epoch_lock(server);
   if (function->epoch_wakeup_timer != NULL)
   {
     timeout_del(function->epoch_wakeup_timer);
     free(function->epoch_wakeup_timer);
     function->epoch_wakeup_timer= NULL;
   }
+  gearman_server_epoch_unlock(server);
   delete [] function->function_name;
   delete function;
 }
 
 void gearman_server_function_cancel_epoch_timers(gearman_server_st *server)
 {
+  gearman_server_epoch_lock(server);
   for (uint32_t function_key= 0; function_key < GEARMAND_DEFAULT_HASH_SIZE; function_key++)
   {
     for (gearman_server_function_st *function= server->function_hash[function_key];
@@ -167,6 +170,25 @@ void gearman_server_function_cancel_epoch_timers(gearman_server_st *server)
         function->epoch_next_wakeup= 0;
       }
     }
+  }
+  gearman_server_epoch_unlock(server);
+}
+
+void gearman_server_epoch_lock(gearman_server_st *server)
+{
+  int error;
+  if ((error= pthread_mutex_lock(&(server->epoch_lock))))
+  {
+    gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_lock epoch_lock");
+  }
+}
+
+void gearman_server_epoch_unlock(gearman_server_st *server)
+{
+  int error;
+  if ((error= pthread_mutex_unlock(&(server->epoch_lock))))
+  {
+    gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_unlock epoch_lock");
   }
 }
 #pragma GCC diagnostic pop

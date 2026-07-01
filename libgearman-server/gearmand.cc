@@ -190,6 +190,8 @@ static void gearman_server_free(gearman_server_st& server)
   free(server.job_hash);
   free(server.unique_hash);
   free(server.function_hash);
+
+  pthread_mutex_destroy(&(server.epoch_lock));
 }
 
 /** @} */
@@ -1275,6 +1277,13 @@ static bool gearman_server_create(gearman_server_st& server,
   server.queue_version= QUEUE_VERSION_NONE;
   server.queue.object= NULL;
   server.queue.functions= NULL;
+
+  int error;
+  if ((error= pthread_mutex_init(&(server.epoch_lock), NULL)))
+  {
+    gearmand_perror(error, "pthread_mutex_init epoch_lock");
+    return false;
+  }
 
   server.function_hash= (gearman_server_function_st **) calloc(GEARMAND_DEFAULT_HASH_SIZE, sizeof(gearman_server_function_st *));
   if (server.function_hash == NULL)
