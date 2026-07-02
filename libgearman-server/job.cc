@@ -212,18 +212,27 @@ static void _epoch_wakeup_cb(int, short, void *arg)
     function->worker_list= worker;
   }
 
-  /* Find the next earliest epoch job still pending and chain a new timer. */
+  /* Find the next earliest epoch job still pending and chain a new timer.
+     Read from epoch_pending_whens (guarded by epoch_lock) rather than
+     job_list: job_list is owned exclusively by the proc thread, and this
+     callback runs on the main thread, so scanning job_list directly here
+     would race against gearman_server_job_queue()'s insertions/removals.
+     A stale entry (e.g. the job was cancelled before its `when` arrived)
+     just costs one harmless extra NOOP, never a crash. */
   int64_t next_when= 0;
-  for (int p= 0; p < GEARMAN_JOB_PRIORITY_MAX; p++)
+  gearman_server_epoch_lock(Server);
+  int64_t now= (int64_t)time(NULL);
+  std::multiset<int64_t>::iterator it= function->epoch_pending_whens.begin();
+  while (it != function->epoch_pending_whens.end() && *it <= now)
   {
-    for (gearman_server_job_st *j= function->job_list[p]; j != NULL; j= j->function_next)
-    {
-      if (j->when > 0 && (next_when == 0 || j->when < next_when))
-      {
-        next_when= j->when;
-      }
-    }
+    it= function->epoch_pending_whens.erase(it);
   }
+  if (it != function->epoch_pending_whens.end())
+  {
+    next_when= *it;
+  }
+  gearman_server_epoch_unlock(Server);
+
   if (next_when > 0)
   {
     _schedule_epoch_wakeup(function, next_when);
@@ -574,6 +583,9 @@ gearmand_error_t gearman_server_job_queue(gearman_server_job_st *job)
      are woken exactly when the job becomes available. */
   if (job->when > 0 && job->when > (int64_t)time(NULL))
   {
+    gearman_server_epoch_lock(Server);
+    job->function->epoch_pending_whens.insert(job->when);
+    gearman_server_epoch_unlock(Server);
     _schedule_epoch_wakeup(job->function, job->when);
   }
 
