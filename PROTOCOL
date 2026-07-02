@@ -218,7 +218,7 @@ SUBMIT_JOB_SCHED
 SUBMIT_JOB_EPOCH
 
     Just like SUBMIT_JOB_BG, but run job at given time instead of
-    immediately. This is not currently used and may be removed.
+    immediately.
 
     Arguments:
     - NULL byte terminated function name.

@@ -42,6 +42,7 @@ using namespace libtest;
 
 #include <cassert>
 #include <cstring>
+#include <ctime>
 #include <libgearman/gearman.h>
 #include <string>
 #include <tests/execute.h>
@@ -205,6 +206,36 @@ test_return_t gearman_execute_epoch_check_job_handle_test(void *object)
   }
 
   gearman_task_free(task);
+
+  return TEST_SUCCESS;
+}
+
+test_return_t gearman_execute_epoch_wakeup_test(void *object)
+{
+  gearman_client_st *client= (gearman_client_st *)object;
+  const char *worker_function= (const char *)gearman_client_context(client);
+  ASSERT_TRUE(worker_function);
+
+  /* Submit an epoch job that becomes runnable in 2 seconds.
+     Without the epoch-timer-wakeup fix the worker goes back to sleep after
+     the first GRAB_JOB / NO_JOB exchange and never wakes up again, so
+     WORK_COMPLETE is never sent back and gearman_client_run_tasks() times out. */
+  gearman_task_attr_t task_attr= gearman_task_attr_init_epoch(time(NULL) + 2, GEARMAN_JOB_PRIORITY_NORMAL);
+  gearman_argument_t value= gearman_argument_make(0, 0, test_literal_param("epoch_wakeup_check"));
+
+  gearman_task_st *task;
+  ASSERT_TRUE(task= gearman_execute(client, test_string_make_from_cstr(worker_function),
+                                    NULL, 0, &task_attr, &value, 0));
+  ASSERT_TRUE(gearman_task_job_handle(task));
+
+  /* Drive the client event loop until WORK_COMPLETE arrives.  The epoch
+     timer fires after ~2 seconds; allow 10 seconds total as slack. */
+  gearman_client_set_timeout(client, 10000);
+  gearman_return_t rc= gearman_client_run_tasks(client);
+
+  gearman_task_free(task);
+
+  ASSERT_EQ(GEARMAN_SUCCESS, rc);
 
   return TEST_SUCCESS;
 }

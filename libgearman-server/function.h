@@ -73,6 +73,27 @@ GEARMAN_API
 GEARMAN_API
 void gearman_server_function_free(gearman_server_st *server, gearman_server_function_st *function);
 
+/**
+ * Cancel any pending epoch-job wakeup timers on all functions.  Must be
+ * called before the owning event_base is allowed to exit its loop, since a
+ * pending timer keeps the loop alive until it fires.
+ */
+GEARMAN_API
+void gearman_server_function_cancel_epoch_timers(gearman_server_st *server);
+
+/**
+ * Lock/unlock server->epoch_lock, which guards epoch_wakeup_timer and
+ * epoch_next_wakeup on every gearman_server_function_st.  Those fields are
+ * armed and torn down from the proc thread, per-connection IO threads, and
+ * the main event thread, so every read-modify-write of them must hold this
+ * lock.
+ */
+GEARMAN_API
+void gearman_server_epoch_lock(gearman_server_st *server);
+
+GEARMAN_API
+void gearman_server_epoch_unlock(gearman_server_st *server);
+
 /** @} */
 
 #ifdef __cplusplus

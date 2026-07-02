@@ -44,5 +44,6 @@ test_return_t gearman_execute_fail_test(void *object);
 test_return_t gearman_execute_timeout_test(void *object);
 test_return_t gearman_execute_epoch_test(void *object);
 test_return_t gearman_execute_epoch_check_job_handle_test(void *object);
+test_return_t gearman_execute_epoch_wakeup_test(void *object);
 test_return_t gearman_execute_bg_test(void *object);
 test_return_t gearman_execute_multile_bg_test(void *object);
