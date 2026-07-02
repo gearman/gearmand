@@ -126,13 +126,21 @@ struct Task
 
     // Add the task to the client
     {
-      if (client_->task_list)
+      // New task always has no next
+      // next has been initialized to NULL in the member-initializer list
+      if (client_->task_list_tail != NULL)
       {
-        client_->task_list->impl()->prev= _shell;
+        // List is not empty: append to tail
+        prev= client_->task_list_tail;
+        client_->task_list_tail->impl()->next= _shell;
       }
-      next= client_->task_list;
-      prev= NULL;
-      client_->task_list= _shell;
+      else
+      {
+        // List is empty: new task becomes both head and tail
+        // prev has been initialized to NULL in the member-initializer list
+        client_->task_list= _shell;
+      }
+      client_->task_list_tail= _shell;
       client_->task_count++;
     }
 
