@@ -60,6 +60,10 @@ using namespace org::gearmand;
 #include <unistd.h>
 #include <sys/time.h>
 
+#ifdef HAVE_PTHREAD_NP_H
+# include <pthread_np.h>
+#endif
+
 #define WORKER_FUNCTION_NAME "foo"
 
 #ifndef SERVER_TARGET
