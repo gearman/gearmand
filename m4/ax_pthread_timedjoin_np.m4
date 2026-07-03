@@ -19,11 +19,16 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 6
+#serial 7
 
 AC_DEFUN([AX_PTHREAD_TIMEDJOIN_NP],
     [AC_PREREQ([2.63])dnl
     AC_REQUIRE([AX_PTHREAD])
+
+    dnl FreeBSD keeps pthread_timedjoin_np's prototype in pthread_np.h,
+    dnl separate from pthread.h.
+    AC_CHECK_HEADERS([pthread_np.h])
+
     AC_CACHE_CHECK([check for pthread_timedjoin_np], [ax_cv_pthread_timedjoin_np],
       [AX_SAVE_FLAGS
       CFLAGS="$PTHREAD_CFLAGS"
@@ -32,13 +37,19 @@ AC_DEFUN([AX_PTHREAD_TIMEDJOIN_NP],
       AC_LINK_IFELSE(
         [AC_LANG_PROGRAM(
           [
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <pthread.h>
 #include <stdlib.h>
+#ifdef HAVE_PTHREAD_NP_H
+# include <pthread_np.h>
+#endif
           ],[
           pthread_t thread;
           pthread_timedjoin_np(thread, NULL, NULL);
           ])],
-        [ax_cv_pthread_timedjoin_np=yes],[])
+        [ax_cv_pthread_timedjoin_np=yes],[ax_cv_pthread_timedjoin_np=no])
 
       AC_LANG_POP
       AX_RESTORE_FLAGS
