@@ -3,9 +3,9 @@ gearmand
 
 [![Build Status](https://github.com/gearman/gearmand/actions/workflows/ci.yml/badge.svg)](https://github.com/gearman/gearmand/actions/workflows/ci.yml)
 
-The latest version of ```gearmand``` source code and versions 1.1.13 and later can be found at [GitHub Repository](https://github.com/gearman/gearmand). Older versions released before 1.1.13 can be found at [Launchpad Repository](https://launchpad.net/gearmand/).
+The latest version of ```gearmand``` source code and versions 1.1.13 and later can be found at the [GitHub Repository](https://github.com/gearman/gearmand). Older versions released before 1.1.13 can be found at the [Launchpad Repository](https://launchpad.net/gearmand/).
 
-You can grab the latest release distribution of Gearman from https://github.com/gearman/gearmand/releases. Unless otherwise specified, releases are GPG-signed by Clint Byrum, whose public key can be found at https://fewbar.com/clint-byrum-public-key/.
+You can grab the latest release distribution of Gearman from https://github.com/gearman/gearmand/releases. Unless otherwise specified, releases are GPG-signed by Clint Byrum (@SpamapS on GitHub), whose public key can be found at https://fewbar.com/clint-byrum-public-key/, or Edward Sabol (@esabol on GitHub), whose public key can be found at https://raw.githubusercontent.com/esabol/esabol/refs/heads/main/sabol-public-github-signing-key.asc.
 
 
 What Is Gearman?
@@ -23,7 +23,7 @@ Getting Started
 
 If you want to work on the latest code, please read the file [CONTRIBUTING.md](https://github.com/gearman/gearmand/blob/master/CONTRIBUTING.md).
 
-To build a release version from a tarball (```.tar.gz``` or ```.tgz```), you can follow the normal:
+To build and install from a release tarball (```.tar.gz``` or ```.tgz```), follow these steps:
 
 Change into the directory where you saved the tarball and run:
 
@@ -43,7 +43,7 @@ There are various dependencies that may be satisfied on Ubuntu by installing the
         libtokyocabinet-dev python3-sphinx uuid-dev
 
 You can also run ```make test``` before installing to make sure everything
-checks out ok. You can also streamline the process of building and testing by running:
+checks out OK. You can streamline the process of building and testing by executing:
 
     ./configure && make && make test
     make install
@@ -84,7 +84,7 @@ Enjoy!
 Contributing
 ------------
 
-The current versions of geamand are maintained on our [GitHub Repo for gearmand](https://github.com/gearman/gearmand).
+The current versions of geamand are maintained on the [GitHub repository for gearmand](https://github.com/gearman/gearmand).
 
 If you are not familiar with ```git```, you can find more info at [Getting Started with Git](https://git-scm.com/book/en/v1/Getting-Started).
 
@@ -133,8 +133,8 @@ Releasing Gearmand
 ------------------
 
 When it's time to release the master branch, check the last release tag, and
-create a new one. Most releases are patch releases, and so should increment the
-third number in the version.
+create a new one. Most releases are patch releases. Just increment the
+third number in the version if that's the case with this release.
 
 - Checkout the master branch of this repository.
 - Ensure there are no changes staged or un-added. Anything not committed to the master branch will be removed by the next step!
