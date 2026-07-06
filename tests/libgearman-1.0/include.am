@@ -29,6 +29,7 @@ t_client_SOURCES+= tests/libgearman-1.0/server_options.cc
 t_client_SOURCES+= tests/libgearman-1.0/task.cc 
 t_client_SOURCES+= tests/libgearman-1.0/unique.cc 
 t_client_SOURCES+= tests/libgearman-1.0/priority_test.cc
+t_client_SOURCES+= tests/libgearman-1.0/fifo.cc 
 t_client_SOURCES+= tests/workers/aggregator/cat.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react.cc
 t_client_SOURCES+= tests/workers/v1/echo_or_react_chunk.cc
@@ -81,8 +82,8 @@ t_signal_wait_LDADD+= libgearman/libgearmancore.la
 check_PROGRAMS+= t/signal_wait
 noinst_PROGRAMS+= t/signal_wait
 
-t_worker_LDADD=
 t_worker_SOURCES=
+t_worker_LDADD=
 
 t_worker_SOURCES+= libgearman/command.cc
 t_worker_SOURCES+= tests/libgearman-1.0/worker_test.cc
@@ -109,7 +110,6 @@ gdb-signal-wait: t/signal_wait
 
 helgrind-internals: t/internals gearmand/gearmand
 	@$(HELGRIND_COMMAND) t/internals
-
 
 valgrind-internals: t/internals gearmand/gearmand
 	@$(VALGRIND_COMMAND) t/internals

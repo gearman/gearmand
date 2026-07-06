@@ -100,6 +100,11 @@ void gearman_task_free(gearman_task_st *task_shell)
           task->client->task_list= task->next;
         }
 
+        if (task->client->task_list_tail == task_shell)
+        {
+          task->client->task_list_tail= task->prev;
+        }
+
         if (task->prev)
         {
           task->prev->impl()->next= task->next;
@@ -488,7 +493,7 @@ bool gearman_task_is_finished(const gearman_task_st *task_shell)
 {
   if (task_shell and task_shell->impl())
   {
-    task_shell->impl()->is_finished();
+    return task_shell->impl()->is_finished();
   }
 
   return false;

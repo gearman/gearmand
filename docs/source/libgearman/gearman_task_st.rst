@@ -58,15 +58,13 @@ Link with -lgearman
 DESCRIPTION
 -----------
 
-A :c:type:`gearman_task_st` represents a :term:`task`.  Work that is sent by a :term:`client` to a gearman server is seen as a task (a :term:`worker` receives a task in the form of a :term:`job`.
+A :c:type:`gearman_task_st` represents a :term:`task`.  Work that is sent by a :term:`client` to a Gearman server is seen as a task (a :term:`worker` receives a task in the form of a :term:`job`.
 
-Tasks, i.e. :c:type:`gearman_task_st` are created by calling either :c:func:`gearman_execute`, :c:func:`gearman_client_add_task`, or :c:func:`gearman_client_add_task_background`.
+Tasks, i.e. :c:type:`gearman_task_st` are created by calling either :c:func:`gearman_execute`, :c:func:`gearman_client_add_task`, or :c:func:`gearman_client_add_task_background`. Note that, as of version 2.0.0, tasks are sent to the Gearman server in the order they are added, i.e., First-In, First-Out (FIFO) order. Prior to that release, the order was Last-In, First-Out (LIFO), but this was never a documented or guaranteed behavior.
 
-:c:func:`gearman_client_add_task_status` can also create :c:type:`gearman_task_st`, these tasks will be used to
-monitor a previously created :c:type:`gearman_task_st`.
+:c:func:`gearman_client_add_task_status` can also create :c:type:`gearman_task_st`, these tasks will be used to monitor a previously created :c:type:`gearman_task_st`.
 
-:c:func:`gearman_task_free` is used to free a task. This only needs to be
-done if a task was created with a preallocated structure or if you want to clean up the memory of a specific task.
+:c:func:`gearman_task_free` is used to free a task. This only needs to be done if a task was created with a preallocated structure or if you want to clean up the memory of a specific task.
 
 :c:func:`gearman_task_set_context` sets the given context of the :c:type:`gearman_task_st`. The context can be used to pass information to a :c:type:`gearman_task_st`.
 
