@@ -57,7 +57,7 @@ SYNOPSIS
 
 .. option:: -R [ --round-robin ]
 
-   Assign work in round-robin order per worker connection. The default is to assign work in the order of functions added by the worker.
+   Assign work in round-robin order per worker connection. As of version 2.0.0, this is the default behavior, and it cannot be deactivated. This command line option does nothing, and its continued existence is only supported for backwards compatibility.
 
 .. option:: -q [ --queue-type ] arg
 

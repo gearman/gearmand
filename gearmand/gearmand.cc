@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
    "Load protocol module.")
 
   ("round-robin,R", boost::program_options::bool_switch(&opt_round_robin)->default_value(true),
-   "Assign work in round-robin order per worker connection. This is the default behavior, and it cannot be deactivated. This option is only provided for backwards compatibility.")
+   "Assign work in round-robin order per worker connection. This is the default behavior, and it cannot be deactivated. This command line option does nothing and is only supported for backwards compatibility.")
 
   ("queue-type,q", boost::program_options::value(&queue_type)->default_value("builtin"),
    "Persistent queue type to use.")
