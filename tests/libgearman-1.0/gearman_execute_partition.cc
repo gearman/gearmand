@@ -154,6 +154,13 @@ test_return_t gearman_execute_partition_basic(void *object)
   ASSERT_TRUE(value);
   ASSERT_EQ(18UL, gearman_result_size(result));
 
+  // cat_aggregator_fn() concatenates the sub-task results in task-list
+  // order, which is submission order (FIFO, since PR #435). split_worker()
+  // splits "this dog does not hunt" on spaces in left-to-right order, so
+  // the aggregated result is expected to be the words back-to-back in
+  // their original order.
+  test_memcmp("thisdogdoesnothunt", value, 18);
+
   gearman_task_free(task);
   gearman_client_task_free_all(client);
 
