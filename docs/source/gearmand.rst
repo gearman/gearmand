@@ -257,6 +257,10 @@ The following headers can be passed to change the behavior of the job::
    * X-Gearman-Unique: <unique key>
    * X-Gearman-Background: true
    * X-Gearman-Priority: <high|low>
+
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
    
 For example, to run a low priority background job, the following request can be sent::
 

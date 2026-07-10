@@ -28,6 +28,10 @@ If the unique value is not set, then a unique will be assigned.
 identical to :c:func:`gearman_client_do`, only they set the priority to
 either high or low. 
 
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
+
 .. warning:: 
 
   You may wish to avoid using :c:func:`gearman_client_add_task_background` with a stack based allocated
@@ -51,4 +55,3 @@ To find out more information please check:
 .. seealso::
 
    :manpage:`gearmand(8)` :manpage:`libgearman(3)` :manpage:`gearman_task_st`
-

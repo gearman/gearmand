@@ -176,7 +176,9 @@ SUBMIT_JOB_LOW, SUBMIT_JOB_LOW_BG
     The Gearman job server queue is implemented with three levels:
     normal, high, and low. Jobs submitted with one of the HIGH versions
     always take precedence, and jobs submitted with the normal versions
-    take precedence over the LOW versions.
+    take precedence over the LOW versions. Priority is applied globally
+    across registered functions, so a high-priority job for any function
+    is assigned before normal- or low-priority jobs for other functions.
 
     The unique ID can be used by the server to reduce queue length. If a
     job with the same Unique ID has already been submitted, the server
@@ -573,6 +575,10 @@ prioritystatus
     - Number of queued normal priority jobs.
     - Number of queued low priority jobs.
     - Available workers registered for this function.
+
+    These counts are reported per function. Job assignment priority is still
+    global across registered functions: high-priority jobs are considered
+    before normal- or low-priority jobs, regardless of function name.
 
     Arguments:
     - None.

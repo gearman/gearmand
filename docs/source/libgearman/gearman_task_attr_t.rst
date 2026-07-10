@@ -28,6 +28,10 @@ DESCRIPTION
 
 :c:func:`gearman_work` creates a :c:type:`gearman_work_t` with a priority.
 
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
+
 :c:func:`gearman_work_epoch` creates a :c:type:`gearman_work_t` which tells :c:func:`gearman_execute` to execute the workload at the time specified by epoch.
 
 :c:func:`gearman_work_background` creates a :c:type:`gearman_work_t` which tells :c:func:`gearman_execute` to execute the workload as a background job.
