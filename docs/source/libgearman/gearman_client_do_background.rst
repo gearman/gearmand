@@ -30,6 +30,10 @@ gearmand server and returns the status via :c:type:`gearman_return_t`.
 :c:func:`gearman_client_add_task_high_background` and :c:func:`gearman_client_add_task_low_background` are identical to
 :c:func:`gearman_client_do_background`, only they set the :c:type:`gearman_priority_t` to either high or low. 
 
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
+
 
 If job_handle is not NULL, it will be populated with the name of the job_handle
 for the task created. The job handle needs to be the size of
@@ -60,4 +64,3 @@ To find out more information please check:
 
 .. seealso::
   :manpage:`gearmand(8)` :manpage:`libgearman(3)` :manpage:`gearman_strerror(3)`
-

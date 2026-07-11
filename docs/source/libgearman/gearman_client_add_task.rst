@@ -26,6 +26,10 @@ If the unique value is not set, then a unique will be assigned.
 
 :c:func:`gearman_client_add_task_high` and :c:func:`gearman_client_add_task_low` are identical to :c:func:`gearman_client_do`, only they set the priority to either high or low. 
 
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
+
 ------------
 RETURN VALUE
 ------------

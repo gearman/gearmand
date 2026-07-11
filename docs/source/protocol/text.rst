@@ -54,3 +54,6 @@ The following list represents the current list of commands supported. You can is
 
    Queued jobs status by priority.
 
+   Counts are reported per function. Job assignment priority is global across
+   registered functions: high priority jobs are considered before normal or low
+   priority jobs, regardless of function name.

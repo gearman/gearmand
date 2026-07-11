@@ -31,6 +31,10 @@ server and waits for a reply.
 identical to :c:func:`gearman_client_do`, only they set the priority to
 either high or low. 
 
+Job assignment priority is global across registered functions. A high priority
+job for any function is assigned before normal or low priority jobs for other
+functions.
+
 All of the functions will block until either a response or an error is
 returned.
 

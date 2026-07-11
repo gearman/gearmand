@@ -59,6 +59,10 @@ SYNOPSIS
 
    Run jobs as low priority
 
+   Job assignment priority is global across registered functions: a high
+   priority job for any function is assigned before normal or low priority jobs
+   for other functions.
+
 .. option:: -P
 
    Prefix all output lines with functions names
