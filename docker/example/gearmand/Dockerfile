@@ -1,6 +1,6 @@
 FROM gearmand/supervisord:1.0
 
-ARG version=1.1.22
+ARG version=2.0.0
 
 LABEL description="Gearman Job Server Image"
 LABEL maintainer="Gearmand Developers https://github.com/gearman/gearmand"
@@ -21,14 +21,14 @@ RUN apt-get update \
         libssl-dev \
         libtokyocabinet-dev \
         uuid-dev \
-        wget \
+        curl \
  && apt-get clean autoclean \
  && apt-get -y autoremove \
  && rm -rf /var/lib/apt/lists/*
 
 # Retrieve the source code and untar
 WORKDIR /var/lib/gearman
-RUN wget https://github.com/gearman/gearmand/releases/download/${version}/gearmand-${version}.tar.gz \
+RUN curl -f -L -O https://github.com/gearman/gearmand/releases/download/${version}/gearmand-${version}.tar.gz \
  && tar xzvf gearmand-${version}.tar.gz \
  && rm -f gearmand-${version}.tar.gz
 
