@@ -336,6 +336,13 @@ static test_return_t _job_retry_TEST(Context *context, Limit& limit)
                               NULL, 0, // workload
                               NULL, // result size
                               &rc));
+
+  // Join the background worker thread before inspecting limit's counters:
+  // job_retry_WORKER (running on that thread) writes limit->_count with no
+  // synchronization, so reading it here without a join first is a data race
+  // (and can observe a stale/torn value if the worker is still mid-retry).
+  handle->shutdown();
+
   ASSERT_EQ(uint32_t(limit.expected()), uint32_t(limit.count()));
   ASSERT_EQ(limit.response(), rc);
 
