@@ -21,14 +21,14 @@ RUN apt-get update \
         libssl-dev \
         libtokyocabinet-dev \
         uuid-dev \
-        wget \
+        curl \
  && apt-get clean autoclean \
  && apt-get -y autoremove \
  && rm -rf /var/lib/apt/lists/*
 
 # Retrieve the source code and untar
 WORKDIR /var/lib/gearman
-RUN wget https://github.com/gearman/gearmand/releases/download/${version}/gearmand-${version}.tar.gz \
+RUN curl -f -L -O https://github.com/gearman/gearmand/releases/download/${version}/gearmand-${version}.tar.gz \
  && tar xzvf gearmand-${version}.tar.gz \
  && rm -f gearmand-${version}.tar.gz
 
