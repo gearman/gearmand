@@ -229,8 +229,6 @@ bool Server::start()
                                 hostname(), port(), "Could not build command()");
   }
 
-  libtest::release_port(_port);
-
   Application::error_t ret;
   if (Application::SUCCESS !=  (ret= _app.run()))
   {
@@ -305,6 +303,12 @@ bool Server::start()
       libtest::dream(this_wait, 0);
     }
   }
+
+  // Only now that the server has either bound the port (ping succeeded) or
+  // definitively failed to start do we give up the reservation; releasing it
+  // any earlier reopens the port to other concurrently-running test
+  // processes' get_free_port() calls before this server has actually bound it.
+  libtest::release_port(_port);
 
   if (pinged == false)
   {
