@@ -232,7 +232,11 @@ in_port_t get_free_port()
   }
 
   all_socket_fd.last_port= ret_port;
-  release_port(ret_port);
+
+  // Deliberately leave the reservation socket bound (not released) so the
+  // port stays unavailable to other processes' get_free_port() calls until
+  // the caller explicitly release_port()s it, e.g. once its server is
+  // confirmed listening. See libtest::Server::start().
 
   return ret_port;
 }
