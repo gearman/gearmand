@@ -66,6 +66,7 @@ public:
   {
     extra_clear();
     _servers.clear();
+    libtest::release_port(_port);
   }
 
   const char *worker_function_name() const
@@ -123,6 +124,7 @@ public:
 
     _worker= NULL;
     extra_clear();
+    libtest::release_port(_port);
     _port= get_free_port();
   }
 };

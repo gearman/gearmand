@@ -191,6 +191,10 @@ static test_return_t long_keepalive_start_TEST(void *)
   char port_str[1024];
   ASSERT_TRUE(snprintf(port_str, sizeof(port_str), "--port=%d", int32_t(port)) > 0);
 
+  // --check-args only validates arguments; gearmand never binds this port,
+  // so there's nothing for anyone else to release it later.
+  libtest::release_port(port);
+
   const char *args[]= {
     port_str,
     "--check-args",
@@ -549,6 +553,10 @@ static test_return_t config_file_SIMPLE_TEST(void *)
   in_port_t port= libtest::get_free_port();
   char port_str[1024];
   ASSERT_TRUE(snprintf(port_str, sizeof(port_str), "%d", int32_t(port)) > 0);
+
+  // --check-args only validates the config file; gearmand never binds this
+  // port, so there's nothing for anyone else to release it later.
+  libtest::release_port(port);
 
   std::string config_file= "etc/gearmand.conf";
   {

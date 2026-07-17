@@ -154,7 +154,13 @@ static void *world_create(server_startup_st& servers, test_return_t& error)
   length= snprintf(buffer, sizeof(buffer), "--http-port=%d", int(http_port));
   fatal_assert(length > 0 and sizeof(length) < sizeof(buffer));
   const char *argv[]= { "--protocol=http", buffer, 0 };
-  if (server_startup(servers, "gearmand", libtest::default_port(), argv) == false)
+  bool started= server_startup(servers, "gearmand", libtest::default_port(), argv);
+
+  // http_port is only ever used as the --http-port= value above; it's never
+  // the primary port of a Server object, so nothing else will release it.
+  libtest::release_port(http_port);
+
+  if (started == false)
   {
     error= TEST_SKIPPED;
     return NULL;
