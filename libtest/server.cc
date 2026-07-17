@@ -229,6 +229,15 @@ bool Server::start()
                                 hostname(), port(), "Could not build command()");
   }
 
+  // Hold the port reservation (acquired via get_free_port()) until start()
+  // returns by any path -- success, ping timeout, or exception -- so no
+  // other concurrently-running test process's get_free_port() can grab
+  // _port while this server is still starting up.
+  struct PortReservation {
+    in_port_t port;
+    ~PortReservation() { libtest::release_port(port); }
+  } port_reservation{_port};
+
   Application::error_t ret;
   if (Application::SUCCESS !=  (ret= _app.run()))
   {
@@ -303,12 +312,6 @@ bool Server::start()
       libtest::dream(this_wait, 0);
     }
   }
-
-  // Only now that the server has either bound the port (ping succeeded) or
-  // definitively failed to start do we give up the reservation; releasing it
-  // any earlier reopens the port to other concurrently-running test
-  // processes' get_free_port() calls before this server has actually bound it.
-  libtest::release_port(_port);
 
   if (pinged == false)
   {
