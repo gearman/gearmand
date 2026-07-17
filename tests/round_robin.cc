@@ -59,12 +59,14 @@ struct Context
 
   ~Context()
   {
-    reset();
+    servers.clear();
+    libtest::release_port(_port);
   }
 
   void reset()
   {
     servers.clear();
+    libtest::release_port(_port);
     _port= libtest::get_free_port();
     _retries= 0;
   }

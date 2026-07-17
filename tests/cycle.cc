@@ -56,9 +56,15 @@ struct cycle_context_st
     reset();
   }
 
+  ~cycle_context_st()
+  {
+    libtest::release_port(port);
+  }
+
   void reset()
   {
     servers.clear();
+    libtest::release_port(port);
     port= get_free_port();
   }
 

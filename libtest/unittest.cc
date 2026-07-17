@@ -921,8 +921,21 @@ static test_return_t get_free_port_TEST(void *)
 {
   in_port_t ret_port;
   ASSERT_TRUE((ret_port= get_free_port()));
-  ASSERT_TRUE(get_free_port() != default_port());
-  ASSERT_TRUE(get_free_port() != get_free_port());
+
+  in_port_t second_port= get_free_port();
+  ASSERT_TRUE(second_port != default_port());
+
+  in_port_t third_port= get_free_port();
+  in_port_t fourth_port= get_free_port();
+  ASSERT_TRUE(third_port != fourth_port);
+
+  // These are throwaway reservations never tied to a Server, so release them
+  // ourselves; default_port()'s own reservation is intentionally left alone
+  // since it stays valid for the lifetime of the process.
+  release_port(ret_port);
+  release_port(second_port);
+  release_port(third_port);
+  release_port(fourth_port);
 
   return TEST_SUCCESS;
 }
