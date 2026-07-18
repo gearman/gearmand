@@ -9,9 +9,9 @@ between languages. It can be used in a variety of applications, from
 high-availability web sites, to the transport of database replication events.
 
 
--------------
-Introduction:
--------------
+------------
+Introduction
+------------
 .. toctree::
    :maxdepth: 1
    
@@ -42,9 +42,9 @@ Command Line Tools
    bin/gearadmin
 
 
----------------------
-C/C++ Client Library:
----------------------
+--------------------
+C/C++ Client Library
+--------------------
 
 .. toctree::
    :maxdepth: 1
@@ -77,9 +77,8 @@ Version Information
    libgearman
 
 ------------------
-Indices and tables
+Indices and Tables
 ------------------
 
 * :ref:`genindex`
 * :ref:`search`
-
