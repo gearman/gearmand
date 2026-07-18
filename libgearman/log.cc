@@ -79,7 +79,10 @@ void gearman_log_error(gearman_universal_st& state, gearman_verbose_t verbose)
   {
     if (state.log_fn)
     {
-      state.log_fn(state.error(), verbose, state.log_context);
+      if (const char *line= state.error())
+      {
+        state.log_fn(line, verbose, state.log_context);
+      }
     }
   }
 }
