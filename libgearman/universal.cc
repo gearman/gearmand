@@ -301,7 +301,7 @@ gearman_return_t gearman_wait(gearman_universal_st& universal)
   nfds_t x= 0;
   for (gearman_connection_st *con= universal.con_list; con; con= con->next_connection())
   {
-    if (con->events())
+    if (con->events() and con->socket_descriptor_is_valid())
     {
       con->set_pollfd(pfds[x]);
       x++;
