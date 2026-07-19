@@ -1646,13 +1646,16 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
                                static_cast<char *>(client->con->_packet.arg[0]),
                                client->con->_packet.arg_size[0]) == 0))
               { }
-              else if (strncmp(client->task->impl()->job_handle,
+              // arg_size[0] includes trailing bytes (NUL and/or following data)
+              // whose count varies by how the job was assigned/dispatched, so it
+              // isn't a reliable stand-in for the handle's length. Only bail out
+              // here if the packet is too short to even hold job_handle - that's
+              // the one case where reading strlen(job_handle) bytes from arg[0]
+              // would run past the packet's declared data.
+              else if (strlen(client->task->impl()->job_handle) > client->con->_packet.arg_size[0] ||
+                       strncmp(client->task->impl()->job_handle,
                                static_cast<char *>(client->con->_packet.arg[0]),
-                               client->con->_packet.arg_size[0]) ||
-                       (client->con->_packet.failed() == false &&
-                        strlen(client->task->impl()->job_handle) != client->con->_packet.arg_size[0] - 1) ||
-                       (client->con->_packet.failed() &&
-                        strlen(client->task->impl()->job_handle) != client->con->_packet.arg_size[0]))
+                               strlen(client->task->impl()->job_handle)))
               {
                 continue;
               }
