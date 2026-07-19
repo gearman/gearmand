@@ -1649,10 +1649,7 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
               else if (strncmp(client->task->impl()->job_handle,
                                static_cast<char *>(client->con->_packet.arg[0]),
                                client->con->_packet.arg_size[0]) ||
-                       (client->con->_packet.failed() == false &&
-                        strlen(client->task->impl()->job_handle) != client->con->_packet.arg_size[0] - 1) ||
-                       (client->con->_packet.failed() &&
-                        strlen(client->task->impl()->job_handle) != client->con->_packet.arg_size[0]))
+                       strlen(client->task->impl()->job_handle) != client->con->_packet.arg_size[0] - 1)
               {
                 continue;
               }
