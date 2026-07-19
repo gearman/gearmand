@@ -19,8 +19,7 @@ t_stress_SOURCES+= tests/burnin.cc
 t_stress_LDADD+= libgearman/libgearman.la
 t_stress_LDADD+= libtest/libtest.la
 t_stress_LDADD+= tests/libstartworker.la
-#check_PROGRAMS+=t/stress
-noinst_PROGRAMS+=t/stress
+check_PROGRAMS+=t/stress
 
 test-stress: t/stress gearmand/gearmand
 	@t/stress
