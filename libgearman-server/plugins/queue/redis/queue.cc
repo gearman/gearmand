@@ -267,10 +267,10 @@ static size_t build_key(vchar_t &key,
                         size_t function_name_size)
 {
   size_t buf_size = function_name_size + unique_size + prefix_size + 4;
-  char buf[buf_size];
+  std::vector<char> buf(buf_size);
   // buf size is overestimated
   // so buf contains some \0 at the end
-  int key_size= snprintf(buf, buf_size, GEARMAND_KEY_LITERAL,
+  int key_size= snprintf(buf.data(), buf_size, GEARMAND_KEY_LITERAL,
                          prefix,
                          (int)function_name_size, function_name,
                          (int)unique_size, unique);
@@ -281,7 +281,7 @@ static size_t build_key(vchar_t &key,
   }
 
   // std::string removes all \0 at the end of buf
-  std::string s{buf};
+  std::string s{buf.data()};
 
   key.resize(0);
   std::copy(s.begin(), s.end(), std::back_inserter(key));
