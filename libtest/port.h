@@ -51,6 +51,9 @@ LIBTEST_API
 in_port_t get_free_port();
 
 LIBTEST_API
+bool reserve_port(in_port_t port);
+
+LIBTEST_API
 void release_port(in_port_t arg);
 
 } // namespace libtest

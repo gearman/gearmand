@@ -141,6 +141,57 @@ void release_port(in_port_t arg)
   all_socket_fd.release(arg);
 }
 
+bool reserve_port(in_port_t port)
+{
+  // Same trick get_free_port() uses to hold a port: bind (but never
+  // listen()) a SO_REUSEADDR socket to it. A real listener started later
+  // with SO_REUSEADDR on the same port (e.g. gearmand) can still bind
+  // alongside it, but other processes' get_free_port()/reserve_port() calls
+  // cannot claim the port while this socket is held open.
+  int retries= 10;
+
+  while (retries--)
+  {
+    int sd;
+    if ((sd= socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR)
+    {
+      Error << strerror(errno);
+      return false;
+    }
+
+    int optval= 1;
+    if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == SOCKET_ERROR)
+    {
+      Error << strerror(errno);
+      close(sd);
+      return false;
+    }
+
+    struct sockaddr_in sin;
+    sin.sin_port= htons(port);
+    sin.sin_addr.s_addr= INADDR_ANY;
+    sin.sin_family= AF_INET;
+
+    if (bind(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) != SOCKET_ERROR)
+    {
+      all_socket_fd._pair.push_back(std::make_pair(sd, port));
+      return true;
+    }
+
+    close(sd);
+
+    if (errno != EADDRINUSE)
+    {
+      Error << strerror(errno);
+      return false;
+    }
+
+    libtest::dream(2, 0);
+  }
+
+  return false;
+}
+
 in_port_t get_free_port()
 {
   const in_port_t default_port= in_port_t(-1);
@@ -171,7 +222,12 @@ in_port_t get_free_port()
 
             if (getsockname(sd, (struct sockaddr *)&sin, &addrlen) != -1)
             {
-              ret_port= sin.sin_port;
+              // sin_port is network byte order; every caller (gearmand's
+              // --port=, gearman_client_add_server(), etc.) treats the
+              // returned value as a plain host-order decimal port number,
+              // so it must be converted here or the port we hand out won't
+              // match the one this function actually verified and reserved.
+              ret_port= ntohs(sin.sin_port);
             }
           }
           else

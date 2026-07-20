@@ -106,6 +106,12 @@ static test_return_t multi_client_test(void *object)
   in_port_t gearmand_port_2= test_client->port(1);
   ASSERT_TRUE(server_container.shutdown(0));
 
+  // Server 1 is restarted on this same port further down, but not until
+  // after several job-status round trips below, so hold the port reserved
+  // for the whole gap -- otherwise a concurrently-running test process's
+  // get_free_port() could grab it first and the restart's bind() would fail.
+  libtest::reserve_port(gearmand_port_1);
+
   // Try to queue up a job again
   const char* unique_2= "unique_2";
   test_compare(GEARMAN_LOST_CONNECTION,
@@ -136,6 +142,10 @@ static test_return_t multi_client_test(void *object)
 
   // Bring server 1 back up
   server_container.shutdown();
+  // Server 2 was just killed too; reserve its port the same way for the
+  // same reason as gearmand_port_1 above. gearmand_port_1's reservation is
+  // still held from further up.
+  libtest::reserve_port(gearmand_port_2);
   ASSERT_TRUE(server_startup(server_container, "gearmand", gearmand_port_1, server_argv));
   ASSERT_TRUE(server_startup(server_container, "gearmand", gearmand_port_2, server_argv));
 
