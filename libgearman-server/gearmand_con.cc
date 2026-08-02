@@ -86,6 +86,7 @@ static gearmand_error_t _con_add(gearmand_thread_st *thread,
     if (gearmand_failed(ret))
     {
       gearman_server_con_free(dcon->server_con);
+      dcon->server_con= NULL;
 
       dcon->close_socket();
 
