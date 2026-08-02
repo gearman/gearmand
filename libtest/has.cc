@@ -201,6 +201,32 @@ const char* memcached_binary()
   return NULL;
 }
 
+bool has_redis()
+{
+#if defined(HAVE_REDIS_SERVER_BINARY) && HAVE_REDIS_SERVER_BINARY
+  if (HAVE_REDIS_SERVER_BINARY)
+  {
+#if defined(REDIS_SERVER_BINARY)
+    if (access(REDIS_SERVER_BINARY, X_OK) == 0)
+    {
+      return true;
+    }
+#endif
+  }
+#endif
+
+  return false;
+}
+
+const char* redis_server_binary()
+{
+#if defined(REDIS_SERVER_BINARY)
+  return REDIS_SERVER_BINARY;
+#else
+  return NULL;
+#endif
+}
+
 const char *gearmand_binary() 
 {
 #if defined(GEARMAND_BINARY)

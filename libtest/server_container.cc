@@ -248,6 +248,13 @@ libtest::Server* server_startup_st::create(const std::string& server_type, in_po
       server= build_memcached("localhost", try_port);
     }
   }
+  else if (server_type.compare("redis") == 0)
+  {
+    if (has_redis())
+    {
+      server= build_redis("localhost", try_port);
+    }
+  }
 
   return server;
 }

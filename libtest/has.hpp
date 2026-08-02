@@ -69,8 +69,14 @@ LIBTEST_API
 const char* memcached_binary();
 
 LIBTEST_API
-const char *gearmand_binary(); 
+const char *gearmand_binary();
 
 LIBTEST_API
 const char *drizzled_binary();
+
+LIBTEST_API
+bool has_redis();
+
+LIBTEST_API
+const char* redis_server_binary();
 } // namespace libtest
