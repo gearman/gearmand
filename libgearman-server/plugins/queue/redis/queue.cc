@@ -388,68 +388,93 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
 
   gearmand_info("hiredis replay start");
 
-  redisReply *reply= (redisReply*)redisCommand(queue->redis(), "KEYS %s*", queue->prefix.c_str());
-  if (reply == nullptr)
+  char fmt_str[100] = "";
+  int fmt_str_length= snprintf(fmt_str, sizeof(fmt_str), "%%%d[^-]-%%%d[^-]-%%%d[^*]",
+                               int(queue->prefix.size()),
+                               int(GEARMAN_FUNCTION_MAX_SIZE),
+                               int(GEARMAN_MAX_UNIQUE_SIZE));
+  if (fmt_str_length <= 0 or size_t(fmt_str_length) >= sizeof(fmt_str))
   {
-    return gearmand_log_gerror(
-      GEARMAN_DEFAULT_LOG_PARAM,
-      GEARMAND_QUEUE_ERROR,
-      "Failed to call KEYS during QUEUE replay: %s", queue->redis()->errstr);
+    assert(fmt_str_length != 1);
+    return gearmand_gerror(
+      "snprintf() failed to produce a valud fmt_str for redis key",
+      GEARMAND_QUEUE_ERROR);
   }
 
-  for (size_t x= 0; x < reply->elements; x++)
+  // KEYS blocks the whole redis server while it walks every key in the
+  // instance, which is painful if gearmand shares redis with other
+  // applications (#59). SCAN walks the keyspace incrementally via a
+  // cursor instead, so no single call blocks other clients. Note this
+  // still touches every key in the instance overall (just spread across
+  // many non-blocking calls) since matching still requires a per-key
+  // prefix comparison; see #59 for a proposed follow-up that tracks
+  // gearmand's own keys in a set to avoid that entirely.
+  std::string cursor= "0";
+  do
   {
-    char* prefix= (char*) malloc(queue->prefix.size() * sizeof(char));
-    char function_name[GEARMAN_FUNCTION_MAX_SIZE];
-    char unique[GEARMAN_MAX_UNIQUE_SIZE];
-
-    char fmt_str[100] = "";
-    int fmt_str_length= snprintf(fmt_str, sizeof(fmt_str), "%%%d[^-]-%%%d[^-]-%%%d[^*]",
-                                 int(queue->prefix.size()),
-                                 int(GEARMAN_FUNCTION_MAX_SIZE),
-                                 int(GEARMAN_MAX_UNIQUE_SIZE));
-    if (fmt_str_length <= 0 or size_t(fmt_str_length) >= sizeof(fmt_str))
-    {
-      free(prefix);
-      assert(fmt_str_length != 1);
-      return gearmand_gerror(
-        "snprintf() failed to produce a valud fmt_str for redis key",
-        GEARMAND_QUEUE_ERROR);
-    }
-    int ret= sscanf(reply->element[x]->str,
-                    fmt_str,
-                    prefix,
-                    function_name,
-                    unique);
-
-    free(prefix);
-    if (ret != 3)
-    {
-      continue;
-    }
-
-    gearmand::plugins::queue::redis_record_t record;
-    if(!queue->fetch(reply->element[x]->str, record))
+    redisReply *reply= (redisReply*)redisCommand(queue->redis(), "SCAN %s MATCH %s* COUNT 100",
+                                                  cursor.c_str(), queue->prefix.c_str());
+    if (reply == nullptr)
     {
       return gearmand_log_gerror(
         GEARMAN_DEFAULT_LOG_PARAM,
         GEARMAND_QUEUE_ERROR,
-        "Failed to fetch data for the key: %s", reply->element[x]->str);
+        "Failed to call SCAN during QUEUE replay: %s", queue->redis()->errstr);
     }
 
-    /* need to make a copy here ... gearman_server_job_free will free it later */
-    char *data = strdup(record.data.c_str());
-    size_t data_size = record.data.size();
-    gearman_job_priority_t priority = static_cast<gearman_job_priority_t>(record.priority);
+    if (reply->type != REDIS_REPLY_ARRAY or reply->elements != 2)
+    {
+      freeReplyObject(reply);
+      return gearmand_gerror(
+        "Unexpected reply shape from SCAN during QUEUE replay",
+        GEARMAND_QUEUE_ERROR);
+    }
 
-    (void)(add_fn)(server, add_context,
-                   unique, strlen(unique),
-                   function_name, strlen(function_name),
-                   data, data_size,
-                   priority, 0);
-  }
+    cursor.assign(reply->element[0]->str, reply->element[0]->len);
+    redisReply *keys= reply->element[1];
 
-  freeReplyObject(reply);
+    for (size_t x= 0; x < keys->elements; x++)
+    {
+      char* prefix= (char*) malloc((queue->prefix.size() +1) * sizeof(char));
+      char function_name[GEARMAN_FUNCTION_MAX_SIZE];
+      char unique[GEARMAN_MAX_UNIQUE_SIZE];
+
+      int ret= sscanf(keys->element[x]->str,
+                      fmt_str,
+                      prefix,
+                      function_name,
+                      unique);
+
+      free(prefix);
+      if (ret != 3)
+      {
+        continue;
+      }
+
+      gearmand::plugins::queue::redis_record_t record;
+      if(!queue->fetch(keys->element[x]->str, record))
+      {
+        freeReplyObject(reply);
+        return gearmand_log_gerror(
+          GEARMAN_DEFAULT_LOG_PARAM,
+          GEARMAND_QUEUE_ERROR,
+          "Failed to fetch data for the key: %s", keys->element[x]->str);
+      }
+
+      /* need to make a copy here ... gearman_server_job_free will free it later */
+      char *data = strdup(record.data.c_str());
+      size_t data_size = record.data.size();
+      gearman_job_priority_t priority = static_cast<gearman_job_priority_t>(record.priority);
+
+      (void)(add_fn)(server, add_context,
+                     unique, strlen(unique),
+                     function_name, strlen(function_name),
+                     data, data_size,
+                     priority, 0);
+    }
+
+    freeReplyObject(reply);
+  } while (cursor != "0");
 
   return GEARMAND_SUCCESS;
 }
