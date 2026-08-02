@@ -51,6 +51,26 @@ enum {
 #  include <openssl/ssl.h>
 #  include <openssl/err.h>
 # endif
+
+/**
+ * Formats the next pending error off the OpenSSL/wolfSSL error queue into
+ * buf. SSL_get_error()'s return value (SSL_ERROR_SSL, SSL_ERROR_SYSCALL, ...)
+ * must never be passed directly to ERR_error_string_n() -- it is a small
+ * enum, not a packed OpenSSL error code, so doing so decodes garbage (e.g.
+ * SSL_ERROR_SYSCALL == 5 decodes as "DH lib"). Returns false if the queue is
+ * empty, which happens for SSL_ERROR_SYSCALL when the peer simply closed the
+ * connection without a clean SSL shutdown -- not a genuine SSL failure.
+ */
+static inline bool gearman_ssl_error_string(char *buf, size_t buf_size)
+{
+  unsigned long code= ERR_get_error();
+  if (code == 0)
+  {
+    return false;
+  }
+  ERR_error_string_n(code, buf, buf_size);
+  return true;
+}
 #else
 struct SSL_CTX {
 };
