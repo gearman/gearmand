@@ -321,6 +321,8 @@ bool SimpleClient::is_valid()
           error(__FILE__, __LINE__, "SSL_set_fd() should not be returning an error.");
           return false;
         }
+
+        SSL_set_connect_state(_ssl);
       }
 #endif
 
