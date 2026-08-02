@@ -222,7 +222,26 @@ int main(int argc, char *argv[], char* environ_[])
     }
   }
 
-  srandom((unsigned int)time(NULL));
+  {
+    unsigned int random_seed;
+    if (const char* seed_str= getenv("YATL_RANDOM_SEED"))
+    {
+      errno= 0;
+      random_seed= (unsigned int)strtoul(seed_str, (char**)NULL, 10);
+      if (errno != 0)
+      {
+        Error << "ENV YATL_RANDOM_SEED passed an invalid value: `" << seed_str << "`";
+        exit(EXIT_FAILURE);
+      }
+    }
+    else
+    {
+      random_seed= (unsigned int)time(NULL);
+    }
+
+    Out << "YATL_RANDOM_SEED=" << random_seed << " (set this environment variable to reproduce this run)";
+    srandom(random_seed);
+  }
 
   errno= 0;
   if (bool(getenv("YATL_REPEAT")))

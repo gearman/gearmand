@@ -52,13 +52,22 @@ static pthread_once_t start_key_once= PTHREAD_ONCE_INIT;
 
 static void startup(void)
 {
-  time_t time_seed= time(NULL);
+  unsigned int seed;
+  const char *seed_env= getenv("HOSTILE_SEED");
+  if (seed_env)
+  {
+    seed= (unsigned int)strtoul(seed_env, NULL, 10);
+  }
+  else
+  {
+    seed= (unsigned int)time(NULL);
+  }
 
   fprintf(stderr, "--------------------------------------------------------\n\n");
   fprintf(stderr, "\t\tHostile Engaged\n\n");
-  fprintf(stderr, "Seed used %lu\n", (unsigned long)time_seed);
+  fprintf(stderr, "Seed used %u (set HOSTILE_SEED to reproduce this run)\n", seed);
   fprintf(stderr, "\n--------------------------------------------------------\n");
-  srand((unsigned int)time_seed);
+  srand(seed);
 
   make_socket(HOSTILE_PORT);
 }
