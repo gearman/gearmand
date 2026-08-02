@@ -45,6 +45,8 @@
 #include <libgearman-server/plugins/queue/base.h>
 #include <hiredis/hiredis.h>
 
+#include <ctime>
+
 typedef std::vector<char> vchar_t;
 
 namespace gearmand {
@@ -67,6 +69,24 @@ struct redis_record_t {
 class Hiredis : public Queue {
   private:
     redisContext *_redis;
+    time_t _last_reconnect_attempt;
+
+    /*
+     * (re)send AUTH if a password is configured.
+     *
+     * returns true on success, or if no password is configured
+     */
+    bool authenticate();
+
+    /*
+     * reconnect() reconnects _redis using its saved connection parameters
+     * and re-authenticates if needed. Rate-limited so a sustained outage
+     * doesn't turn every queue operation into a blocking connect attempt.
+     *
+     * returns true if _redis is usable afterward
+     */
+    bool reconnect();
+
   public:
     std::string server;
     std::string service;
@@ -78,6 +98,12 @@ class Hiredis : public Queue {
 
     gearmand_error_t initialize();
 
+    /*
+     * redis()
+     *
+     * returns _redis, transparently reconnecting first if the connection
+     * was lost (network blip, redis restart, etc)
+     */
     redisContext* redis();
 
     /*
