@@ -50,6 +50,42 @@ EXTRA_DIST+= libtest/version.h
 
 BUILT_SOURCES+= libtest/version.h
 
+# libtest/ssl.h needs to embed absolute cert/key paths: main.cc chdir()s
+# into a scratch temp directory before any test's world_create() runs, so
+# a path relative to the source/build tree would no longer resolve by the
+# time a test actually opens the file.
+BUILT_SOURCES+= libtest/ssl.h
+CLEANFILES+= libtest/ssl.h libtest/ssl.h-t
+libtest/ssl.h: Makefile
+	@rm -f $@-t $@
+	@{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
+	  echo '#pragma once'; \
+	  echo '#define YATL_CA_CERT_PEM "$(abs_top_builddir)/tests/ssl-certs/server-cert.pem"'; \
+	  echo '#define YATL_CERT_PEM "$(abs_top_builddir)/tests/ssl-certs/server-cert.pem"'; \
+	  echo '#define YATL_CERT_KEY_PEM "$(abs_top_builddir)/tests/ssl-certs/server-key.pem"'; \
+	  } > $@-t
+	@mv $@-t $@
+
+# Self-signed, loopback-only, test-only cert/key: no security value, so
+# it's generated on demand instead of checked into the repository. If the
+# "openssl" CLI isn't available, leave empty placeholder files behind
+# instead of failing the build; tests/ssl.cc SKIPs when it finds them
+# empty rather than treating that as a failure.
+if ENABLE_SSL
+tests/ssl-certs/server-cert.pem tests/ssl-certs/server-key.pem:
+	@$(MKDIR_P) tests/ssl-certs
+	@if test -n "$(OPENSSL)"; then \
+	  $(OPENSSL) req -x509 -newkey rsa:2048 -nodes -days 3650 -subj /CN=localhost \
+	    -keyout tests/ssl-certs/server-key.pem \
+	    -out tests/ssl-certs/server-cert.pem >/dev/null 2>&1; \
+	fi
+	@test -s tests/ssl-certs/server-cert.pem || : > tests/ssl-certs/server-cert.pem
+	@test -s tests/ssl-certs/server-key.pem || : > tests/ssl-certs/server-key.pem
+
+CLEANFILES+= tests/ssl-certs/server-cert.pem
+CLEANFILES+= tests/ssl-certs/server-key.pem
+endif
+
 .PHONY: clean-libtest-check
 clean-libtest-check:
 	-rm -rf $(TMP_DIR)
@@ -97,7 +133,6 @@ noinst_HEADERS+= libtest/server.h
 noinst_HEADERS+= libtest/server_container.h
 noinst_HEADERS+= libtest/signal.h
 noinst_HEADERS+= libtest/socket.hpp
-noinst_HEADERS+= libtest/ssl.h
 noinst_HEADERS+= libtest/stream.h
 noinst_HEADERS+= libtest/strerror.h
 noinst_HEADERS+= libtest/string.hpp
