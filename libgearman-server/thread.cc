@@ -189,7 +189,7 @@ gearman_server_thread_run(gearman_server_thread_st *thread,
         gearman_server_con_free(server_con);
       else
         gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "con %p isn't dead %d or proc removed %d, but is in to_be_freed_list",
-                           server_con, server_con->is_dead, server_con->proc_removed);
+                           server_con, bool(server_con->is_dead), bool(server_con->proc_removed));
     }
 
     while ((server_con= gearman_server_con_io_next(thread)) != NULL)
@@ -344,18 +344,45 @@ static gearmand_error_t _thread_packet_flush(gearman_server_con_st *con)
     return GEARMAND_IO_WAIT;
   }
 
-  while (con->io_packet_list)
+  while (1)
   {
-    gearmand_error_t ret= gearman_io_send(con, &(con->io_packet_list->packet),
-                                          con->io_packet_list->next == NULL ? true : false);
+    /* con->io_packet_list is appended to under con->thread->lock by other
+       threads (e.g. gearman_server_io_packet_add() from the proc thread), so
+       the head pointer and its ->next must be read under the same lock
+       rather than dereferenced directly here. */
+    gearman_server_packet_st *packet;
+    bool is_last;
+
+    int lock_error;
+    if ((lock_error= pthread_mutex_lock(&con->thread->lock)) == 0)
+    {
+      packet= con->io_packet_list;
+      is_last= (packet != NULL) and (packet->next == NULL);
+      if ((lock_error= pthread_mutex_unlock(&con->thread->lock)))
+      {
+        gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, lock_error, "pthread_mutex_unlock");
+      }
+    }
+    else
+    {
+      gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, lock_error, "pthread_mutex_lock");
+      return GEARMAND_ERRNO;
+    }
+
+    if (packet == NULL)
+    {
+      break;
+    }
+
+    gearmand_error_t ret= gearman_io_send(con, &(packet->packet), is_last);
     if (gearmand_failed(ret))
     {
       return ret;
     }
 
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, 
+    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM,
                        "Sent %s",
-                       gearman_strcommand(con->io_packet_list->packet.command));
+                       gearman_strcommand(packet->packet.command));
 
     gearman_server_io_packet_remove(con);
   }

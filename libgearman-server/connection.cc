@@ -427,11 +427,9 @@ gearman_server_con_st * gearman_server_con_to_be_freed_next(gearman_server_threa
 {
   gearman_server_con_st *con;
 
-  if (thread->to_be_freed_list == NULL)
-  {
-    return NULL;
-  }
-
+  /* thread->to_be_freed_list is mutated under thread->lock by other threads
+     (e.g. gearman_server_con_to_be_freed_add()), so it must not be read
+     before taking the lock below. */
   int lock_error;
   if ((lock_error= pthread_mutex_lock(&thread->lock)) == 0)
   {
