@@ -123,6 +123,7 @@ noinst_HEADERS+= libtest/memcached.h
 noinst_HEADERS+= libtest/memcached.hpp
 noinst_HEADERS+= libtest/poll_error.hpp
 noinst_HEADERS+= libtest/port.h
+noinst_HEADERS+= libtest/redis.h
 noinst_HEADERS+= libtest/result.hpp
 noinst_HEADERS+= libtest/result/base.hpp
 noinst_HEADERS+= libtest/result/fail.hpp
@@ -157,6 +158,7 @@ libtest_libtest_la_LIBADD=
 libtest_libtest_la_SOURCES=
 libtest_libtest_la_CXXFLAGS+= @LIBMEMCACHED_CFLAGS@
 libtest_libtest_la_LIBADD+= @LIBMEMCACHED_LIB@
+libtest_libtest_la_LIBADD+= @HIREDIS_LIB@
 if ENABLE_SSL
 if ENABLE_WOLFSSL
 libtest_libtest_la_LIBADD+= @WOLFSSL_LIB@
@@ -216,6 +218,7 @@ EXTRA_libtest_libtest_la_DEPENDENCIES+= libtest/wait
 
 # We are either building in tree, or with
 libtest_libtest_la_SOURCES+= libtest/memcached.cc
+libtest_libtest_la_SOURCES+= libtest/redis.cc
 
 libtest_libtest_la_LDFLAGS+= @LIBDRIZZLE_LDFLAGS@
 libtest_libtest_la_LIBADD+= @LIBDRIZZLE_LIB@
