@@ -776,34 +776,47 @@ void gearmand_con_check_queue(gearmand_thread_st *thread)
   }
 
   /* We want to add new connections inside the lock because other threads may
-     walk the thread's dcon_list while holding the lock. */
-  while (thread->dcon_add_list != NULL)
+     walk the thread's dcon_list while holding the lock. thread->dcon_add_list
+     is mutated under thread->lock by other threads (e.g. gearmand_con_create()),
+     so it must not be read before taking the lock below either. */
+  while (1)
   {
+    gearmand_con_st *dcon= NULL;
+
     int error;
     if ((error= pthread_mutex_lock(&(thread->lock))) == 0)
     {
-      gearmand_con_st *dcon= thread->dcon_add_list;
-      GEARMAND_LIST__DEL(thread->dcon_add, dcon);
+      dcon= thread->dcon_add_list;
+      if (dcon)
+      {
+        GEARMAND_LIST__DEL(thread->dcon_add, dcon);
+      }
 
       if ((error= pthread_mutex_unlock(&(thread->lock))))
       {
         gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_unlock");
         gearmand_wakeup(Gearmand(), GEARMAND_WAKEUP_SHUTDOWN);
       }
-
-      gearmand_error_t rc;
-      if ((rc= _con_add(thread, dcon)) != GEARMAND_SUCCESS)
-      {
-        gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, rc, "%s:%s _con_add() has failed, please report any crashes that occur immediately after this.",
-                            dcon->host,
-                            dcon->port);
-        gearmand_con_free(dcon);
-      }
     }
     else
     {
       gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_lock");
       gearmand_wakeup(Gearmand(), GEARMAND_WAKEUP_SHUTDOWN);
+      return;
+    }
+
+    if (dcon == NULL)
+    {
+      break;
+    }
+
+    gearmand_error_t rc;
+    if ((rc= _con_add(thread, dcon)) != GEARMAND_SUCCESS)
+    {
+      gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, rc, "%s:%s _con_add() has failed, please report any crashes that occur immediately after this.",
+                          dcon->host,
+                          dcon->port);
+      gearmand_con_free(dcon);
     }
   }
 }
