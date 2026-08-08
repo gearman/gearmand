@@ -527,11 +527,29 @@ void gearman_server_con_io_remove(gearman_server_con_st *con)
 gearman_server_con_st *
 gearman_server_con_io_next(gearman_server_thread_st *thread)
 {
-  gearman_server_con_st *con= thread->io_list;
+  gearman_server_con_st *con= NULL;
 
-  if (con)
+  /* thread->io_list is mutated under thread->lock by other threads (e.g.
+     gearman_server_con_io_add()), so it must not be read before taking
+     the lock below. */
+  int lock_error;
+  if ((lock_error= pthread_mutex_lock(&thread->lock)) == 0)
   {
-    gearman_server_con_io_remove(con);
+    con= thread->io_list;
+    if (con)
+    {
+      GEARMAND_LIST_DEL(thread->io, con, io_);
+      con->io_list= false;
+    }
+
+    if ((lock_error= pthread_mutex_unlock(&thread->lock)))
+    {
+      gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, lock_error, "pthread_mutex_unlock");
+    }
+  }
+  else
+  {
+    gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, lock_error, "pthread_mutex_lock");
   }
 
   return con;
@@ -609,13 +627,11 @@ void gearman_server_con_proc_remove(gearman_server_con_st *con)
 gearman_server_con_st *
 gearman_server_con_proc_next(gearman_server_thread_st *thread)
 {
-  if (thread->proc_list == NULL)
-  {
-    return NULL;
-  }
-
   gearman_server_con_st *con= NULL;
 
+  /* thread->proc_list is mutated under thread->lock by other threads (e.g.
+     gearman_server_con_proc_add()), so it must not be read before taking
+     the lock below. */
   int pthread_error;
   if ((pthread_error= pthread_mutex_lock(&thread->lock)) == 0)
   {
