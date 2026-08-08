@@ -156,7 +156,11 @@ struct gearman_server_con_st
   std::atomic<bool> is_dead{false};
   bool is_noop_sent{};
   bool is_cleaned_up{};
-  gearmand_error_t ret{};
+  // Set by the proc thread (gearmand_con.cc's _proc()) and polled by the
+  // IO thread (thread.cc's gearman_server_thread_run()) with no other
+  // synchronization, so this must be atomic rather than plain
+  // gearmand_error_t.
+  std::atomic<gearmand_error_t> ret{GEARMAND_SUCCESS};
   std::atomic<bool> io_list{false};
   std::atomic<bool> proc_list{false};
   std::atomic<bool> proc_removed{false};
