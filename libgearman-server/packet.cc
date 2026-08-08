@@ -252,23 +252,27 @@ void gearman_server_proc_packet_add(gearman_server_con_st *con,
 gearman_server_packet_st *
 gearman_server_proc_packet_remove(gearman_server_con_st *con)
 {
-  gearman_server_packet_st *server_packet= con->proc_packet_list;
+  gearman_server_packet_st *server_packet= NULL;
 
-  if (server_packet)
+  /* con->proc_packet_list is mutated under con->thread->lock by other
+     threads (e.g. gearman_server_proc_packet_add()), so it must not be
+     read before taking the lock below. */
+  int error;
+  if ((error= pthread_mutex_lock(&con->thread->lock)) == 0)
   {
-    int error;
-    if ((error= pthread_mutex_lock(&con->thread->lock)) == 0)
+    server_packet= con->proc_packet_list;
+    if (server_packet)
     {
       GEARMAND_FIFO__DEL(con->proc_packet, server_packet);
-      if ((error= pthread_mutex_unlock(&con->thread->lock)) != 0)
-      {
-        gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_unlock");
-      }
     }
-    else
+    if ((error= pthread_mutex_unlock(&con->thread->lock)) != 0)
     {
-      gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_lock");
+      gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_unlock");
     }
+  }
+  else
+  {
+    gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, error, "pthread_mutex_lock");
   }
 
   return server_packet;
