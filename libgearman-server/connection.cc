@@ -572,27 +572,28 @@ void gearman_server_con_proc_add(gearman_server_con_st *con)
       gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_mutex_unlock");
     }
 
-    if (! (Server->proc_shutdown) && !(Server->proc_wakeup))
+    /* Server->proc_shutdown/proc_wakeup are plain bool, mutated under
+       Server->proc_lock by other threads calling this same function, so
+       they must not be read before taking that lock. */
+    if ((pthread_error= pthread_mutex_lock(&(Server->proc_lock))) == 0)
     {
-      if ((pthread_error= pthread_mutex_lock(&(Server->proc_lock))) == 0)
+      if (! (Server->proc_shutdown) && !(Server->proc_wakeup))
       {
         Server->proc_wakeup= true;
-        if ((pthread_error= pthread_cond_signal(&(Server->proc_cond))) == 0)
-        {
-          if ((pthread_error= pthread_mutex_unlock(&(Server->proc_lock))))
-          {
-            gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_mutex_unlock");
-          }
-        }
-        else
+        if ((pthread_error= pthread_cond_signal(&(Server->proc_cond))))
         {
           gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_cond_signal");
         }
       }
-      else
+
+      if ((pthread_error= pthread_mutex_unlock(&(Server->proc_lock))))
       {
-        gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_mutex_lock");
+        gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_mutex_unlock");
       }
+    }
+    else
+    {
+      gearmand_log_fatal_perror(GEARMAN_DEFAULT_LOG_PARAM, pthread_error, "pthread_mutex_lock");
     }
   }
   else
