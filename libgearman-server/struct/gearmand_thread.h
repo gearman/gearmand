@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <atomic>
+
 struct gearmand_st;
 
 struct gearmand_thread_st
@@ -45,7 +47,11 @@ struct gearmand_thread_st
   bool is_wakeup_event;
   uint32_t count;
   uint32_t dcon_count;
-  uint32_t dcon_add_count;
+  // Written unlocked by the main thread (gearmand_con_create()'s "no need
+  // to lock if empty" fast path) and read unlocked by this thread's own
+  // gearmand_con_check_queue(), so it must be atomic rather than plain
+  // uint32_t.
+  std::atomic<uint32_t> dcon_add_count;
   uint32_t free_dcon_count;
   int wakeup_fd[2];
   gearmand_st& _gearmand;
