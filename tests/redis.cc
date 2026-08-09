@@ -51,6 +51,9 @@ using namespace libtest;
 #include <tests/basic.h>
 #include <tests/context.h>
 
+#include "libgearman/client.hpp"
+using namespace org::gearmand;
+
 #define WORKER_FUNCTION "hiredis_queue_test"
 
 #ifndef __INTEL_COMPILER
@@ -58,6 +61,7 @@ using namespace libtest;
 #endif
 
 static in_port_t redis_port= 0;
+static libtest::Server *redis_server_handle= NULL;
 
 static test_return_t gearmand_basic_option_test(void *)
 {
@@ -77,6 +81,8 @@ static test_return_t collection_init(void *object)
 
   redis_port= libtest::get_free_port();
   ASSERT_TRUE(server_startup(test->_servers, "redis", redis_port, NULL));
+  redis_server_handle= test->_servers.last();
+  ASSERT_TRUE(redis_server_handle);
 
   char redis_port_string[1024];
   int length= snprintf(redis_port_string,
@@ -131,6 +137,54 @@ static test_return_t collection_cleanup(void *object)
   return TEST_SUCCESS;
 }
 
+// Regression test for #45: gearmand used to keep the same broken redis
+// connection forever after an outage, requiring a restart to recover. This
+// drives a real outage/recovery cycle against the redis server started in
+// collection_init() and checks that job submission fails gracefully during
+// the outage and succeeds again afterward, without restarting gearmand.
+static test_return_t redis_reconnect_after_outage(void *object)
+{
+  Context *test= (Context *)object;
+  ASSERT_TRUE(test);
+  ASSERT_TRUE(redis_server_handle);
+
+  libgearman::Client client(test->port());
+
+  {
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, test->worker_function_name(), NULL,
+                                                       test_literal_param("before outage"), job_handle);
+    ASSERT_EQ(rc, GEARMAN_SUCCESS);
+    ASSERT_TRUE(job_handle[0]);
+  }
+
+  ASSERT_TRUE(redis_server_handle->kill());
+
+  {
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, test->worker_function_name(), NULL,
+                                                       test_literal_param("during outage"), job_handle);
+    ASSERT_EQ(rc, GEARMAN_QUEUE_ERROR);
+  }
+
+  // Clear the internal once-per-second reconnect rate limit (#45) before
+  // retrying, and give redis-server time to finish starting back up.
+  libtest::dream(2, 0);
+
+  ASSERT_TRUE(redis_server_handle->start());
+  ASSERT_TRUE(redis_server_handle->wait_for_pidfile());
+
+  {
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, test->worker_function_name(), NULL,
+                                                       test_literal_param("after recovery"), job_handle);
+    ASSERT_EQ(rc, GEARMAN_SUCCESS);
+    ASSERT_TRUE(job_handle[0]);
+  }
+
+  return TEST_SUCCESS;
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunreachable-code"
 static bool test_for_HAVE_HIREDIS()
@@ -179,6 +233,7 @@ test_st tests[] ={
 
 test_st regressions[] ={
   {"lp:734663", 0, lp_734663 },
+  {"#45 reconnect after redis outage", 0, redis_reconnect_after_outage },
   {0, 0, 0}
 };
 
