@@ -67,13 +67,92 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
                                                 gearman_queue_add_fn *add_fn,
                                                 void *add_context);
 
+namespace {
+  // Minimum time between reconnect attempts while redis is unreachable, so
+  // a sustained outage doesn't turn every queue operation into a blocking
+  // connect attempt (#45).
+  const time_t REDIS_RECONNECT_MIN_INTERVAL_SECONDS= 1;
+}
+
+/*
+ * gearmand::plugins::queue::Hiredis::authenticate()
+ *
+ * (re)sends AUTH on the current _redis connection if a password is
+ * configured.
+ *
+ * returns true on success, or if no password is configured
+ */
+bool gearmand::plugins::queue::Hiredis::authenticate()
+{
+  if (this->password.empty())
+  {
+    return true;
+  }
+
+  redisReply *reply= (redisReply*)redisCommand(this->_redis, "AUTH %s", this->password.c_str());
+  if (reply == nullptr)
+  {
+    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Failed to exec AUTH command, redis server reply: %s", this->_redis->errstr);
+    return false;
+  }
+
+  bool authenticated= (reply->type != REDIS_REPLY_ERROR);
+  if (authenticated == false)
+  {
+    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Could not pass redis server auth, redis server reply: %s", reply->str);
+  }
+
+  freeReplyObject(reply);
+
+  return authenticated;
+}
+
+/*
+ * gearmand::plugins::queue::Hiredis::reconnect()
+ *
+ * reconnects _redis using its saved connection parameters and
+ * re-authenticates if needed.
+ *
+ * returns true if _redis is usable afterward
+ */
+bool gearmand::plugins::queue::Hiredis::reconnect()
+{
+  time_t now= time(nullptr);
+  if (now - this->_last_reconnect_attempt < REDIS_RECONNECT_MIN_INTERVAL_SECONDS)
+  {
+    return false;
+  }
+  this->_last_reconnect_attempt= now;
+
+  if (redisReconnect(this->_redis) != REDIS_OK)
+  {
+    gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Failed to reconnect to redis server: %s", this->_redis->errstr);
+    return false;
+  }
+
+  if (this->authenticate() == false)
+  {
+    return false;
+  }
+
+  gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "Reconnected to redis server");
+
+  return true;
+}
+
 /**
  * gearmand::plugins::queue::Hiredis::redis()
  *
- * returns _redis
+ * returns _redis, transparently reconnecting first if the connection was
+ * lost (network blip, redis restart, etc). See #45.
  */
 redisContext* gearmand::plugins::queue::Hiredis::redis()
 {
+  if (this->_redis and this->_redis->err)
+  {
+    this->reconnect();
+  }
+
   return this->_redis;
 }
 
@@ -182,6 +261,7 @@ bool gearmand::plugins::queue::Hiredis::fetch(char *key, gearmand::plugins::queu
 gearmand::plugins::queue::Hiredis::Hiredis() :
   Queue("redis"),
   _redis(nullptr),
+  _last_reconnect_attempt(0),
   server("127.0.0.1"),
   service("6379"),
   prefix("_gear_")
@@ -207,38 +287,31 @@ gearmand::plugins::queue::Hiredis::~Hiredis()
 gearmand_error_t gearmand::plugins::queue::Hiredis::initialize()
 {
   int service_port= atoi(service.c_str());
-  if ((_redis= redisConnect(server.c_str(), service_port)) == nullptr)
+  _redis= redisConnect(server.c_str(), service_port);
+  if (_redis == nullptr)
   {
     return gearmand_log_gerror(
       GEARMAN_DEFAULT_LOG_PARAM,
       GEARMAND_QUEUE_ERROR,
-      "Could not connect to redis server: %s", _redis->errstr);
+      "Could not allocate redis connection context");
   }
 
-  if (password.size())
+  if (_redis->err)
   {
-    redisReply *reply = (redisReply*)redisCommand(_redis, "AUTH %s", password.c_str());
-    if(reply == nullptr)
-    {
-        return gearmand_log_gerror(
-          GEARMAN_DEFAULT_LOG_PARAM,
-          GEARMAND_QUEUE_ERROR,
-          "Failed to exec AUTH command, redis server reply: %s", _redis->errstr);
-    }
+    gearmand_error_t rc= gearmand_log_gerror(
+      GEARMAN_DEFAULT_LOG_PARAM,
+      GEARMAND_QUEUE_ERROR,
+      "Could not connect to redis server: %s", _redis->errstr);
+    redisFree(_redis);
+    _redis= nullptr;
+    return rc;
+  }
 
-    if(reply->type == REDIS_REPLY_ERROR)
-    {
-        gearmand_log_gerror(
-          GEARMAN_DEFAULT_LOG_PARAM,
-          GEARMAND_QUEUE_ERROR,
-          "Could not pass redis server auth, redis server reply: %s", reply->str);
-        freeReplyObject(reply);
-
-        return GEARMAND_QUEUE_ERROR;
-    }
-
-    freeReplyObject(reply);
-    gearmand_log_debug(GEARMAN_DEFAULT_LOG_PARAM, "Auth success");
+  if (authenticate() == false)
+  {
+    redisFree(_redis);
+    _redis= nullptr;
+    return GEARMAND_QUEUE_ERROR;
   }
 
   gearmand_info("Initializing hiredis module");
