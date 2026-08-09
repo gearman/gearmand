@@ -90,6 +90,7 @@
 #include <libtest/blobslap_worker.h>
 #include <libtest/memcached.h>
 #include <libtest/drizzled.h>
+#include <libtest/redis.h>
 
 #include <libtest/libtool.hpp>
 #include <libtest/killpid.h>

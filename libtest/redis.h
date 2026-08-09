@@ -1,8 +1,8 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  *
- *  Data Differential YATL (i.e. libtest)  library
+ *  YATL (i.e. libtest) library
  *
- *  Copyright (C) 2013 Data Differential, http://datadifferential.com/
+ *  Copyright (C) 2026 Alexei Pastuchov
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are
@@ -34,12 +34,10 @@
  *
  */
 
-/*
-  Location of ssl certs during testing.
-*/
-
 #pragma once
 
-#define YATL_CA_CERT_PEM "/home/brian/wolfssl/certs/ca-cert.pem"
-#define YATL_CERT_PEM "/home/brian/wolfssl/certs/server-cert.pem"
-#define YATL_CERT_KEY_PEM "/home/brian/wolfssl/certs/server-key.pem"
+namespace libtest {
+
+libtest::Server *build_redis(const std::string& hostname, const in_port_t try_port);
+
+}

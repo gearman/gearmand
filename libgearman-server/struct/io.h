@@ -41,6 +41,8 @@
 
 #include "libgearman/ssl.h"
 
+#include <atomic>
+
 struct gearmand_io_st
 {
   struct {
@@ -146,14 +148,19 @@ struct gearman_server_con_st
   gearmand_io_st con;
   bool is_sleeping{};
   bool is_exceptions{};
-  bool is_dead{};
+  // These flags are used to hand connection ownership off between the IO,
+  // proc, and main threads (e.g. gearman_server_con_attempt_free() sets
+  // is_dead from an IO thread while _proc() reads it from the proc thread
+  // with no other synchronization), so they must be atomic rather than
+  // plain bool.
+  std::atomic<bool> is_dead{false};
   bool is_noop_sent{};
   bool is_cleaned_up{};
   gearmand_error_t ret{};
-  bool io_list{};
-  bool proc_list{};
-  bool proc_removed{};
-  bool to_be_freed_list{};
+  std::atomic<bool> io_list{false};
+  std::atomic<bool> proc_list{false};
+  std::atomic<bool> proc_removed{false};
+  std::atomic<bool> to_be_freed_list{false};
   uint32_t io_packet_count{};
   uint32_t proc_packet_count{};
   uint32_t worker_count{};

@@ -71,6 +71,7 @@ libtest/abort
 libtest/backtrace
 libtest/core-count
 libtest/skiptest
+libtest/ssl.h
 libtest/unittest
 libtest/version.h
 libtest/wait
@@ -118,6 +119,7 @@ t/redis
 t/result
 t/round_robin
 t/skip
+t/ssl
 t/sqlite
 t/stress
 t/tokyocabinet
@@ -148,6 +150,7 @@ tests/protocol
 tests/redis_test
 tests/result
 tests/round_robin_test
+tests/ssl-certs/
 tests/sqlite_test
 tests/stress
 tests/tokyocabinet_test

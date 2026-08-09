@@ -109,6 +109,24 @@ include tests/hostile.am
 include tests/workers/include.am
 include tests/protocol.mk
 
+EXTRA_t_ssl_DEPENDENCIES=
+t_ssl_SOURCES=
+t_ssl_LDADD=
+
+t_ssl_SOURCES+= tests/ssl.cc
+t_ssl_LDADD+= ${LIBGEARMAN_1_0_CLIENT_LDADD}
+t_ssl_LDADD+= libgearman/libgearmancore.la
+EXTRA_t_ssl_DEPENDENCIES+= gearmand/gearmand
+if ENABLE_SSL
+EXTRA_t_ssl_DEPENDENCIES+= tests/ssl-certs/server-cert.pem
+EXTRA_t_ssl_DEPENDENCIES+= tests/ssl-certs/server-key.pem
+endif
+check_PROGRAMS+= t/ssl
+noinst_PROGRAMS+= t/ssl
+
+test-ssl: t/ssl gearmand/gearmand
+	@t/ssl
+
 t_round_robin_SOURCES=
 t_round_robin_LDADD=
 

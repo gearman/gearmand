@@ -681,8 +681,11 @@ gearman_return_t gearman_connection_st::enable_ssl()
     {
       close_socket();
       char errorString[SSL_ERROR_SIZE]= { 0 };
-      ERR_error_string_n(SSL_get_error(_ssl, 0), errorString, sizeof(errorString));
-      return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, errorString);
+      if (gearman_ssl_error_string(errorString, sizeof(errorString)))
+      {
+        return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, errorString);
+      }
+      return gearman_error(universal, GEARMAN_COULD_NOT_CONNECT, "SSL_set_fd() failed");
     }
 
     SSL_set_connect_state(_ssl);
@@ -875,9 +878,13 @@ gearman_return_t gearman_connection_st::flush()
             default:
               {
                 char errorString[SSL_ERROR_SIZE]= { 0 };
-                ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
                 close_socket();
-                return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);
+                if (gearman_ssl_error_string(errorString, sizeof(errorString)))
+                {
+                  return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);
+                }
+                return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT,
+                                                   "lost connection to server (SSL peer closed without clean shutdown)");
               }
           }
         }
@@ -1189,9 +1196,13 @@ size_t gearman_connection_st::recv_socket(void *data, size_t data_size, gearman_
         default:
           {
             char errorString[SSL_ERROR_SIZE]= { 0 };
-            ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
             close_socket();
-            return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);
+            if (gearman_ssl_error_string(errorString, sizeof(errorString)))
+            {
+              return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT, "SSL failure(%s)", errorString);
+            }
+            return gearman_universal_set_error(universal, GEARMAN_LOST_CONNECTION, GEARMAN_AT,
+                                               "lost connection to server (SSL peer closed without clean shutdown)");
           }
       }
     }

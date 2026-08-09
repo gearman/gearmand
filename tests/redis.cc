@@ -57,9 +57,11 @@ using namespace libtest;
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 
+static in_port_t redis_port= 0;
+
 static test_return_t gearmand_basic_option_test(void *)
 {
-  const char *args[]= { "--check-args", 
+  const char *args[]= { "--check-args",
     "--redis-server=localhost",
     "--redis-port=6379",
     0 };
@@ -70,26 +72,53 @@ static test_return_t gearmand_basic_option_test(void *)
 
 static test_return_t collection_init(void *object)
 {
-  SKIP_IF(true);
   Context *test= (Context *)object;
   assert(test);
 
-  const char *argv[]= { "--queue-type=redis", 0 };
+  redis_port= libtest::get_free_port();
+  ASSERT_TRUE(server_startup(test->_servers, "redis", redis_port, NULL));
 
-  test->initialize(argv);
+  char redis_port_string[1024];
+  int length= snprintf(redis_port_string,
+                       sizeof(redis_port_string),
+                       "--redis-port=%d",
+                       int(redis_port));
+  ASSERT_TRUE(size_t(length) < sizeof(redis_port_string));
+
+  const char *argv[]= {
+    "--queue-type=redis",
+    "--redis-server=localhost",
+    redis_port_string,
+    0 };
+
+  ASSERT_TRUE(test->initialize(argv));
 
   return TEST_SUCCESS;
 }
 
 static test_return_t collection_init_with_prefix(void *object)
 {
-  SKIP_IF(true);
   Context *test= (Context *)object;
   assert(test);
 
-  const char *argv[]= { "--queue-type=redis", "--redis-prefix=_prefix_", 0 };
+  redis_port= libtest::get_free_port();
+  ASSERT_TRUE(server_startup(test->_servers, "redis", redis_port, NULL));
 
-  test->initialize(argv);
+  char redis_port_string[1024];
+  int length= snprintf(redis_port_string,
+                       sizeof(redis_port_string),
+                       "--redis-port=%d",
+                       int(redis_port));
+  ASSERT_TRUE(size_t(length) < sizeof(redis_port_string));
+
+  const char *argv[]= {
+    "--queue-type=redis",
+    "--redis-server=localhost",
+    redis_port_string,
+    "--redis-prefix=_prefix_",
+    0 };
+
+  ASSERT_TRUE(test->initialize(argv));
 
   return TEST_SUCCESS;
 }
@@ -118,6 +147,7 @@ static bool test_for_HAVE_HIREDIS()
 static void *world_create(server_startup_st& servers, test_return_t&)
 {
   SKIP_IF(test_for_HAVE_HIREDIS() == false);
+  SKIP_IF(has_redis() == false);
   return new Context(servers);
 }
 

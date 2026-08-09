@@ -163,9 +163,15 @@ static size_t _connection_read(gearman_server_con_st *con, void *data, size_t da
         default:
           { // All other errors
             char errorString[SSL_ERROR_SIZE]= { 0 };
-            ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
             ret= GEARMAND_LOST_CONNECTION;
-            gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "SSL failure(%s) errno:%d", errorString, errno);
+            if (gearman_ssl_error_string(errorString, sizeof(errorString)))
+            {
+              gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "SSL failure(%s)", errorString);
+            }
+            else
+            {
+              gearmand_log_info(GEARMAN_DEFAULT_LOG_PARAM, "Peer connection has called close() without a clean SSL shutdown");
+            }
             _connection_close(connection);
 
             return 0;
@@ -343,10 +349,14 @@ static gearmand_error_t _connection_flush(gearman_server_con_st *con)
             default:
               {
                 char errorString[SSL_ERROR_SIZE]= { 0 };
-                ERR_error_string_n(ssl_error, errorString, sizeof(errorString));
                 _connection_close(connection);
-                return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION, "SSL failure(%s)",
-                                           errorString);
+                if (gearman_ssl_error_string(errorString, sizeof(errorString)))
+                {
+                  return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION, "SSL failure(%s)",
+                                             errorString);
+                }
+                return gearmand_log_gerror(GEARMAN_DEFAULT_LOG_PARAM, GEARMAND_LOST_CONNECTION,
+                                           "Peer connection has called close() without a clean SSL shutdown");
               }
           }
         }

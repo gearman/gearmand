@@ -10,6 +10,13 @@ updates:
     labels:
         - "dependencies"
         - "github-actions"
+    # Only open PRs for major version bumps of Actions.
+    # Minor/patch updates are unnecessary when using floating major tags (e.g. @v4).
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
     # Group updates together (newer Dependabot feature)
     groups:
       actions:
