@@ -401,6 +401,19 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
       GEARMAND_QUEUE_ERROR);
   }
 
+  // queue->prefix.size() is loop-invariant, so allocate the sscanf scratch
+  // buffer for it once here instead of once per key below -- it can't be a
+  // fixed-size stack buffer since --redis-prefix is an unbounded
+  // user-configurable string and sscanf's %<N>[^-] conversion writes up to
+  // queue->prefix.size() bytes into it.
+  char* prefix= (char*) malloc((queue->prefix.size() +1) * sizeof(char));
+  if (prefix == nullptr)
+  {
+    return gearmand_gerror(
+      "malloc() failed to allocate prefix scratch buffer for redis key",
+      GEARMAND_QUEUE_ERROR);
+  }
+
   // KEYS blocks the whole redis server while it walks every key in the
   // instance, which is painful if gearmand shares redis with other
   // applications (#59). SCAN walks the keyspace incrementally via a
@@ -416,15 +429,19 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
                                                   cursor.c_str(), queue->prefix.c_str());
     if (reply == nullptr)
     {
+      free(prefix);
       return gearmand_log_gerror(
         GEARMAN_DEFAULT_LOG_PARAM,
         GEARMAND_QUEUE_ERROR,
         "Failed to call SCAN during QUEUE replay: %s", queue->redis()->errstr);
     }
 
-    if (reply->type != REDIS_REPLY_ARRAY or reply->elements != 2)
+    if (reply->type != REDIS_REPLY_ARRAY or reply->elements != 2 or
+        reply->element[0] == nullptr or reply->element[0]->type != REDIS_REPLY_STRING or
+        reply->element[1] == nullptr or reply->element[1]->type != REDIS_REPLY_ARRAY)
     {
       freeReplyObject(reply);
+      free(prefix);
       return gearmand_gerror(
         "Unexpected reply shape from SCAN during QUEUE replay",
         GEARMAND_QUEUE_ERROR);
@@ -435,7 +452,6 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
 
     for (size_t x= 0; x < keys->elements; x++)
     {
-      char* prefix= (char*) malloc((queue->prefix.size() +1) * sizeof(char));
       char function_name[GEARMAN_FUNCTION_MAX_SIZE];
       char unique[GEARMAN_MAX_UNIQUE_SIZE];
 
@@ -445,7 +461,6 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
                       function_name,
                       unique);
 
-      free(prefix);
       if (ret != 3)
       {
         continue;
@@ -455,6 +470,7 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
       if(!queue->fetch(keys->element[x]->str, record))
       {
         freeReplyObject(reply);
+        free(prefix);
         return gearmand_log_gerror(
           GEARMAN_DEFAULT_LOG_PARAM,
           GEARMAND_QUEUE_ERROR,
@@ -476,6 +492,7 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
     freeReplyObject(reply);
   } while (cursor != "0");
 
+  free(prefix);
   return GEARMAND_SUCCESS;
 }
 #pragma GCC diagnostic pop
