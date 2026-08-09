@@ -157,13 +157,17 @@ redisContext* gearmand::plugins::queue::Hiredis::redis()
 }
 
 /*
- * gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, size_t data_size, uint32_t priority)
+ * gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, size_t data_size, uint32_t priority,
+ *                                          const char *function_name, size_t function_name_size,
+ *                                          const char *unique, size_t unique_size)
  *
  * returns true if hiredis HMSET succeeded
  */
-bool gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, size_t data_size, uint32_t priority) {
+bool gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, size_t data_size, uint32_t priority,
+                                              const char *function_name, size_t function_name_size,
+                                              const char *unique, size_t unique_size) {
   redisContext* context = this->redis();
-  const size_t argc = 6;
+  const size_t argc = 10;
   std::string _priority = std::to_string((uint32_t)priority);
 
   const size_t argvlen[argc] = {
@@ -172,7 +176,11 @@ bool gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, siz
     (size_t)4,
     (size_t)data_size,
     (size_t)8,
-    _priority.size()
+    _priority.size(),
+    (size_t)8,
+    function_name_size,
+    (size_t)6,
+    unique_size
   };
 
   std::vector<const char*> argv {"HMSET"};
@@ -181,6 +189,10 @@ bool gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, siz
   argv.push_back( static_cast<const char*>(data) );
   argv.push_back( "priority" );
   argv.push_back( _priority.c_str() );
+  argv.push_back( "function" );
+  argv.push_back( function_name );
+  argv.push_back( "unique" );
+  argv.push_back( unique );
 
   redisReply *reply = (redisReply *)redisCommandArgv(context, static_cast<int>(argv.size()), &(argv[0]), &(argvlen[0]) );
   if (reply == nullptr)
@@ -230,19 +242,37 @@ bool gearmand::plugins::queue::Hiredis::fetch(char *key, gearmand::plugins::queu
     req.data = s;
     req.priority = GEARMAN_JOB_PRIORITY_NORMAL;
   } else {
-    // 2 x (key + value)
-    assert(reply->elements == 4);
-    auto fk = reply->element[0]->str;
-    if(strcmp(fk, "data") == 0) {
-      std::string s{reply->element[1]->str};
-      req.data = s;
-      req.priority = (uint32_t)std::stoi(reply->element[3]->str);
-    } else if (strcmp(fk, "priority") == 0) {
-      std::string s{reply->element[3]->str};
-      req.data = s;
-      req.priority = (uint32_t)std::stoi(reply->element[1]->str);
-    } else {
-      gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "unexpected key %s", fk);
+    // HGETALL replies with a flat [field, value, field, value, ...] array.
+    // Older gearmand versions only ever wrote "data"/"priority" (#159 added
+    // "function"/"unique" so replay doesn't have to parse them back out of
+    // the key), so this has to tolerate either shape rather than assuming a
+    // fixed field count.
+    assert(reply->elements % 2 == 0);
+    bool have_data= false;
+    bool have_priority= false;
+    for (size_t i= 0; i + 1 < reply->elements; i+= 2)
+    {
+      const char *field= reply->element[i]->str;
+      const char *value= reply->element[i + 1]->str;
+
+      if (strcmp(field, "data") == 0) {
+        req.data= std::string{value};
+        have_data= true;
+      } else if (strcmp(field, "priority") == 0) {
+        req.priority= (uint32_t)std::stoi(value);
+        have_priority= true;
+      } else if (strcmp(field, "function") == 0) {
+        req.function_name= std::string{value};
+      } else if (strcmp(field, "unique") == 0) {
+        req.unique= std::string{value};
+      } else {
+        gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "unexpected key %s", field);
+        return false;
+      }
+    }
+
+    if (have_data == false or have_priority == false) {
+      gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "missing data/priority field(s) for key: %s", key);
       return false;
     }
   }
@@ -408,7 +438,8 @@ static gearmand_error_t _hiredis_add(gearman_server_st *, void *context,
   gearmand_log_debug(
     GEARMAN_DEFAULT_LOG_PARAM,
     "hires key: %u", (uint32_t)key.size());
-  if (queue->hmset(key, data, data_size, (uint32_t)priority))
+  if (queue->hmset(key, data, data_size, (uint32_t)priority,
+                  function_name, function_name_size, unique, unique_size))
     return GEARMAND_SUCCESS;
 
   return gearmand_log_gerror(
@@ -525,20 +556,6 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
 
     for (size_t x= 0; x < keys->elements; x++)
     {
-      char function_name[GEARMAN_FUNCTION_MAX_SIZE];
-      char unique[GEARMAN_MAX_UNIQUE_SIZE];
-
-      int ret= sscanf(keys->element[x]->str,
-                      fmt_str,
-                      prefix,
-                      function_name,
-                      unique);
-
-      if (ret != 3)
-      {
-        continue;
-      }
-
       gearmand::plugins::queue::redis_record_t record;
       if(!queue->fetch(keys->element[x]->str, record))
       {
@@ -548,6 +565,36 @@ static gearmand_error_t _hiredis_replay(gearman_server_st *server, void *context
           GEARMAN_DEFAULT_LOG_PARAM,
           GEARMAND_QUEUE_ERROR,
           "Failed to fetch data for the key: %s", keys->element[x]->str);
+      }
+
+      // Prefer the "function"/"unique" hash fields (#159) over parsing them
+      // out of the key: the key uses '-' as a delimiter, which breaks for
+      // function names or unique IDs that contain a hyphen. Fall back to
+      // parsing the key only for entries written before that fix.
+      char parsed_function_name[GEARMAN_FUNCTION_MAX_SIZE];
+      char parsed_unique[GEARMAN_MAX_UNIQUE_SIZE];
+      const char *function_name;
+      const char *unique;
+
+      if (record.function_name.empty() == false and record.unique.empty() == false)
+      {
+        function_name= record.function_name.c_str();
+        unique= record.unique.c_str();
+      }
+      else
+      {
+        int ret= sscanf(keys->element[x]->str,
+                        fmt_str,
+                        prefix,
+                        parsed_function_name,
+                        parsed_unique);
+        if (ret != 3)
+        {
+          continue;
+        }
+
+        function_name= parsed_function_name;
+        unique= parsed_unique;
       }
 
       /* need to make a copy here ... gearman_server_job_free will free it later */

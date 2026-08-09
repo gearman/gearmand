@@ -59,6 +59,13 @@ namespace queue {
 struct redis_record_t {
   uint32_t priority;
   std::string data;
+  // Populated from the "function"/"unique" hash fields when present (see
+  // #159 -- older gearmand versions encoded these into the key itself,
+  // delimited by '-', which breaks for function names or unique IDs that
+  // contain a hyphen). Empty if the key predates those fields, in which
+  // case the caller must fall back to parsing the key.
+  std::string function_name;
+  std::string unique;
 };
 
 /**
@@ -107,11 +114,18 @@ class Hiredis : public Queue {
     redisContext* redis();
 
     /*
-     * hmset(vchar_t key, const void *data, size_t data_size, uint32_t)
+     * hmset(vchar_t key, const void *data, size_t data_size, uint32_t priority,
+     *       const char *function_name, size_t function_name_size,
+     *       const char *unique, size_t unique_size)
+     *
+     * function_name/unique are stored as their own hash fields (in addition
+     * to being embedded in the key) so replay can recover them without
+     * parsing the key -- see #159.
      *
      * returns true if hiredis HMSET succeeded
      */
-    bool hmset(vchar_t, const void *, size_t, uint32_t);
+    bool hmset(vchar_t, const void *, size_t, uint32_t,
+              const char *, size_t, const char *, size_t);
 
     /*
      * bool fetch(char *key, redis_record_t &req)
