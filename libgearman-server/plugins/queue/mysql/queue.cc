@@ -331,12 +331,19 @@ static gearmand_error_t _mysql_queue_add(gearman_server_st *, void *context,
   bind[4].is_null= 0;
   bind[4].length= 0;
 
-  while(1)
+  // retried bounds this to a single reprepare-and-retry. Without it, a query
+  // that's too large for the server's max_allowed_packet gets CR_SERVER_LOST
+  // every time (MySQL closes the connection outright on an oversized packet
+  // rather than rejecting just that query), so reconnecting and retrying the
+  // *same* oversized data would otherwise loop forever (#126).
+  bool retried= false;
+  while (1)
   {
     if (mysql_stmt_bind_param(queue->add_stmt, bind))
     {
-      if ( mysql_stmt_errno(queue->add_stmt) == CR_NO_PREPARE_STMT )
+      if ( mysql_stmt_errno(queue->add_stmt) == CR_NO_PREPARE_STMT and retried == false )
       {
+        retried= true;
         if (queue->prepareAddStatement() == GEARMAND_QUEUE_ERROR)
         {
           return GEARMAND_QUEUE_ERROR;
@@ -352,8 +359,9 @@ static gearmand_error_t _mysql_queue_add(gearman_server_st *, void *context,
 
     if (mysql_stmt_execute(queue->add_stmt))
     {
-      if ( mysql_stmt_errno(queue->add_stmt) == CR_SERVER_LOST )
+      if ( mysql_stmt_errno(queue->add_stmt) == CR_SERVER_LOST and retried == false )
       {
+        retried= true;
         mysql_stmt_close(queue->add_stmt);
         if (queue->prepareAddStatement() != GEARMAND_QUEUE_ERROR)
         {
@@ -406,12 +414,17 @@ static gearmand_error_t _mysql_queue_done(gearman_server_st*, void *context,
   bind[1].is_null= 0;
   bind[1].length= (unsigned long*)&function_name_size;
 
+  // See the matching comment in _mysql_queue_add(): bound to a single
+  // reprepare-and-retry so a persistently-failing connection can't loop
+  // forever (#126).
+  bool retried= false;
   while(1)
   {
     if (mysql_stmt_bind_param(queue->done_stmt, bind))
     {
-      if ( mysql_stmt_errno(queue->done_stmt) == CR_NO_PREPARE_STMT )
+      if ( mysql_stmt_errno(queue->done_stmt) == CR_NO_PREPARE_STMT and retried == false )
       {
+        retried= true;
         if (queue->prepareDoneStatement() == GEARMAND_QUEUE_ERROR)
         {
           return GEARMAND_QUEUE_ERROR;
@@ -427,8 +440,9 @@ static gearmand_error_t _mysql_queue_done(gearman_server_st*, void *context,
 
     if (mysql_stmt_execute(queue->done_stmt))
     {
-      if ( mysql_stmt_errno(queue->done_stmt) == CR_SERVER_LOST )
+      if ( mysql_stmt_errno(queue->done_stmt) == CR_SERVER_LOST and retried == false )
       {
+        retried= true;
         mysql_stmt_close(queue->done_stmt);
         if (queue->prepareDoneStatement() != GEARMAND_QUEUE_ERROR)
         {
