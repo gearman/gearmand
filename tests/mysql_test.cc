@@ -45,6 +45,7 @@ using namespace libtest;
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <unistd.h>
 
 #include <libgearman/gearman.h>
@@ -52,9 +53,14 @@ using namespace libtest;
 #include <tests/basic.h>
 #include <tests/context.h>
 
+#include "libgearman/client.hpp"
+using namespace org::gearmand;
+
 #ifndef __INTEL_COMPILER
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
+
+static in_port_t mysqld_port= 0;
 
 static test_return_t gearmand_basic_option_test(void *)
 {
@@ -72,30 +78,78 @@ static test_return_t gearmand_basic_option_test(void *)
   return TEST_SUCCESS;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunreachable-code"
 static test_return_t collection_init(void *object)
 {
-  return TEST_SKIPPED; // Just skip until YaTL has MySQL startup support
+  Context *test= (Context *)object;
+  fatal_assert(test);
+
+  mysqld_port= libtest::get_free_port();
+  ASSERT_TRUE(server_startup(test->_servers, "mysqld", mysqld_port, NULL));
+
+  ASSERT_TRUE(mysqld_create_database(mysqld_port, "gearman"));
+
+  char mysql_port_string[1024];
+  int length= snprintf(mysql_port_string,
+                       sizeof(mysql_port_string),
+                       "--mysql-port=%d",
+                       int(mysqld_port));
+  ASSERT_TRUE(size_t(length) < sizeof(mysql_port_string));
 
   const char *argv[]= {
     "--queue-type=MySQL",
+    "--mysql-host=127.0.0.1",
+    mysql_port_string,
+    "--mysql-user=root",
+    "--mysql-db=gearman",
     "--mysql-table=gearman",
     0 };
-
-  Context *test= (Context *)object;
-  fatal_assert(test);
 
   ASSERT_TRUE(test->initialize(argv));
 
   return TEST_SUCCESS;
 }
-#pragma GCC diagnostic pop
 
 static test_return_t collection_cleanup(void *object)
 {
   Context *test= (Context *)object;
   test->reset();
+
+  return TEST_SUCCESS;
+}
+
+// Regression test for #126: _mysql_queue_add() retried a failed INSERT
+// against CR_SERVER_LOST unconditionally and unboundedly. MySQL closes the
+// connection outright (rather than rejecting just that one query) when a
+// query exceeds max_allowed_packet, so a job whose data was too large made
+// the add path retry the exact same oversized query forever instead of
+// failing cleanly. collection_init() starts mysqld with a small
+// max_allowed_packet (see MySQLd::build() in libtest/mysqld.cc) so a
+// multi-megabyte payload reliably triggers that path.
+static test_return_t mysql_oversized_packet_does_not_hang(void *object)
+{
+  Context *test= (Context *)object;
+  ASSERT_TRUE(test);
+
+  libgearman::Client client(test->port());
+
+  std::string big_payload(2 * 1024 * 1024, 'x');
+
+  {
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, "oversized_test", NULL,
+                                                       big_payload.data(), big_payload.size(), job_handle);
+    ASSERT_EQ(rc, GEARMAN_QUEUE_ERROR);
+  }
+
+  // Confirm the connection (and mysqld) is still healthy afterward -- a
+  // normal-sized job should still persist and succeed.
+  {
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, "oversized_test", NULL,
+                                                       test_literal_param("small payload"), job_handle);
+    ASSERT_EQ(rc, GEARMAN_SUCCESS);
+    ASSERT_TRUE(job_handle[0]);
+  }
 
   return TEST_SUCCESS;
 }
@@ -132,9 +186,15 @@ test_st tests[] ={
   {0, 0, 0}
 };
 
+test_st regressions[] ={
+  {"#126 oversized packet does not hang", 0, mysql_oversized_packet_does_not_hang },
+  {0, 0, 0}
+};
+
 collection_st collection[] ={
   {"gearmand options", 0, 0, gearmand_basic_option_tests},
   {"mysql queue", collection_init, collection_cleanup, tests},
+  {"regressions", collection_init, collection_cleanup, regressions},
   {0, 0, 0, 0}
 };
 

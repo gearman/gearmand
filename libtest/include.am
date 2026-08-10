@@ -121,6 +121,7 @@ noinst_HEADERS+= libtest/killpid.h
 noinst_HEADERS+= libtest/libtool.hpp
 noinst_HEADERS+= libtest/memcached.h
 noinst_HEADERS+= libtest/memcached.hpp
+noinst_HEADERS+= libtest/mysqld.h
 noinst_HEADERS+= libtest/poll_error.hpp
 noinst_HEADERS+= libtest/port.h
 noinst_HEADERS+= libtest/redis.h
@@ -218,6 +219,7 @@ EXTRA_libtest_libtest_la_DEPENDENCIES+= libtest/wait
 
 # We are either building in tree, or with
 libtest_libtest_la_SOURCES+= libtest/memcached.cc
+libtest_libtest_la_SOURCES+= libtest/mysqld.cc
 libtest_libtest_la_SOURCES+= libtest/redis.cc
 
 libtest_libtest_la_LDFLAGS+= @LIBDRIZZLE_LDFLAGS@

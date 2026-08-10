@@ -79,4 +79,16 @@ bool has_redis();
 
 LIBTEST_API
 const char* redis_server_binary();
+
+LIBTEST_API
+bool has_mysql_install_db();
+
+LIBTEST_API
+const char* mysqld_binary();
+
+LIBTEST_API
+const char* mysql_install_db_binary();
+
+LIBTEST_API
+const char* mysql_client_binary();
 } // namespace libtest

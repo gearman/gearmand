@@ -136,6 +136,30 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AX_PROG_MEMCACHED
 AX_PROG_REDIS
+
+dnl YATL_MYSQL (libtest/m4/mysql.m4, invoked from libtest/yatl.m4) already
+dnl detects the mysqld/mariadbd server binary (HAVE_MYSQLD_BUILD/MYSQLD_BINARY)
+dnl and the mysql client library (HAVE_LIBMYSQL_BUILD). The only things it
+dnl doesn't cover, needed to spawn a throwaway instance for t/mysql, are the
+dnl install-db helper and a mysql/mariadb client binary.
+AC_PATH_PROGS([MYSQL_INSTALL_DB_BINARY],[mariadb-install-db mysql_install_db],[unknown])
+AS_IF([test x"$MYSQL_INSTALL_DB_BINARY" != xunknown -a -x "$MYSQL_INSTALL_DB_BINARY"],
+      [AC_DEFINE([HAVE_MYSQL_INSTALL_DB_BINARY], [1], [If a mysql_install_db/mariadb-install-db binary is available])
+      AC_DEFINE_UNQUOTED([MYSQL_INSTALL_DB_BINARY],"$MYSQL_INSTALL_DB_BINARY",[Path to the mysql_install_db/mariadb-install-db binary used in make test])
+      ],
+      [AC_DEFINE([HAVE_MYSQL_INSTALL_DB_BINARY], [0], [If a mysql_install_db/mariadb-install-db binary is available])
+      MYSQL_INSTALL_DB_BINARY=
+      ])
+
+AC_PATH_PROGS([MYSQL_CLIENT_BINARY],[mariadb mysql],[unknown])
+AS_IF([test x"$MYSQL_CLIENT_BINARY" != xunknown -a -x "$MYSQL_CLIENT_BINARY"],
+      [AC_DEFINE([HAVE_MYSQL_CLIENT_BINARY], [1], [If a mysql/mariadb client binary is available])
+      AC_DEFINE_UNQUOTED([MYSQL_CLIENT_BINARY],"$MYSQL_CLIENT_BINARY",[Path to the mysql/mariadb client binary used in make test])
+      ],
+      [AC_DEFINE([HAVE_MYSQL_CLIENT_BINARY], [0], [If a mysql/mariadb client binary is available])
+      MYSQL_CLIENT_BINARY=
+      ])
+
 AX_PROG_SPHINX_BUILD(,[AC_MSG_WARN([sphinx-build version 1.0 or greater is required to build man pages])])
 AX_WITH_PROG([LCOV],[lcov])
 AX_WITH_PROG([LCOV_GENHTML],[genhtml])
