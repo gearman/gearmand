@@ -36,7 +36,7 @@
  *
  */
 
-#include "gear_config.h"
+#include <gear_config.h>
 #include <libgearman-server/common.h>
 
 #include <libgearman-server/plugins/queue/tokyocabinet/queue.h>
