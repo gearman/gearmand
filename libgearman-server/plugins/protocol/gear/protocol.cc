@@ -526,6 +526,17 @@ gearmand_error_t Gear::start(gearmand_st *gearmand)
 
     assert(gearmand->ctx_ssl());
   }
+#else
+  // --ssl is always a recognized option (registered unconditionally above),
+  // so a binary built without SSL support silently accepted it and fell
+  // back to plaintext instead of refusing to start (#207). Fail loudly
+  // instead: a user who asked for SSL and got an unencrypted listener with
+  // no indication of that is a security footgun, not a graceful fallback.
+  if (opt_ssl)
+  {
+    return gearmand_log_fatal(GEARMAN_DEFAULT_LOG_PARAM,
+                              "--ssl was requested, but this gearmand binary was not built with SSL support");
+  }
 #endif
 
   rc= gearmand_port_add(gearmand, _port.c_str(), _gear_con_add, _gear_con_remove);
