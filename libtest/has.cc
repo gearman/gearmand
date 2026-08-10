@@ -140,6 +140,50 @@ bool has_mysqld()
   return false;
 }
 
+const char* mysqld_binary()
+{
+#if defined(MYSQLD_BINARY)
+  return MYSQLD_BINARY;
+#else
+  return NULL;
+#endif
+}
+
+bool has_mysql_install_db()
+{
+#if defined(HAVE_MYSQL_INSTALL_DB_BINARY) && HAVE_MYSQL_INSTALL_DB_BINARY
+  if (HAVE_MYSQL_INSTALL_DB_BINARY)
+  {
+#if defined(MYSQL_INSTALL_DB_BINARY)
+    if (access(MYSQL_INSTALL_DB_BINARY, X_OK) == 0)
+    {
+      return true;
+    }
+#endif
+  }
+#endif
+
+  return false;
+}
+
+const char* mysql_install_db_binary()
+{
+#if defined(MYSQL_INSTALL_DB_BINARY)
+  return MYSQL_INSTALL_DB_BINARY;
+#else
+  return NULL;
+#endif
+}
+
+const char* mysql_client_binary()
+{
+#if defined(MYSQL_CLIENT_BINARY)
+  return MYSQL_CLIENT_BINARY;
+#else
+  return NULL;
+#endif
+}
+
 static char memcached_binary_path[FILENAME_MAX +1]= { 0 };
 
 static void initialize_memcached_binary_path()

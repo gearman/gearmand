@@ -255,6 +255,13 @@ libtest::Server* server_startup_st::create(const std::string& server_type, in_po
       server= build_redis("localhost", try_port);
     }
   }
+  else if (server_type.compare("mysqld") == 0)
+  {
+    if (has_mysqld())
+    {
+      server= build_mysqld("localhost", try_port);
+    }
+  }
 
   return server;
 }

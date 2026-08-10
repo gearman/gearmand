@@ -1,8 +1,8 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  *
- *  Data Differential YATL (i.e. libtest)  library
+ *  YATL (i.e. libtest) library
  *
- *  Copyright (C) 2012 Data Differential, http://datadifferential.com/
+ *  Copyright (C) 2026 Alexei Pastuchov
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are
@@ -33,91 +33,17 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*
-  Common include file for libtest
-*/
 
 #pragma once
 
-#include <cassert>
-#include <cerrno>
-#include <cstdlib>
-#include <sstream>
-#include <string>
+namespace libtest {
 
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
+libtest::Server *build_mysqld(const std::string& hostname, const in_port_t try_port);
 
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
+// Creates "database_name" on a running mysqld/mariadbd instance (via the
+// mysql/mariadb client binary). Server::start()'s own ping() loop already
+// confirmed the server is up before returning, so this is safe to call
+// right after server_startup() succeeds.
+bool mysqld_create_database(const in_port_t port, const std::string& database_name);
 
-#ifdef HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H 
-# include <sys/resource.h> 
-#endif
- 
-#ifdef HAVE_FNMATCH_H
-# include <fnmatch.h>
-#endif
-
-#ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#endif
-
-#if defined(WIN32)
-# include "win32/wrappers.h"
-# define get_socket_errno() WSAGetLastError()
-#else
-# ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-# endif
-# define INVALID_SOCKET -1
-# define SOCKET_ERROR -1
-# define closesocket(a) close(a)
-# define get_socket_errno() errno
-#endif
-
-#include <libtest/test.hpp>
-
-#include <libtest/is_pid.hpp>
-
-#include <libtest/gearmand.h>
-#include <libtest/blobslap_worker.h>
-#include <libtest/memcached.h>
-#include <libtest/drizzled.h>
-#include <libtest/redis.h>
-#include <libtest/mysqld.h>
-
-#include <libtest/libtool.hpp>
-#include <libtest/killpid.h>
-#include <libtest/signal.h>
-#include <libtest/dns.hpp>
-#include <libtest/formatter.hpp>
-
-struct FreeFromVector
-{
-  template <class T>
-    void operator() ( T* ptr) const
-    {
-      if (ptr)
-      {
-        free(ptr);
-        ptr= NULL;
-      }
-    }
-};
-
-struct DeleteFromVector
-{
-  template <class T>
-    void operator() ( T* ptr) const
-    {
-      delete ptr;
-      ptr= NULL;
-    }
-};
+}
