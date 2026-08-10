@@ -52,7 +52,10 @@ using namespace libtest;
 #include <tests/context.h>
 
 #include "libgearman/client.hpp"
+#include "libgearman/worker.hpp"
 using namespace org::gearmand;
+
+#include "tests/workers/v2/called.h"
 
 #define WORKER_FUNCTION "hiredis_queue_test"
 
@@ -62,6 +65,7 @@ using namespace org::gearmand;
 
 static in_port_t redis_port= 0;
 static libtest::Server *redis_server_handle= NULL;
+static libtest::Server *gearmand_server_handle= NULL;
 
 static test_return_t gearmand_basic_option_test(void *)
 {
@@ -98,6 +102,8 @@ static test_return_t collection_init(void *object)
     0 };
 
   ASSERT_TRUE(test->initialize(argv));
+  gearmand_server_handle= test->_servers.last();
+  ASSERT_TRUE(gearmand_server_handle);
 
   return TEST_SUCCESS;
 }
@@ -185,6 +191,71 @@ static test_return_t redis_reconnect_after_outage(void *object)
   return TEST_SUCCESS;
 }
 
+// Regression test for #159: gearmand encoded prefix-function_name-unique
+// into the redis key and parsed it back apart on replay using '-' as the
+// delimiter, so a function name containing a hyphen got truncated at the
+// first one. Submits a job to a hyphenated function name with no worker
+// running (so it persists to redis), restarts gearmand to force a replay,
+// and confirms a worker registering the *full* function name receives it.
+static test_return_t redis_replay_hyphenated_function_name(void *object)
+{
+  Context *test= (Context *)object;
+  ASSERT_TRUE(test);
+  ASSERT_TRUE(gearmand_server_handle);
+
+  const char *function_name= "hyphenated-function-name";
+
+  {
+    libgearman::Client client(test->port());
+
+    gearman_job_handle_t job_handle= {};
+    gearman_return_t rc= gearman_client_do_background(&client, function_name, NULL,
+                                                       test_literal_param("hyphen test payload"), job_handle);
+    ASSERT_EQ(rc, GEARMAN_SUCCESS);
+    ASSERT_TRUE(job_handle[0]);
+  }
+
+  // Server::start() isn't idempotent for gearmand: calling it again on the
+  // same handle re-adds --verbose/--log-file/--pid-file on top of what's
+  // already there, and gearmand's strict option parser rejects the
+  // duplicates. Kill the old one and start a fresh Server via
+  // initialize() (same config collection_init() used) instead of trying to
+  // restart the existing handle in place.
+  ASSERT_TRUE(gearmand_server_handle->kill());
+
+  char redis_port_string[1024];
+  int length= snprintf(redis_port_string,
+                       sizeof(redis_port_string),
+                       "--redis-port=%d",
+                       int(redis_port));
+  ASSERT_TRUE(size_t(length) < sizeof(redis_port_string));
+
+  const char *argv[]= {
+    "--queue-type=redis",
+    "--redis-server=localhost",
+    redis_port_string,
+    0 };
+
+  ASSERT_TRUE(test->initialize(argv));
+  gearmand_server_handle= test->_servers.last();
+  ASSERT_TRUE(gearmand_server_handle);
+
+  libgearman::Worker worker(test->port());
+  gearman_worker_set_timeout(&worker, 3000);
+
+  Called called;
+  gearman_function_t function= gearman_function_create(called_worker);
+  ASSERT_EQ(gearman_worker_define_function(&worker,
+                                           function_name, strlen(function_name),
+                                           function,
+                                           5, &called), GEARMAN_SUCCESS);
+
+  ASSERT_EQ(gearman_worker_work(&worker), GEARMAN_SUCCESS);
+  ASSERT_TRUE(called.count());
+
+  return TEST_SUCCESS;
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunreachable-code"
 static bool test_for_HAVE_HIREDIS()
@@ -234,6 +305,7 @@ test_st tests[] ={
 test_st regressions[] ={
   {"lp:734663", 0, lp_734663 },
   {"#45 reconnect after redis outage", 0, redis_reconnect_after_outage },
+  {"#159 replay hyphenated function name", 0, redis_replay_hyphenated_function_name },
   {0, 0, 0}
 };
 

@@ -43,6 +43,8 @@
 #include <gear_config.h>
 #include <libgearman-server/plugins/queue/redis/queue.h>
 
+#include <cstdlib>
+
 #if defined(GEARMAND_PLUGINS_QUEUE_REDIS_H)
 
 /* Queue callback functions. */
@@ -252,6 +254,13 @@ bool gearmand::plugins::queue::Hiredis::fetch(char *key, gearmand::plugins::queu
     bool have_priority= false;
     for (size_t i= 0; i + 1 < reply->elements; i+= 2)
     {
+      if (reply->element[i] == nullptr or reply->element[i]->str == nullptr or
+          reply->element[i + 1] == nullptr or reply->element[i + 1]->str == nullptr)
+      {
+        gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "unexpected null field/value in HGETALL reply for key: %s", key);
+        return false;
+      }
+
       const char *field= reply->element[i]->str;
       const char *value= reply->element[i + 1]->str;
 
@@ -259,7 +268,13 @@ bool gearmand::plugins::queue::Hiredis::fetch(char *key, gearmand::plugins::queu
         req.data= std::string{value};
         have_data= true;
       } else if (strcmp(field, "priority") == 0) {
-        req.priority= (uint32_t)std::stoi(value);
+        char *end= nullptr;
+        unsigned long parsed_priority= std::strtoul(value, &end, 10);
+        if (end == value or *end != '\0' or parsed_priority > UINT32_MAX) {
+          gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "invalid priority value '%s' for key: %s", value, key);
+          return false;
+        }
+        req.priority= static_cast<uint32_t>(parsed_priority);
         have_priority= true;
       } else if (strcmp(field, "function") == 0) {
         req.function_name= std::string{value};
