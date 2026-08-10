@@ -169,10 +169,13 @@ bool gearmand::plugins::queue::Hiredis::hmset(vchar_t key, const void *data, siz
                                               const char *function_name, size_t function_name_size,
                                               const char *unique, size_t unique_size) {
   redisContext* context = this->redis();
-  const size_t argc = 10;
   std::string _priority = std::to_string((uint32_t)priority);
 
-  const size_t argvlen[argc] = {
+  // Size is left for the compiler to infer from the initializer instead of
+  // a named argc constant -- some older compilers (e.g. the GCC 4.4 that
+  // shipped with CentOS 6, see #113) rejected initializing an array sized
+  // by a const size_t as though it were a VLA.
+  const size_t argvlen[]= {
     (size_t)5,
     (size_t)key.size(),
     (size_t)4,
