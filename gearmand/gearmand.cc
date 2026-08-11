@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
   int backlog;
   rlim_t fds= 0;
-  uint32_t job_retries;
+  int32_t job_retries;
   uint32_t worker_wakeup;
 
   std::string host;
@@ -146,8 +146,8 @@ int main(int argc, char *argv[])
 
   ("help,h", "Print this help menu.")
 
-  ("job-retries,j", boost::program_options::value(&job_retries)->default_value(0),
-   "Number of attempts to run the job before the job server removes it. This is helpful to ensure a bad job does not crash all available workers. Default is no limit.")
+  ("job-retries,j", boost::program_options::value(&job_retries)->default_value(-1),
+   "Number of attempts to run the job before the job server removes it. This is helpful to ensure a bad job does not crash all available workers. Use 0 to disable retries. Default is -1 (no limit).")
 
   ("job-handle-prefix", boost::program_options::value(&job_handle_prefix),
    "Prefix used to generate a job handle string. If not provided, the default \"H:<host_name>\" is used.")
@@ -312,6 +312,12 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  if (job_retries < -1 || job_retries > 255)
+  {
+    error::message("job-retries must be -1 (no limit), 0 (no retries), or between 1 and 255");
+    return EXIT_FAILURE;
+  }
+
   if (opt_check_args)
   {
     return EXIT_SUCCESS;
@@ -392,7 +398,7 @@ int main(int argc, char *argv[])
   gearmand_st *_gearmand= gearmand_create(gearmand_config,
                                           host.empty() ? NULL : host.c_str(),
                                           threads, backlog,
-                                          static_cast<uint8_t>(job_retries),
+                                          job_retries,
                                           job_handle_prefix.empty() ? NULL : job_handle_prefix.c_str(),
                                           static_cast<uint8_t>(worker_wakeup),
                                           _log, &log_info, verbose,
