@@ -44,6 +44,7 @@
 #include <libgearman-server/plugins/queue/redis/queue.h>
 
 #include <cstdlib>
+#include <string>
 
 #if defined(GEARMAND_PLUGINS_QUEUE_REDIS_H)
 
