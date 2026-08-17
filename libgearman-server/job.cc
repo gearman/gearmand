@@ -486,7 +486,8 @@ gearmand_error_t gearman_server_job_queue(gearman_server_job_st *job)
   if (job->worker)
   {
     job->retries++;
-    if (Server->job_retries != 0 && Server->job_retries == job->retries)
+    if (Server->job_retries == 0 ||
+        (Server->job_retries > 0 && job->retries == Server->job_retries))
     {
       gearmand_log_notice(GEARMAN_DEFAULT_LOG_PARAM,
                           "Dropped job due to max retry count: %s %.*s",

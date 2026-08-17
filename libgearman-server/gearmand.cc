@@ -110,7 +110,7 @@ static void _clear_events(gearmand_st *gearmand);
 static void _close_events(gearmand_st *gearmand);
 
 static bool gearman_server_create(gearman_server_st& server,
-                                  const uint32_t job_retries,
+                                  const int32_t job_retries,
                                   const char *job_handle_prefix,
                                   uint8_t worker_wakeup,
                                   bool round_robin,
@@ -222,7 +222,7 @@ gearmand_st *gearmand_create(gearmand_config_st *config,
                              const char *host_arg,
                              uint32_t threads_arg,
                              int backlog_arg,
-                             const uint32_t job_retries,
+                             const int32_t job_retries,
                              const char *job_handle_prefix,
                              uint8_t worker_wakeup,
                              gearmand_log_fn *log_function, void *log_context, const gearmand_verbose_t verbose_arg,
@@ -1235,8 +1235,8 @@ bool gearmand_verbose_check(const char *name, gearmand_verbose_t& level)
   return success;
 }
 
-static bool gearman_server_create(gearman_server_st& server, 
-                                  const uint32_t job_retries_arg,
+static bool gearman_server_create(gearman_server_st& server,
+                                  const int32_t job_retries_arg,
                                   const char *job_handle_prefix,
                                   uint8_t worker_wakeup_arg,
                                   bool round_robin_arg,

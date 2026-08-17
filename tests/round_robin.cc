@@ -387,6 +387,18 @@ static test_return_t job_retry_GEARMAN_FATAL_TEST(void *object)
   return _job_retry_TEST(context, limit);
 }
 
+/* Regression test for https://github.com/gearman/gearmand/issues/197 :
+ * --job-retries=0 must mean "no retries" (drop after the first failure),
+ * not "unlimited retries". The worker should be invoked exactly once. */
+static test_return_t job_retry_no_retries_TEST(void *object)
+{
+  Context *context= (Context *)object;
+
+  Limit limit(1);
+
+  return _job_retry_TEST(context, limit);
+}
+
 static test_return_t round_robin_SETUP(void *object)
 {
   Context *context= (Context *)object;
@@ -411,6 +423,14 @@ static test_return_t _job_retries_SETUP(Context *context)
   }
 
   return TEST_FAILURE;
+}
+
+static test_return_t job_retries_zero_SETUP(void *object)
+{
+  Context *context= (Context *)object;
+  context->retries(0);
+
+  return _job_retries_SETUP(context);
 }
 
 static test_return_t job_retries_once_SETUP(void *object)
@@ -475,8 +495,14 @@ test_st job_retry_TESTS[] ={
   {0, 0, 0}
 };
 
+test_st job_retry_no_retries_TESTS[] ={
+  {"no retries", 0, job_retry_no_retries_TEST },
+  {0, 0, 0}
+};
+
 collection_st collection[] ={
   {"round_robin", round_robin_SETUP, _TEARDOWN, round_robin_TESTS },
+  {"--job-retries=0", job_retries_zero_SETUP, _TEARDOWN, job_retry_no_retries_TESTS },
   {"--job-retries=1", job_retries_once_SETUP, _TEARDOWN, job_retry_TESTS },
   {"--job-retries=2", job_retries_twice_SETUP, _TEARDOWN, job_retry_TESTS },
   {"--job-retries=10", job_retries_ten_SETUP, _TEARDOWN, job_retry_TESTS },
