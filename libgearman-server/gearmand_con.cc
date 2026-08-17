@@ -641,14 +641,6 @@ gearmand_error_t gearmand_con_create(gearmand_st *gearmand, int& fd,
 
   dcon->thread= gearmand->thread_add_next;
 
-  /* We don't need to lock if the list is empty. */
-  if (dcon->thread->dcon_add_count == 0 &&
-      dcon->thread->free_dcon_count < gearmand->max_thread_free_dcon_count)
-  {
-    GEARMAND_LIST__ADD(dcon->thread->dcon_add, dcon);
-    gearmand_thread_wakeup(dcon->thread, GEARMAND_WAKEUP_CON);
-  }
-  else
   {
     gearmand_con_st *free_dcon_list= NULL;
 

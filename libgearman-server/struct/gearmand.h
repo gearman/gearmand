@@ -121,7 +121,6 @@ struct gearmand_st
   uint32_t threads;
   uint32_t thread_count;
   uint32_t free_dcon_count;
-  uint32_t max_thread_free_dcon_count;
   int wakeup_fd[2];
   char *host;
   gearmand_log_fn *log_fn;
@@ -152,7 +151,6 @@ struct gearmand_st
     threads(threads_),
     thread_count(0),
     free_dcon_count(0),
-    max_thread_free_dcon_count(0),
     host(NULL),
     log_fn(NULL),
     log_context(NULL),

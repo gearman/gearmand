@@ -355,15 +355,6 @@ gearmand_error_t gearmand_run(gearmand_st *gearmand)
                       (unsigned long)(getpid()),
                       gearmand_verbose_name(gearmand->verbose));
 
-    if (gearmand->threads > 0)
-    {
-      /* Set the number of free connection structures each thread should keep
-         around before the main thread is forced to take them. We compute this
-         here so we don't need to on every new connection. */
-      gearmand->max_thread_free_dcon_count= ((GEARMAND_MAX_FREE_SERVER_CON /
-                                              gearmand->threads) / 2);
-    }
-
     gearmand->base= static_cast<struct event_base *>(event_base_new());
     if (gearmand->base == NULL)
     {
