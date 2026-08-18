@@ -317,7 +317,7 @@ private:
   bool init_ssl();
 
 public:
-  SSL_CTX* ctx_ssl() 
+  SSL_CTX* ctx_ssl()
   {
     if (ssl())
     {
@@ -325,7 +325,11 @@ public:
       {
         if (init_ssl() == false)
         {
-          abort();
+          // init_ssl() has already recorded a specific error (bad cert
+          // path, SSL_CTX_new() failure, etc.) via gearman_universal_set_error().
+          // That is a recoverable connection error, not a programmer error,
+          // so let the caller see it instead of aborting the process.
+          return NULL;
         }
       }
       assert(_ctx_ssl);
