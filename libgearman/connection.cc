@@ -670,7 +670,16 @@ gearman_return_t gearman_connection_st::enable_ssl()
 #if defined(HAVE_SSL) && HAVE_SSL
   if (universal.ssl())
   {
-    _ssl= SSL_new(universal.ctx_ssl());
+    SSL_CTX* ctx= universal.ctx_ssl();
+    if (ctx == NULL)
+    {
+      // ctx_ssl() already recorded the specific failure (bad cert path,
+      // SSL_CTX_new() failure, etc.) via gearman_universal_set_error().
+      close_socket();
+      return universal.error_code();
+    }
+
+    _ssl= SSL_new(ctx);
     if (_ssl == NULL)
     {
       close_socket();

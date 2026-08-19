@@ -119,8 +119,35 @@ static test_return_t SSL_ECHO_TEST(void *)
   return TEST_SUCCESS;
 }
 
+#if defined(HAVE_SSL) && HAVE_SSL
+// Regression test for #503: gearman_universal_st::ctx_ssl() used to call
+// abort() on any recoverable SSL init failure (bad/unreadable CA, cert, or
+// key file), crashing the whole process instead of returning an error the
+// caller could handle. If that regresses, this test process itself
+// crashes with SIGABRT rather than reporting a clean FAIL.
+static test_return_t SSL_BAD_CERT_NO_ABORT_TEST(void *)
+{
+  gearman_universal_st universal;
+  gearman_set_log_fn(universal, error_logger, NULL, GEARMAN_VERBOSE_ERROR);
+  universal.ssl(true);
+  universal.ssl_ca_file("/no/such/gearman-test-ca.pem");
+  universal.ssl_certificate("/no/such/gearman-test-cert.pem");
+  universal.ssl_key("/no/such/gearman-test-key.pem");
+
+  ASSERT_TRUE(universal.ctx_ssl() == NULL);
+  ASSERT_EQ(GEARMAN_INVALID_ARGUMENT, universal.error_code());
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+#endif // defined(HAVE_SSL) && HAVE_SSL
+
 test_st SSL_TESTS[] ={
   {"SSL echo request/response round-trip over TLS", 0, SSL_ECHO_TEST },
+#if defined(HAVE_SSL) && HAVE_SSL
+  {"ctx_ssl() returns error instead of abort() on bad cert/key path (#503)", 0, SSL_BAD_CERT_NO_ABORT_TEST },
+#endif
   {0, 0, 0}
 };
 
