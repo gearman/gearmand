@@ -43,6 +43,30 @@
 #include "gear_config.h"
 #include <libgearman/common.h>
 
+#if defined(HAVE_HTONLL)
+/* System already provides htonll / ntohll, so nothing to do here. */
+#elif defined(HAVE_HTOBE64)
+/* Map the modern htobe64 / be64toh to htonll / ntohll for the codebase. */
+
+# if defined(HAVE_SYS_ENDIAN_H)
+#  include <sys/endian.h>
+# elif defined(HAVE_ENDIAN_H)
+#  include <endian.h>
+# endif
+
+uint64_t ntohll(uint64_t value)
+{
+  return be64toh(value);
+}
+
+uint64_t htonll(uint64_t value)
+{
+  return htobe64(value);
+}
+
+#else
+/* Use historical portable software fallback. */
+
 #ifndef swap64
 /* Byte swap a 64-bit number. */
 static inline uint64_t swap64(uint64_t in)
@@ -63,9 +87,7 @@ static inline uint64_t swap64(uint64_t in)
   return in;
  #endif
 }
-#endif
-
-#ifndef HAVE_HTONLL
+#endif /* !swap64 */
 
 uint64_t ntohll(uint64_t value)
 {
@@ -77,4 +99,4 @@ uint64_t htonll(uint64_t value)
   return swap64(value);
 }
 
-#endif
+#endif /* !HAVE_HTONLL && !HAVE_HTOBE64 */
