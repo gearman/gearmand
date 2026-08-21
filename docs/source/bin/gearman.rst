@@ -44,8 +44,22 @@ SYNOPSIS
 
    Same as -n, but strip off the newline
 
+.. option:: -S
+
+   Enable SSL connections. Certificate paths are taken from the
+   environment variables ``GEARMAND_CA_CERTIFICATE``, ``GEARMAN_CLIENT_PEM``,
+   and ``GEARMAN_CLIENT_KEY`` environment variables or from the libgearman
+   compile-time defaults.
+
 
 **Client options**
+
+.. option:: --ping
+
+   Send an ECHO request to the job server and exit. No worker is required.
+   Useful as a connectivity / health check. Exit status is 0 on success,
+   non-zero on failure. When ``-t`` is omitted, a 2-second timeout is used.
+   With ``-v``, it prints ``ping OK`` on success.
 
 .. option:: -b
 
@@ -93,6 +107,13 @@ DESCRIPTION
 
 
 With gearman you can run client and worker functions from the command line. 
+
+In ping mode (``--ping``), gearman only checks that a job server responds to
+an ECHO request. No function name (``-f``) and no worker are required. This is
+suitable for process supervisors and container health checks, for example::
+
+   gearman --ping -h example.com -p 4730
+   gearman --ping -h 127.0.0.1 -p 47300 -S -t 2000
 
 The environmental variable GEARMAN_SERVER can be used to specify multiple gearmand servers. Please see the c:func:'gearman_client_add_servers' for an explanation of the required syntax.
 

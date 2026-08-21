@@ -54,13 +54,24 @@ GEARMAN_PIDFILE = ${abs_top_builddir}/tests/var/tmp/Xugear.pid
 GEARMAND_PIDFILE = ${abs_top_builddir}/tests/var/tmp/Xugearmand.pid
 GEARMAND_PORT = 5999
 
-client-test: client-test-basic
+client-test: client-test-basic client-test-ping
 
 client-test-basic: $(GEARMAN_CLIENT_TEST)
 	@$(GEARMAN_CLIENT_TEST) -H 2>&1 > /dev/null
 	@$(GEARMAN_CLIENT_TEST) -w -f true -d -i $(GEARMAN_PIDFILE) -- false
 	@libtest/wait $(GEARMAN_PIDFILE)
 	@cat $(GEARMAN_PIDFILE) | xargs kill
+
+client-test-ping: $(GEARMAN_CLIENT_TEST)
+	@gearmand/gearmand --port=$(GEARMAND_PORT) --daemon --pid-file=$(GEARMAND_PIDFILE)
+	@$(GEARMAN_CLIENT_TEST) --ping -p $(GEARMAND_PORT)
+	@$(GEARMAN_CLIENT_TEST) --ping $(GEARMAND_PORT) -v | grep -q "ping ok"
+	@if $(GEARMAN_CLIENT_TEST) --ping -p 1 -t 500; then \
+	  echo "ping unexpectedly succeeded against closed port"; \
+	  exit 1; \
+	fi
+	@libtest/wait $(GEARMAND_PIDFILE)
+	@cat $(GEARMAND_PIDFILE) | xargs kill
 
 client-test-wc: $(GEARMAN_CLIENT_TEST)
 	@gearmand/gearmand --port=$(GEARMAND_PORT) --daemon --pid-file=$(GEARMAND_PIDFILE)
