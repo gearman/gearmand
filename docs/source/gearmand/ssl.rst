@@ -33,7 +33,7 @@ Then, generate the key, the request, and the signed certificate (valid for 2 yea
 
    openssl x509 -req -in gearmand.req -CA gearmand-ca.pem -CAkey gearmand-ca.key -CAcreateserial -out gearmand.pem -days 730 -sha256 -extfile gearmand_server_ext.cnf
 
-Note that the :option:`-CAcreateserial` argument in that last command will cause a :file:`gearmand-ca.srl` file to be automatically created in the current working directory the first time you execute it.
+Note that the ``-CAcreateserial`` argument in that last command will cause a :file:`gearmand-ca.srl` file to be automatically created in the current working directory the first time you execute it.
 
 Finally, generate a certificate for clients and workers to use::
 
