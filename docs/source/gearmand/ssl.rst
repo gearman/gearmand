@@ -2,7 +2,9 @@
 Using SSL with Gearman
 ======================
 
-If you are not paying a certificate authority to generate a certificate for you, you will first need a certificate authority (CA) for gearmand::
+If you are not paying a certificate authority to generate a certificate for you, you will first need a certificate authority (CA) for gearmand:
+
+.. code-block:: bash
 
    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out gearmand-ca.key
 
@@ -10,7 +12,9 @@ If you are not paying a certificate authority to generate a certificate for you,
 
 You then need to place your CA certificate into the directory from which the server will read it.
 
-Generate a server certificate for the server to use. You will need to create an extension file named "gearmand_server_ext.cnf" in order to support Subject Alternative Names (SAN), which are required by modern TLS clients. It should look something like the following (add and/or replace the hostnames and IP addresses under "[alt_names]" as needed)::
+Generate a server certificate for the server to use. You will need to create an extension file named :file:`gearmand_server_ext.cnf` in order to support Subject Alternative Names (SAN), which are required by modern TLS clients. It should look something like the following (add and/or replace the hostnames and IP addresses under "[alt_names]" as needed):
+
+.. code-block:: ini
 
    authorityKeyIdentifier=keyid,issuer
    basicConstraints=CA:FALSE
@@ -25,7 +29,9 @@ Generate a server certificate for the server to use. You will need to create an 
    # Add your internal server IP if clients connect directly via IP
    # IP.2 = 10.x.x.x
 
-Then, generate the key, the request, and the signed certificate (valid for 2 years or 730 days)::
+Then, generate the key, the request, and the signed certificate (valid for 2 years or 730 days):
+
+.. code-block:: bash
 
    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out gearmand.key
 
@@ -35,7 +41,9 @@ Then, generate the key, the request, and the signed certificate (valid for 2 yea
 
 Note that the ``-CAcreateserial`` argument in that last command will cause a :file:`gearmand-ca.srl` file to be automatically created in the current working directory the first time you execute it.
 
-Finally, generate a certificate for clients and workers to use::
+Finally, generate a certificate for clients and workers to use:
+
+.. code-block:: bash
 
    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out gearman.key
 
@@ -47,8 +55,8 @@ Specifying Subject Alternative Names (SAN) is not needed for clients/workers sin
 
 Caveats:
 
-  1. Make sure your gearmand was configured with '--enable-ssl'. You will likely need to compile from source as packagers tend to not enable that option. Passing '--ssl' to a gearmand binary that wasn't built with SSL support refuses to start rather than silently falling back to accepting unencrypted connections.
+  1. Make sure your gearmand was configured with ``--enable-ssl``. You will likely need to compile from source as packagers tend to not enable that option. Passing ``--ssl`` to a gearmand executable that wasn't built with SSL support causes it to refuse to start rather than silently falling back to accepting unencrypted connections.
 
-  2. The commands above generate server and client certificates valid for 730 days (2 years). If you want a different lifetime, adjust the '-days' parameters in the commands accordingly. The lifetimes of the server and client certificates should be less than or equal to the number of days until the CA certificate expires (3650 in the commands above).
+  2. The commands above generate server and client certificates valid for 730 days (2 years). If you want a different lifetime, adjust the ``-days`` parameters in the commands accordingly. The lifetimes of the server and client certificates should be less than or equal to the number of days until the CA certificate expires (3650 in the commands above).
 
   3. Make sure you specify different "Common Name" ("/CN=...") values when generating the certificates for the CA, server, and client. OpenSSL does not like them being the same.
