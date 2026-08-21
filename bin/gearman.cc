@@ -135,6 +135,11 @@ static void _read_workload(int fd, Bytes& workload);
  */
 static void usage(Args&, char *name);
 
+/**
+ * Connectivity check via ECHO_REQ (no worker required).
+ */
+static void _ping(Args &args);
+
 extern "C"
 {
 
@@ -228,6 +233,12 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  if (args.ping())
+  {
+    _ping(args);
+    return args.error();
+  }
+
   if (args.worker())
   {
     _worker(args);
@@ -238,6 +249,55 @@ int main(int argc, char *argv[])
   }
 
   return args.error();
+}
+
+void _ping(Args &args)
+{
+  libgearman::Client client;
+
+  if (args.timeout() >= 0)
+  {
+    gearman_client_set_timeout(&client, args.timeout());
+  }
+  else
+  {
+    /* Default timeout for when -t is omitted. */
+    gearman_client_set_timeout(&client, 2000);
+  }
+
+  if (getenv("GEARMAN_SERVER"))
+  {
+    if (gearman_failed(gearman_client_add_servers(&client, getenv("GEARMAN_SERVER"))))
+    {
+      error::message("Error occurred while parsing GEARMAN_SERVER", &client);
+      return;
+    }
+  }
+  else if (gearman_failed(gearman_client_add_server(&client, args.host(), args.port())))
+  {
+    error::message("gearman_client_add_server", &client);
+    return;
+  }
+
+  if (args.use_ssl())
+  {
+    /* Paths from GEARMAND_CA_CERTIFICATE / GEARMAN_CLIENT_PEM /
+       GEARMAN_CLIENT_KEY environment variables or compile-time defaults. */
+    gearman_client_add_options(&client, GEARMAN_CLIENT_SSL);
+  }
+
+  static const char payload[]= "ping";
+  gearman_return_t rc= gearman_client_echo(&client, payload, sizeof(payload) - 1);
+  if (gearman_failed(rc))
+  {
+    error::message("gearman_client_echo", &client);
+    return;
+  }
+
+  if (args.verbose())
+  {
+    fprintf(stdout, "ping OK\n");
+  }
 }
 
 void _client(Args &args)
@@ -785,18 +845,22 @@ static void usage(Args& args, char *name)
 
   fprintf(stream, "Client mode: %s [options] [<data>]\n", name);
   fprintf(stream, "Worker mode: %s -w [options] [<command> [<args> ...]]\n", name);
+  fprintf(stream, "  Ping mode: %s --ping [options]\n", name);
+  fprintf(stream, "\t              - Send ECHO request to server\n");
+  fprintf(stream, "\t                (connectivity check; no worker needed)\n");
 
-  fprintf(stream, "\nCommon options to both client and worker modes.\n");
-  fprintf(stream, "\t-f <function> - Function name to use for jobs (can give many)\n");
+  fprintf(stream, "\nCommon options to client, ping, and worker modes:\n");
   fprintf(stream, "\t-h <host>     - Job server host\n");
   fprintf(stream, "\t-H            - Print this help menu\n");
   fprintf(stream, "\t-v            - Print diagnostic information to stdout(%s)\n", args.verbose() ? "true" : "false");
   fprintf(stream, "\t-p <port>     - Job server port\n");
   fprintf(stream, "\t-t <timeout>  - Timeout in milliseconds\n");
+  fprintf(stream, "\t                (defaults to 2 seconds in ping mode)\n");
   fprintf(stream, "\t-i <pidfile>  - Create a pidfile for the process\n");
   fprintf(stream, "\t-S            - Enable SSL connections\n");
 
   fprintf(stream, "\nClient options:\n");
+  fprintf(stream, "\t-f <function> - Function name to use for jobs (can give many)\n");
   fprintf(stream, "\t-b            - Run jobs in the background(%s)\n", args.background() ? "true" : "false");
   fprintf(stream, "\t-I            - Run jobs as high priority\n");
   fprintf(stream, "\t-L            - Run jobs as low priority\n");
@@ -807,6 +871,7 @@ static void usage(Args& args, char *name)
   fprintf(stream, "\t-u <unique>   - Unique key to use for job\n");
 
   fprintf(stream, "\nWorker options:\n");
+  fprintf(stream, "\t-f <function> - Function name to use for jobs (can give many)\n");
   fprintf(stream, "\t-c <count>    - Number of jobs for worker to run before exiting\n");
   fprintf(stream, "\t-n            - Send data packet for each line(%s)\n", args.job_per_newline() ? "true" : "false");
   fprintf(stream, "\t-N            - Same as -n, but strip off the newline(%s)\n", args.strip_newline() ? "true" : "false");

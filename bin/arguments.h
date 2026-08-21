@@ -166,6 +166,11 @@ public:
     return _use_ssl;
   }
 
+  bool ping() const
+  {
+    return _ping;
+  }
+
   const char *argument(size_t arg)
   {
     return argv[arg];
@@ -187,7 +192,7 @@ public:
 
   bool is_error()
   {
-    if (_functions.empty())
+    if ((! _ping) && _functions.empty())
     {
       reset_arg_error();
       _arg_error= strdup("No Functions were provided");
@@ -226,6 +231,7 @@ private:
   bool _usage;
   bool _is_error;
   bool _use_ssl;
+  bool _ping;
   char *_arg_error;
   gearman_job_priority_t _priority;
   int _timeout;
