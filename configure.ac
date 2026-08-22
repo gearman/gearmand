@@ -200,9 +200,46 @@ AC_CHECK_HEADERS_ONCE([sys/wait.h])
 AC_CHECK_HEADERS_ONCE([syslog.h])
 AC_CHECK_HEADERS_ONCE([unistd.h])
 AC_CHECK_HEADERS_ONCE([winsock2.h])
+AC_CHECK_HEADERS_ONCE([sys/endian.h])
+AC_CHECK_HEADERS_ONCE([endian.h])
 AC_CHECK_HEADERS_ONCE([libmemcached-1.0/types/return.h])
+
+# 64-bit host/network byte-order conversion:
+# Prefer htonll if present; otherwise, try htobe64 (glibc/BSD).
+# htonll and ntohll are not in POSIX. They appear on:
+#   - macOS (since 10.10) in <arpa/inet.h>
+#   - some older BSDs and Solaris in <netinet/in.h>
+#   - Windows in <winsock2.h>
 AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
-              [Define to 1 if you have htonll.])])
+              [Define to 1 if you have htonll.])],
+  [],
+  [[
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+# include <winsock2.h>
+#endif
+  ]])
+
+AS_IF([test "x$ac_cv_have_decl_htonll" != "xyes"],
+  [
+    AC_CHECK_DECL([htobe64],
+      [AC_DEFINE([HAVE_HTOBE64],[1],
+                 [Define to 1 if you have htobe64.])],
+      [],
+      [[
+#ifdef HAVE_SYS_ENDIAN_H
+# include <sys/endian.h>
+#endif
+#ifdef HAVE_ENDIAN_H
+# include <endian.h>
+#endif
+      ]])
+  ])
 
 AM_CONDITIONAL([BUILD_WIN32_WRAPPERS],[test "x$ac_cv_header_winsock2_h" = "xyes"])
 AS_IF([test "x$ac_cv_header_winsock2_h" = "xyes"],
