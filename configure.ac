@@ -56,14 +56,21 @@ AC_SUBST([lt_cv_dlopen_libs])
 
 # AC_REQUIRE(AC_PROG_CC)
 
-AC_DEFUN([CHECK_CXX0X],[
-          AC_LANG_PUSH([C++])
-          AX_CHECK_COMPILE_FLAG([-std=c++0x],[
-                                 CXX_STD="c++0x"])
-          AC_LANG_POP([C++])
-          ])
-CHECK_CXX0X
-
+# Select a C++ standard dialect flag:
+# Prefer -std=c++14 (what Homebrew and modern toolchains use), then
+# -std=c++11, then the legacy -std=c++0x name. Leave CXX_STD empty if
+# none are accepted (compiler default will be used).
+AC_DEFUN([CHECK_CXX_STD],[
+  AC_LANG_PUSH([C++])
+  AX_CHECK_COMPILE_FLAG([-std=c++14],
+    [CXX_STD="c++14"],
+    [AX_CHECK_COMPILE_FLAG([-std=c++11],
+      [CXX_STD="c++11"],
+      [AX_CHECK_COMPILE_FLAG([-std=c++0x],
+        [CXX_STD="c++0x"])])])
+  AC_LANG_POP([C++])
+])
+CHECK_CXX_STD
 
 AX_PLATFORM
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -368,15 +375,9 @@ AC_CONFIG_FILES([Makefile
                  support/gearmand.pc
                  support/gearmand.spec])
 
-AS_IF([test "x${ax_enable_debug}" = "xyes"],
-      [AC_DEFUN([CHECK_CXX11],
-          [AC_LANG_PUSH([C++])
-          AX_CHECK_COMPILE_FLAG([-std=c++11], [CXX_STD="c++11"])
-          AC_LANG_POP([C++])
-          ])
-      CHECK_CXX11])
-
-CXXFLAGS=" $CXXFLAGS -std=$CXX_STD"
+# Apply the selected -std= flag only if one was found.
+AS_IF([test -n "$CXX_STD"],
+      [CXXFLAGS="$CXXFLAGS -std=$CXX_STD"])
 
 AC_OUTPUT
 
