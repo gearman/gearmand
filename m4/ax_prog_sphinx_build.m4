@@ -27,21 +27,23 @@ AC_DEFUN([AX_PROG_SPHINX_BUILD],
                [SPHINXBUILD=],
                [AS_IF([test -x "$SPHINXBUILD"],
                       [AC_MSG_CHECKING([whether $SPHINXBUILD is recent enough])
-                       # Prefer --version; fall back for very old Sphinx
+                       # Prefer --version; fall back for very old Sphinx that lacked it
                        if $SPHINXBUILD --version >conftest.sphinx 2>&1; then
-                         :
+                         ax_sphinx_need_smoke=no
                        else
                          $SPHINXBUILD >conftest.sphinx 2>&1
+                         ax_sphinx_need_smoke=yes
                        fi
                        ax_sphinx_build_version=`head -1 conftest.sphinx`
                        rm -f conftest.sphinx
-                       AC_MSG_RESULT([$ax_sphinx_build_version])
-                       # Basic smoke test (assumes conf.py exists)
-                       $SPHINXBUILD -Q -C -b man -d conftest.d . . >/dev/null 2>&1
-                       AS_IF([test $? -eq 0],
-                             [],
-                             [SPHINXBUILD=])
-                       rm -rf conftest.d
+                       # Smoke test only when --version was unavailable
+                       AS_IF([test "x$ax_sphinx_need_smoke" = xyes],
+                             [$SPHINXBUILD -Q -C -b man -d conftest.d . . >/dev/null 2>&1
+                              AS_IF([test $? -eq 0], [], [SPHINXBUILD=])
+                              rm -rf conftest.d])
+                       AS_IF([test -n "$SPHINXBUILD"],
+                             [AC_MSG_RESULT([$ax_sphinx_build_version])],
+                             [AC_MSG_RESULT([no])])
                       ],
                       [SPHINXBUILD=])
                 ])
