@@ -36,7 +36,7 @@ AC_DEFUN([AX_PROG_SPHINX_BUILD],
                        ax_sphinx_build_version=`head -1 conftest.sphinx`
                        rm -f conftest.sphinx
                        AC_MSG_RESULT([$ax_sphinx_build_version])
-                       # Basic smoke test (imperfect without a real conf.py)
+                       # Basic smoke test (assumes conf.py exists)
                        $SPHINXBUILD -Q -C -b man -d conftest.d . . >/dev/null 2>&1
                        AS_IF([test $? -eq 0],
                              [],
@@ -44,6 +44,7 @@ AC_DEFUN([AX_PROG_SPHINX_BUILD],
                        rm -rf conftest.d
                       ],
                       [SPHINXBUILD=])
+                ])
 
          INC_SPHINXBUILD='
 ifneq ($(filter $(SPHINX_TARGETS), $(MAKECMDGOALS)), )
