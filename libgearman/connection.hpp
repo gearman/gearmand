@@ -208,6 +208,9 @@ public:
     return _recv_packet;
   }
 
+  // _recv_packet is a non-owning alias of the packet_arg passed to receiving();
+  // the connection never owns it, so releasing our reference is just clearing
+  // the pointer, never gearman_packet_free().
   void reset_recv_packet()
   {
     _recv_packet= NULL;
@@ -222,6 +225,12 @@ private:
   gearman_return_t set_socket_options();
   size_t recv_socket(void *data, size_t data_size, gearman_return_t&);
   gearman_return_t connect_poll();
+
+  // Common error exit for receiving(): on a terminal failure (anything but
+  // GEARMAN_IO_WAIT) reset the recv state machine and drop the borrowed
+  // _recv_packet alias before returning to the caller, which may free the
+  // packet it passed in. Always returns NULL.
+  gearman_packet_st *handle_recv_error(gearman_return_t& ret);
 
   gearman_packet_st *_recv_packet;
 };

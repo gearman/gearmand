@@ -48,6 +48,12 @@ using namespace libtest;
 #include <cstring>
 #include <unistd.h>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <pthread.h>
+#include <sys/socket.h>
+
 #include <libgearman-1.0/gearman.h>
 #include <libgearman/connection.hpp>
 #include "libgearman/command.h"
@@ -1932,6 +1938,134 @@ static test_return_t issue_301_server_job_timeout_stale_ptr_TEST(void *)
   return TEST_SUCCESS;
 }
 
+/* Regression test for GitHub issue #368.
+ *
+ * gearman_connection_st::_recv_packet is a *borrowed* alias of the packet the
+ * caller hands to receiving(); for a worker that packet is
+ * worker->job()->impl()->assigned.  When a blocking receive timed out in the
+ * middle of a packet, receiving() reset recv_state but left _recv_packet still
+ * pointing at the caller's packet.  gearman_worker_work() then did
+ * worker->job(NULL), freeing that packet, and gearman_worker_free() ->
+ * ~gearman_connection_st() -> close_socket() -> free_recv_packet() called
+ * gearman_packet_free() on the now-dangling pointer and crashed.
+ *
+ * The misbehaving server below accepts the worker, then sends a JOB_ASSIGN
+ * header that promises argument bytes which never arrive, so the client blocks
+ * in recv_socket() until its (short) timeout fires mid-packet.
+ */
+namespace {
+
+struct issue_368_server_st {
+  int listen_fd;
+  pthread_t thread;
+};
+
+extern "C" void *issue_368_stalling_server(void *arg)
+{
+  issue_368_server_st *server= static_cast<issue_368_server_st *>(arg);
+
+  int conn= accept(server->listen_fd, NULL, NULL);
+  if (conn == -1)
+  {
+    return NULL;
+  }
+
+  /* Drain whatever the client sends (GRAB_JOB, possibly options first). */
+  char buffer[256];
+  struct pollfd pfd= { conn, POLLIN, 0 };
+  while (poll(&pfd, 1, 150) > 0 and (pfd.revents & POLLIN))
+  {
+    if (::recv(conn, buffer, sizeof(buffer), 0) <= 0)
+    {
+      break;
+    }
+  }
+
+  /* A binary response header that claims 64 bytes of arguments... */
+  unsigned char header[GEARMAN_PACKET_HEADER_SIZE];
+  memcpy(header, "\0RES", 4);
+  uint32_t be_command= htonl(uint32_t(GEARMAN_COMMAND_JOB_ASSIGN));
+  memcpy(header + 4, &be_command, 4);
+  uint32_t be_size= htonl(uint32_t(64));
+  memcpy(header + 8, &be_size, 4);
+  if (::send(conn, header, sizeof(header), 0) != ssize_t(sizeof(header)))
+  { }
+  /* ...none of which are ever sent.  Hold the socket open well past the
+     client's timeout, then close. */
+  libtest::dream(2, 0);
+
+  close(conn);
+
+  return NULL;
+}
+
+} // namespace
+
+static test_return_t issue_368_recv_timeout_clears_recv_packet_TEST(void *)
+{
+  int listen_fd= socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_TRUE(listen_fd != -1);
+
+  int reuse= 1;
+  setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family= AF_INET;
+  addr.sin_addr.s_addr= htonl(INADDR_LOOPBACK);
+  addr.sin_port= 0;
+  ASSERT_EQ(0, bind(listen_fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
+
+  socklen_t addr_len= sizeof(addr);
+  ASSERT_EQ(0, getsockname(listen_fd, reinterpret_cast<struct sockaddr *>(&addr), &addr_len));
+  ASSERT_EQ(0, listen(listen_fd, 1));
+
+  const in_port_t port= ntohs(addr.sin_port);
+
+  issue_368_server_st server;
+  server.listen_fd= listen_fd;
+  ASSERT_EQ(0, pthread_create(&server.thread, NULL, issue_368_stalling_server, &server));
+
+  gearman_universal_st universal;
+  gearman_universal_set_timeout(universal, 400); // blocking, short
+
+  gearman_connection_st *con= gearman_connection_create(universal, "127.0.0.1", port);
+  ASSERT_TRUE(con);
+
+  gearman_packet_st grab_job;
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_packet_create_args(universal, grab_job, GEARMAN_MAGIC_REQUEST,
+                                       GEARMAN_COMMAND_GRAB_JOB, NULL, NULL, 0));
+  ASSERT_EQ(GEARMAN_SUCCESS, con->send_packet(grab_job, true));
+  gearman_packet_free(&grab_job);
+
+  /* Heap-allocate the "assigned" packet so it can be freed while a buggy
+     connection still aliases it, exactly like worker->job(NULL). */
+  gearman_packet_st *assigned= new gearman_packet_st;
+
+  gearman_return_t ret= GEARMAN_SUCCESS;
+  con->receiving(*assigned, ret, true);
+  ASSERT_EQ(GEARMAN_TIMEOUT, ret);
+
+  /* The fix: the borrowed alias must be dropped on this terminal-error path. */
+  ASSERT_NULL(con->recv_packet());
+
+  /* Free the packet, then drive the historical crash site: teardown calling
+     free_recv_packet() on the (previously dangling) pointer. */
+  gearman_packet_free(assigned);
+  delete assigned;
+
+  con->close_socket();
+
+  delete con;
+  gearman_universal_free(universal);
+
+  pthread_join(server.thread, NULL);
+  close(listen_fd);
+
+  return TEST_SUCCESS;
+}
+
 /*********************** World functions **************************************/
 
 static void *world_create(server_startup_st& servers, test_return_t&)
@@ -1987,6 +2121,7 @@ test_st worker_TESTS[] ={
   {"echo_max", 0, echo_max_test },
   {"abandoned_worker", 0, abandoned_worker_test },
   {"issue#301: server job timeout stale pointer", 0, issue_301_server_job_timeout_stale_ptr_TEST },
+  {"issue#368: recv timeout clears borrowed recv_packet", 0, issue_368_recv_timeout_clears_recv_packet_TEST },
   {0, 0, 0}
 };
 

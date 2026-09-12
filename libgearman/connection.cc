@@ -986,6 +986,17 @@ gearman_return_t gearman_connection_st::flush()
   }
 }
 
+gearman_packet_st *gearman_connection_st::handle_recv_error(gearman_return_t& ret)
+{
+  if (ret != GEARMAN_IO_WAIT)
+  {
+    recv_state= GEARMAN_CON_RECV_UNIVERSAL_NONE;
+    reset_recv_packet();
+  }
+
+  return NULL;
+}
+
 #if __GNUC__ >= 7
   #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
 #endif
@@ -1035,7 +1046,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
         {
           assert(universal.error_code());
           close_socket();
-          return NULL;
+          return handle_recv_error(ret);
         }
       }
 
@@ -1049,10 +1060,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
       size_t recv_size= recv_socket(recv_buffer +recv_buffer_size, GEARMAN_RECV_BUFFER_SIZE -recv_buffer_size, ret);
       if (gearman_failed(ret))
       {
-        if (ret != GEARMAN_IO_WAIT) {
-          recv_state= GEARMAN_CON_RECV_UNIVERSAL_NONE;
-        }
-        return NULL;
+        return handle_recv_error(ret);
       }
 
       recv_buffer_size+= recv_size;
@@ -1078,7 +1086,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
     {
       ret= gearman_error(universal, GEARMAN_MEMORY_ALLOCATION_FAILURE, "gearman_malloc((*packet_arg.universal), packet_arg.data_size)");
       close_socket();
-      return NULL;
+      return handle_recv_error(ret);
     }
 
     packet_arg.options.free_data= true;
@@ -1093,7 +1101,7 @@ gearman_packet_st *gearman_connection_st::receiving(gearman_packet_st& packet_ar
                          packet_arg.data_size -recv_data_offset, ret);
       if (gearman_failed(ret))
       {
-        return NULL;
+        return handle_recv_error(ret);
       }
     }
 
