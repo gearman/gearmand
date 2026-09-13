@@ -443,6 +443,17 @@ void gearman_server_job_free(gearman_server_job_st *server_job)
     if (server_job->worker != NULL)
     {
       server_job->function->job_running--;
+
+      /* This job may still have a pending gearman_server_con_add_job_timeout()
+         timeout armed on its worker's connection (e.g. WORK_COMPLETE/WORK_FAIL/
+         WORK_EXCEPTION reaching here well before the timeout fires). Left
+         alone, that event keeps the raw pointer to this job as its callback
+         arg; since freed jobs are handed right back out by
+         gearman_server_job_create()'s LIFO free list, the timer would later
+         fire against a live, unrelated job and corrupt its function's job
+         list. Cancel it here so every path that frees a running job is
+         covered. */
+      gearman_server_con_delete_timeout(server_job->worker->con);
     }
 
     server_job->function->job_total--;
