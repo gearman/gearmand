@@ -1938,6 +1938,169 @@ static test_return_t issue_301_server_job_timeout_stale_ptr_TEST(void *)
   return TEST_SUCCESS;
 }
 
+/* Regression test for GitHub issue #119.
+ *
+ * gearman_server_con_add_job_timeout() arms a per-connection libevent timeout
+ * whose callback arg is the raw gearman_server_job_st* just assigned to a
+ * worker. When that worker completes the job well within the timeout, the
+ * WORK_COMPLETE handler calls gearman_server_job_free() directly -- which
+ * never cancels the still-pending timeout. gearman_server_job_create() hands
+ * jobs out from a LIFO free list, so the very next job submitted for the same
+ * function is highly likely to reuse that exact, now-dangling, memory.
+ *
+ * When the stale timer eventually fires, _server_job_timeout() calls
+ * gearman_server_job_queue() on what is now a live, still-queued job for a
+ * *different* submission. Since that job is already its function's sole
+ * (and therefore also tail) queue entry, gearman_server_job_queue()'s
+ * "append to tail" logic sets job->function_next = job -- a self-loop -- and
+ * double-counts job_count. Any later traversal of that list (e.g. the
+ * "prioritystatus" admin command, or a second gearman_server_job_take())
+ * never terminates, matching the original report of gearmand appearing to
+ * hang with a job_count that had drifted into nonsense.
+ */
+static gearman_return_t issue_119_fast_worker(gearman_job_st *job, void *context)
+{
+  (void)job;
+  int *count= static_cast<int*>(context);
+  (*count)++;
+
+  return GEARMAN_SUCCESS;
+}
+
+namespace {
+
+/* Sends the "prioritystatus" admin command and returns the NORMAL-priority
+   queued count reported for function_name. Uses a bounded poll() so that a
+   still-looping server (the bug) times out this call instead of hanging the
+   test forever. */
+bool issue_119_normal_queued(const char *function_name, uint32_t *normal_queued)
+{
+  int fd= socket(AF_INET, SOCK_STREAM, 0);
+  if (fd == -1)
+  {
+    return false;
+  }
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family= AF_INET;
+  addr.sin_port= htons(libtest::default_port());
+  addr.sin_addr.s_addr= inet_addr("127.0.0.1");
+
+  if (connect(fd, (struct sockaddr*)(&addr), sizeof(addr)) == -1)
+  {
+    close(fd);
+    return false;
+  }
+
+  static const char command[]= "prioritystatus\n";
+  if (send(fd, command, sizeof(command) -1, 0) != ssize_t(sizeof(command) -1))
+  {
+    close(fd);
+    return false;
+  }
+
+  std::string response;
+  struct pollfd pfd= { fd, POLLIN, 0 };
+  while (response.find(".\n") == std::string::npos)
+  {
+    if (poll(&pfd, 1, 3000) <= 0)
+    {
+      break;
+    }
+
+    char buffer[1024];
+    ssize_t received= recv(fd, buffer, sizeof(buffer), 0);
+    if (received <= 0)
+    {
+      break;
+    }
+    response.append(buffer, size_t(received));
+  }
+
+  close(fd);
+
+  size_t name_len= strlen(function_name);
+  size_t pos= response.find(function_name);
+  if (pos == std::string::npos)
+  {
+    /* Nothing queued for this function (server never fell behind enough to
+       report it, or the admin connection never got an answer at all). */
+    *normal_queued= 0;
+    return response.find(".\n") != std::string::npos;
+  }
+
+  unsigned high, normal, low, workers;
+  if (sscanf(response.c_str() + pos + name_len, "\t%u\t%u\t%u\t%u", &high, &normal, &low, &workers) != 4)
+  {
+    return false;
+  }
+
+  *normal_queued= normal;
+  return true;
+}
+
+} // namespace
+
+static test_return_t issue_119_stale_job_timeout_corrupts_job_count_TEST(void *)
+{
+  int call_count= 0;
+
+  char fn[GEARMAN_FUNCTION_MAX_SIZE];
+  snprintf(fn, sizeof(fn), "_%s%d", __func__, int(random()));
+
+  libgearman::Client client(libtest::default_port());
+
+  /* J1: will complete almost instantly, well inside its CAN_DO_TIMEOUT. */
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_client_do_background(&client, fn, NULL, NULL, 0, NULL));
+
+  libgearman::Worker worker(libtest::default_port());
+  gearman_function_t worker_fn= gearman_function_create(issue_119_fast_worker);
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_worker_define_function(&worker, fn, strlen(fn),
+                                          worker_fn,
+                                          1000, /* CAN_DO_TIMEOUT ms */
+                                          &call_count));
+  gearman_worker_set_timeout(&worker, 4000);
+
+  /* Grab and complete J1 fast. This arms a server-side timeout for J1 on
+     this connection, then frees J1 without cancelling it. */
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_worker_work(&worker));
+  ASSERT_EQ(1, call_count);
+
+  /* J2: submitted immediately after, so it is highly likely to reuse J1's
+     just-freed gearman_server_job_st (the server's free list is LIFO). */
+  ASSERT_EQ(GEARMAN_SUCCESS,
+            gearman_client_do_background(&client, fn, NULL, NULL, 0, NULL));
+
+  /* Deliberately do NOT grab J2 yet: doing so would rearm/cancel the
+     connection's timeout via gearman_server_con_add_job_timeout(), masking
+     the bug. Instead wait past J1's 1000 ms timeout so the stale timer fires
+     against J2's (reused) memory while J2 is still sitting in the queue. */
+  libtest::dream(1, 500000); // 1.5s
+
+  uint32_t normal_queued= 0;
+  ASSERT_TRUE(issue_119_normal_queued(fn, &normal_queued));
+
+  /* Exactly one job (J2) is really queued. Before the fix, the stale timer's
+     spurious requeue of J2 onto itself double-counts it here (and, before
+     the "prioritystatus" query can even get this far, may hang altogether
+     walking the self-looped list -- in which case issue_119_normal_queued()
+     above already failed via its poll() timeout). */
+  ASSERT_EQ(1U, normal_queued);
+
+  /* Drain J2 and confirm the server is still healthy. */
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_worker_work(&worker));
+  ASSERT_EQ(2, call_count);
+
+  libgearman::Client ping(libtest::default_port());
+  gearman_client_set_timeout(&ping, 2000);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_echo(&ping, test_literal_param("ping")));
+
+  return TEST_SUCCESS;
+}
+
 /* Regression test for GitHub issue #368.
  *
  * gearman_connection_st::_recv_packet is a *borrowed* alias of the packet the
@@ -2121,6 +2284,7 @@ test_st worker_TESTS[] ={
   {"echo_max", 0, echo_max_test },
   {"abandoned_worker", 0, abandoned_worker_test },
   {"issue#301: server job timeout stale pointer", 0, issue_301_server_job_timeout_stale_ptr_TEST },
+  {"issue#119: completed job's stale timeout corrupts job_count", 0, issue_119_stale_job_timeout_corrupts_job_count_TEST },
   {"issue#368: recv timeout clears borrowed recv_packet", 0, issue_368_recv_timeout_clears_recv_packet_TEST },
   {0, 0, 0}
 };
