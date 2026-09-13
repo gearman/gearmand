@@ -408,6 +408,32 @@ static test_return_t option_test(void *)
   return TEST_SUCCESS;
 }
 
+// Issue #64: gearman_client_set_server_selection_by_unique() opts a client
+// into ketama hash-based server selection. This only covers the getter/
+// setter contract on a single client; multi_client_test.cc covers actual
+// routing behavior against real servers.
+static test_return_t server_selection_by_unique_option_test(void *)
+{
+  gearman_client_st *gear= gearman_client_create(NULL);
+  ASSERT_TRUE(gear);
+
+  ASSERT_FALSE(gearman_client_server_selection_by_unique(gear));
+
+  gearman_client_set_server_selection_by_unique(gear, true);
+  ASSERT_TRUE(gearman_client_server_selection_by_unique(gear));
+
+  gearman_client_set_server_selection_by_unique(gear, false);
+  ASSERT_FALSE(gearman_client_server_selection_by_unique(gear));
+
+  // NULL client is handled, not just non-NULL.
+  gearman_client_set_server_selection_by_unique(NULL, true);
+  ASSERT_FALSE(gearman_client_server_selection_by_unique(NULL));
+
+  gearman_client_free(gear);
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t echo_test(void *object)
 {
   gearman_client_st *client= (gearman_client_st *)object;
@@ -2284,6 +2310,7 @@ test_st gearman_client_st_init_TESTS[] ={
   {"echo", 0, echo_test },
   {"gearman_client_set_log_fn", 0, gearman_client_set_log_fn_TEST },
   {"options", 0, option_test },
+  {"gearman_client_set_server_selection_by_unique()", 0, server_selection_by_unique_option_test },
   {0, 0, 0}
 };
 
