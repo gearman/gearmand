@@ -50,6 +50,7 @@ struct Client
     bool free_tasks;
     bool generate_unique;
     bool exceptions;
+    bool server_selection_hash_unique;
 
     Options():
       non_blocking(false),
@@ -57,7 +58,8 @@ struct Client
       no_new(false),
       free_tasks(false),
       generate_unique(false),
-      exceptions(false)
+      exceptions(false),
+      server_selection_hash_unique(false)
     {
     }
   } options;
