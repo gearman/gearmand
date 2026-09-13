@@ -52,6 +52,7 @@ using namespace libtest;
 #include "libgearman/packet.hpp"
 
 #include "libgearman/universal.hpp"
+#include "libgearman/server_selection.hpp"
 
 #include "tests/regression.h"
 
@@ -392,11 +393,110 @@ test_st regression_tests[] ={
   {0, 0, 0}
 };
 
+// Issue #64: libgearman never routed a job's server selection by its unique
+// identifier. These exercise client_select_connection_by_key() (server_selection.cc)
+// directly against a handful of fake connections, without needing a live gearmand.
+static test_return_t server_selection_is_deterministic_test(void *)
+{
+  gearman_universal_st universal;
+
+  gearman_connection_create(universal, "localhost", (const char*)("4730"));
+  gearman_connection_create(universal, "localhost", (const char*)("4731"));
+  gearman_connection_create(universal, "localhost", (const char*)("4732"));
+
+  gearman_connection_st *first_pick= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+  ASSERT_TRUE(first_pick);
+
+  for (int i= 0; i < 10; i++)
+  {
+    gearman_connection_st *pick= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+    ASSERT_TRUE(pick);
+    ASSERT_EQ(first_pick, pick);
+  }
+
+  // A different key need not land on the same server, but it must still be
+  // one of the connections we added.
+  gearman_connection_st *other_pick= client_select_connection_by_key(universal, test_literal_param("a-completely-different-unique"), NULL);
+  ASSERT_TRUE(other_pick);
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t server_selection_skips_busy_connection_test(void *)
+{
+  gearman_universal_st universal;
+
+  gearman_connection_create(universal, "localhost", (const char*)("4730"));
+  gearman_connection_create(universal, "localhost", (const char*)("4731"));
+
+  gearman_connection_st *first_pick= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+  ASSERT_TRUE(first_pick);
+
+  // Mark it mid-send, as the run-state machine does while a packet is being
+  // flushed; selection should now skip it.
+  first_pick->send_state= GEARMAN_CON_SEND_UNIVERSAL_PRE_FLUSH;
+
+  gearman_connection_st *second_pick= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+  ASSERT_TRUE(second_pick);
+  ASSERT_FALSE(first_pick == second_pick);
+
+  first_pick->send_state= GEARMAN_CON_SEND_STATE_NONE;
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t server_selection_fails_over_in_ring_order_test(void *)
+{
+  gearman_universal_st universal;
+
+  gearman_connection_create(universal, "localhost", (const char*)("4730"));
+  gearman_connection_create(universal, "localhost", (const char*)("4731"));
+  gearman_connection_create(universal, "localhost", (const char*)("4732"));
+
+  gearman_connection_st *primary= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+  ASSERT_TRUE(primary);
+
+  // Simulate the primary having just failed to connect: the fail-over path
+  // must move on to a different, still-idle connection.
+  gearman_connection_st *failover= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), primary);
+  ASSERT_TRUE(failover);
+  ASSERT_FALSE(primary == failover);
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t server_selection_no_connections_test(void *)
+{
+  gearman_universal_st universal;
+
+  gearman_connection_st *pick= client_select_connection_by_key(universal, test_literal_param("some-job-unique"), NULL);
+  ASSERT_FALSE(pick);
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
+test_st server_selection_tests[] ={
+  {"deterministic for a given unique", 0, server_selection_is_deterministic_test },
+  {"skips a mid-send connection", 0, server_selection_skips_busy_connection_test },
+  {"fails over to the next connection in ring order", 0, server_selection_fails_over_in_ring_order_test },
+  {"no connections", 0, server_selection_no_connections_test },
+  {0, 0, 0}
+};
+
 collection_st collection[] ={
   {"gearman_universal_st", 0, 0, universal_st_test},
   {"gearman_connection_st", 0, 0, connection_st_test},
   {"gearman_packet_st", 0, 0, packet_st_test},
   {"regression", 0, 0, regression_tests},
+  {"server_selection", 0, 0, server_selection_tests},
   {0, 0, 0, 0}
 };
 

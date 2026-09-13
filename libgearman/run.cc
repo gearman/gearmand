@@ -40,10 +40,82 @@
 #include <libgearman/common.h>
 
 #include "libgearman/assert.hpp"
+#include "libgearman/server_selection.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+namespace {
+
+// Only job submissions carry a unique meant to identify the job itself;
+// hashing anything else (GET_STATUS, admin/echo commands, ...) would just
+// scatter unrelated requests across servers by whatever bytes happen to be
+// in task->unique for that command.
+bool is_submit_job_command(gearman_command_t command)
+{
+  switch (command)
+  {
+  case GEARMAN_COMMAND_SUBMIT_JOB:
+  case GEARMAN_COMMAND_SUBMIT_JOB_BG:
+  case GEARMAN_COMMAND_SUBMIT_JOB_HIGH:
+  case GEARMAN_COMMAND_SUBMIT_JOB_HIGH_BG:
+  case GEARMAN_COMMAND_SUBMIT_JOB_LOW:
+  case GEARMAN_COMMAND_SUBMIT_JOB_LOW_BG:
+  case GEARMAN_COMMAND_SUBMIT_JOB_SCHED:
+  case GEARMAN_COMMAND_SUBMIT_JOB_EPOCH:
+  case GEARMAN_COMMAND_SUBMIT_REDUCE_JOB:
+  case GEARMAN_COMMAND_SUBMIT_REDUCE_JOB_BACKGROUND:
+    return true;
+
+  case GEARMAN_COMMAND_ALL_YOURS:
+  case GEARMAN_COMMAND_CANT_DO:
+  case GEARMAN_COMMAND_CAN_DO:
+  case GEARMAN_COMMAND_CAN_DO_TIMEOUT:
+  case GEARMAN_COMMAND_ECHO_REQ:
+  case GEARMAN_COMMAND_ECHO_RES:
+  case GEARMAN_COMMAND_ERROR:
+  case GEARMAN_COMMAND_GET_STATUS:
+  case GEARMAN_COMMAND_GET_STATUS_UNIQUE:
+  case GEARMAN_COMMAND_GRAB_JOB:
+  case GEARMAN_COMMAND_GRAB_JOB_ALL:
+  case GEARMAN_COMMAND_GRAB_JOB_UNIQ:
+  case GEARMAN_COMMAND_JOB_ASSIGN:
+  case GEARMAN_COMMAND_JOB_ASSIGN_ALL:
+  case GEARMAN_COMMAND_JOB_ASSIGN_UNIQ:
+  case GEARMAN_COMMAND_JOB_CREATED:
+  case GEARMAN_COMMAND_MAX:
+  case GEARMAN_COMMAND_NOOP:
+  case GEARMAN_COMMAND_NO_JOB:
+  case GEARMAN_COMMAND_OPTION_REQ:
+  case GEARMAN_COMMAND_OPTION_RES:
+  case GEARMAN_COMMAND_PRE_SLEEP:
+  case GEARMAN_COMMAND_RESET_ABILITIES:
+  case GEARMAN_COMMAND_SET_CLIENT_ID:
+  case GEARMAN_COMMAND_STATUS_RES:
+  case GEARMAN_COMMAND_STATUS_RES_UNIQUE:
+  case GEARMAN_COMMAND_TEXT:
+  case GEARMAN_COMMAND_UNUSED:
+  case GEARMAN_COMMAND_WORK_COMPLETE:
+  case GEARMAN_COMMAND_WORK_DATA:
+  case GEARMAN_COMMAND_WORK_EXCEPTION:
+  case GEARMAN_COMMAND_WORK_FAIL:
+  case GEARMAN_COMMAND_WORK_STATUS:
+  case GEARMAN_COMMAND_WORK_WARNING:
+    return false;
+  }
+
+  return false;
+}
+
+bool use_hash_server_selection(Task* task)
+{
+  return task->client->options.server_selection_hash_unique and
+         task->unique_length > 0 and
+         is_submit_job_command(task->send.command);
+}
+
+} // namespace
 
 #if __GNUC__ >= 7
   #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
@@ -71,12 +143,21 @@ gearman_return_t _client_run_task(Task *task)
       return gearman_universal_set_error(task->client->universal, GEARMAN_NO_SERVERS, GEARMAN_AT, "no servers provided");
     }
 
-    for (task->con= task->client->universal.con_list; task->con;
-         task->con= task->con->next_connection())
+    if (use_hash_server_selection(task))
     {
-      if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+      task->con= client_select_connection_by_key(task->client->universal,
+                                                  task->unique, task->unique_length,
+                                                  NULL);
+    }
+    else
+    {
+      for (task->con= task->client->universal.con_list; task->con;
+           task->con= task->con->next_connection())
       {
-        break;
+        if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+        {
+          break;
+        }
       }
     }
 
@@ -117,13 +198,22 @@ gearman_return_t _client_run_task(Task *task)
 
         if (ret == GEARMAN_COULD_NOT_CONNECT)
         {
-          for (task->con= task->con->next_connection(); 
-               task->con;
-               task->con= task->con->next_connection())
+          if (use_hash_server_selection(task))
           {
-            if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+            task->con= client_select_connection_by_key(task->client->universal,
+                                                        task->unique, task->unique_length,
+                                                        task->con);
+          }
+          else
+          {
+            for (task->con= task->con->next_connection();
+                 task->con;
+                 task->con= task->con->next_connection())
             {
-              break;
+              if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+              {
+                break;
+              }
             }
           }
         }
