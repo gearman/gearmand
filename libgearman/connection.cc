@@ -343,6 +343,7 @@ void gearman_connection_st::reset_addrinfo()
   }
 
   addrinfo_next= NULL;
+  cached_errno= 0;
 }
 
 gearman_return_t gearman_connection_st::send_identifier(void)
@@ -733,6 +734,25 @@ gearman_return_t gearman_connection_st::flush()
       if (addrinfo_next == NULL)
       {
         state= GEARMAN_CON_UNIVERSAL_ADDRINFO;
+
+        /* cached_errno carries the errno of the last real connect() attempt
+           (set below, or by gearman_wait() for an async POLLERR/POLLHUP/
+           POLLNVAL). Surface that instead of a bare generic message so the
+           caller can see *why* every address failed (refused, unreachable,
+           timed out, ...) rather than just that it did.
+
+           Note: this deliberately does not go through
+           gearman_universal_set_perror()/GEARMAN_ERRNO -- that path's
+           correct_from_errno() clears the recorded errno whenever the
+           caller's rc isn't GEARMAN_ERRNO, which a fixed GEARMAN_COULD_NOT_CONNECT
+           here is not. Formatting strerror() straight into the message
+           keeps the return code exactly GEARMAN_COULD_NOT_CONNECT as before. */
+        if (cached_errno)
+        {
+          return gearman_universal_set_error(universal, GEARMAN_COULD_NOT_CONNECT, GEARMAN_AT,
+                                             "Connection to %s:%s failed (%s)", _host, _service, strerror(cached_errno));
+        }
+
         return gearman_universal_set_error(universal, GEARMAN_COULD_NOT_CONNECT, GEARMAN_AT, "Connection to %s:%s failed", _host, _service);
       }
 
@@ -782,6 +802,10 @@ gearman_return_t gearman_connection_st::flush()
 
           // We will treat this as an error but retry the address
         case EAGAIN:
+          /* Record the real reason this address failed. If every remaining
+             address also fails and addrinfo_next runs out, this is what
+             finally gets reported instead of a bare generic message. */
+          error(errno);
           state= GEARMAN_CON_UNIVERSAL_CONNECT;
           close_socket();
           break;

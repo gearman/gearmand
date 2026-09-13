@@ -42,6 +42,7 @@
 using namespace libtest;
 
 #include <cassert>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -823,6 +824,40 @@ static test_return_t hostname_resolution(void *)
   gearman_return_t rc= gearman_client_echo(&client, test_literal_param("foo"));
   // Port 12345 is not a gearman server: expect connection refused or timeout.
   ASSERT_TRUE(rc == GEARMAN_COULD_NOT_CONNECT or rc == GEARMAN_TIMEOUT);
+
+  return TEST_SUCCESS;
+}
+
+/* Regression test for GitHub issue #505.
+ *
+ * gearman_connection_st::flush()'s connect() retry loop walks the addrinfo
+ * list silently: each failed attempt (ECONNREFUSED, ENETUNREACH, ETIMEDOUT,
+ * EAGAIN) just moves on to the next address without recording why. Once the
+ * list is exhausted, the only message ever produced is the generic
+ * "Connection to host:port failed" -- giving no hint whether the server
+ * refused the connection, was unreachable, or something else, even though
+ * the real errno was known at the time of the last attempt and simply
+ * discarded.
+ *
+ * A local port nothing is listening on gets a synchronous ECONNREFUSED from
+ * the kernel, so the resulting error message should include
+ * strerror(ECONNREFUSED) ("Connection refused") rather than just the bare
+ * generic string.
+ */
+static test_return_t issue_505_connect_error_includes_errno_reason_TEST(void *)
+{
+  libgearman::Client client;
+
+  in_port_t port= libtest::get_free_port();
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(&client, "127.0.0.1", port));
+  gearman_client_set_timeout(&client, 2000);
+
+  gearman_return_t rc= gearman_client_echo(&client, test_literal_param("foo"));
+  ASSERT_EQ(GEARMAN_COULD_NOT_CONNECT, rc);
+
+  const char *error= gearman_client_error(&client);
+  ASSERT_TRUE(error != NULL);
+  ASSERT_TRUE(strstr(error, strerror(ECONNREFUSED)) != NULL);
 
   return TEST_SUCCESS;
 }
@@ -2299,6 +2334,7 @@ test_st gearman_client_st_TESTS[] ={
   {"background_failure", 0, background_failure_test },
   {"add_servers", 0, add_servers_test },
   {"gearman_client_add_servers(GEARMAN_GETADDRINFO)", 0, hostname_resolution },
+  {"issue#505: connect error includes errno reason", 0, issue_505_connect_error_includes_errno_reason_TEST },
   {"submit_fail_job", 0, submit_fail_job_test }, // Since this drops the worker, it must be last
   {0, 0, 0}
 };
