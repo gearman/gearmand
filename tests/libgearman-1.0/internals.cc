@@ -43,6 +43,7 @@
 
 using namespace libtest;
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -285,9 +286,62 @@ static test_return_t connection_alloc_test(void *)
   return TEST_SUCCESS;
 }
 
+/* Regression test for GitHub issue #513.
+ *
+ * gearman_universal_st::flush() loops over every registered connection and
+ * calls con->flush() on each, intentionally discarding the return value
+ * (there's no way to tell the caller which connection had the problem).
+ * But every con->flush() failure also writes into the single shared
+ * universal._error buffer as a side effect -- discarding the return value
+ * doesn't stop that. So whichever connection happens to fail *last* in the
+ * loop wins the visible error message, regardless of which failure is
+ * actually useful, and an earlier connection's specific reason is silently
+ * lost.
+ *
+ * Force two connections straight into flush()'s address-exhausted branch
+ * (state=CONNECT, addrinfo_next=NULL) so both fail synchronously and
+ * deterministically on a single flush() call, with no real sockets or
+ * timing involved. Each connection's own host:port appears in its failure
+ * message, which is what distinguishes them here (deliberately not relying
+ * on #505's errno-in-message fix, since these are independent changes).
+ * con_list is built newest-first (see gearman_connection_st's
+ * constructor), so connection_b (created second) is processed first by
+ * flush()'s loop; the fix should keep *its* message, not connection_a's.
+ */
+static test_return_t universal_flush_preserves_first_error_TEST(void *)
+{
+  gearman_universal_st universal;
+
+  gearman_connection_st *connection_a= gearman_connection_create(universal, "127.0.0.1", "10000");
+  ASSERT_TRUE(connection_a);
+  connection_a->reset_addrinfo();
+  connection_a->error(ECONNREFUSED);
+  connection_a->state= GEARMAN_CON_UNIVERSAL_CONNECT;
+
+  gearman_connection_st *connection_b= gearman_connection_create(universal, "127.0.0.1", "10001");
+  ASSERT_TRUE(connection_b);
+  connection_b->reset_addrinfo();
+  connection_b->error(ENETUNREACH);
+  connection_b->state= GEARMAN_CON_UNIVERSAL_CONNECT;
+
+  universal.flush();
+
+  ASSERT_EQ(GEARMAN_COULD_NOT_CONNECT, universal.error_code());
+
+  const char *error= universal.error();
+  ASSERT_TRUE(error != NULL);
+  ASSERT_TRUE(strstr(error, "10001") != NULL);
+  ASSERT_TRUE(strstr(error, "10000") == NULL);
+
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
+
 test_st connection_st_test[] ={
   {"init", 0, connection_init_test },
   {"alloc", 0, connection_alloc_test },
+  {"gearman_universal_st::flush() preserves first error (#513)", 0, universal_flush_preserves_first_error_TEST },
   {0, 0, 0}
 };
 

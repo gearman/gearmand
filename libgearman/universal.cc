@@ -260,9 +260,21 @@ void gearman_universal_st::reset()
  * Flush all shouldn't return any error, because there's no way to indicate
  * which connection experienced an issue. Error detection is better done in gearman_wait()
  * after flushing all the connections here.
+ *
+ * That said, every con->flush() call below shares the same universal error
+ * buffer: a real failure on one connection (e.g. GEARMAN_COULD_NOT_CONNECT)
+ * would otherwise get silently overwritten by whatever a later connection
+ * in the list reports, even a routine GEARMAN_IO_WAIT from a still-pending
+ * non-blocking connect. Keep the first genuine failure of this pass instead
+ * of letting the last connection processed win by accident.
  */
 void gearman_universal_st::flush()
 {
+  bool have_first_failure= false;
+  gearman_return_t first_rc= GEARMAN_SUCCESS;
+  char first_message[GEARMAN_MAX_ERROR_SIZE];
+  first_message[0]= 0;
+
   for (gearman_connection_st *con= con_list; con; con= con->next_connection())
   {
     if (con->is_events(POLLOUT))
@@ -270,7 +282,24 @@ void gearman_universal_st::flush()
       continue;
     }
 
-    con->flush();
+    gearman_return_t ret= con->flush();
+    if (have_first_failure == false and gearman_failed(ret) and gearman_continue(ret) == false)
+    {
+      have_first_failure= true;
+      first_rc= error_code();
+      const char *msg= error();
+      if (msg)
+      {
+        strncpy(first_message, msg, sizeof(first_message) -1);
+        first_message[sizeof(first_message) -1]= 0;
+      }
+    }
+  }
+
+  if (have_first_failure)
+  {
+    error_code(first_rc);
+    _error.error("%s", first_message);
   }
 }
 
