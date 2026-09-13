@@ -295,6 +295,7 @@ gearman_client_st *gearman_client_clone(gearman_client_st *destination,
   destination->impl()->options.no_new= source->impl()->options.no_new;
   destination->impl()->options.free_tasks= source->impl()->options.free_tasks;
   destination->impl()->options.generate_unique= source->impl()->options.generate_unique;
+  destination->impl()->options.server_selection_hash_unique= source->impl()->options.server_selection_hash_unique;
   destination->impl()->ssl(source->impl()->ssl());
   destination->impl()->actions= source->impl()->actions;
   destination->impl()->_do_handle[0]= 0;

@@ -227,6 +227,35 @@ static test_return_t server_selection_by_unique_test(void *object)
   return TEST_SUCCESS;
 }
 
+// With hash-based selection enabled, a task submitted with an empty unique
+// (unique_length == 0, e.g. a caller that passes "" rather than a real
+// unique and isn't using GEARMAN_CLIENT_GENERATE_UNIQUE) must fall back to
+// the default head-of-list connection selection instead of hashing zero
+// bytes. This confirms the unique_length > 0 gate in
+// use_hash_server_selection() (run.cc) actually takes effect end-to-end,
+// not just that submission with a real unique works.
+static test_return_t server_selection_by_unique_empty_unique_test(void *object)
+{
+  multi_client_test_st *test_client= (multi_client_test_st*)object;
+  ASSERT_TRUE(test_client);
+
+  test_client->reset_connected_to_both_clone();
+  gearman_client_st *client_to_both= test_client->connected_to_both_client();
+  ASSERT_TRUE(client_to_both);
+  gearman_client_set_server_selection_by_unique(client_to_both, true);
+
+  (void)gearman_client_set_context(client_to_both, const_cast<char *>("nothing"));
+  gearman_string_t value= { test_literal_param("background_test") };
+  const char *worker_function= (const char *)gearman_client_context(client_to_both);
+  ASSERT_TRUE(worker_function);
+
+  gearman_job_handle_t job_handle;
+  test_compare(GEARMAN_SUCCESS,
+               gearman_client_do_background(client_to_both, worker_function, "", gearman_string_param(value), job_handle));
+
+  return TEST_SUCCESS;
+}
+
 // With hash-based selection enabled, submitting while the hash-picked
 // server happens to be down must still succeed by failing over, in ring
 // order, to the one surviving server -- exercising the GEARMAN_COULD_NOT_CONNECT
@@ -251,11 +280,36 @@ static test_return_t server_selection_by_unique_failover_test(void *object)
   in_port_t gearmand_port_1= test_client->port(0);
   in_port_t gearmand_port_2= test_client->port(1);
 
-  ASSERT_TRUE(server_container.shutdown(0));
+  // server_startup_st never reuses or reindexes slots: shutdown()+
+  // server_startup() (as multi_client_test() above already does once) always
+  // *appends* the restarted server rather than replacing its old, now-dead
+  // entry. So the two currently-live servers are always the *last* two
+  // entries pushed, not indices 0/1 -- shutting down a stale, already-dead
+  // index here would silently no-op and leave the real server 1 running,
+  // masking the fail-over path entirely.
+  uint32_t server_1_index= server_container.count() - 2;
+
+  ASSERT_TRUE(server_container.shutdown(server_1_index));
   libtest::reserve_port(gearmand_port_1);
 
   const char* unique= "hash_selection_failover_unique";
   gearman_job_handle_t job_handle;
+
+  // Right after shutdown there is an inherent race -- also relied on by
+  // multi_client_test() above, which expects its own first post-shutdown
+  // submission to come back GEARMAN_LOST_CONNECTION rather than a clean
+  // failure -- where the very first send can land in the dying server's
+  // kernel accept backlog and get a misleading GEARMAN_SUCCESS or
+  // GEARMAN_LOST_CONNECTION before the process is actually gone, instead of
+  // the GEARMAN_COULD_NOT_CONNECT that triggers the fail-over path being
+  // tested here. Submit the same unique once first to flush that race out;
+  // only the submission after it is guaranteed to see the server as truly
+  // down.
+  {
+    gearman_return_t warmup_ret= gearman_client_do_background(client_to_both, worker_function, unique, gearman_string_param(value), job_handle);
+    ASSERT_TRUE(warmup_ret == GEARMAN_SUCCESS or warmup_ret == GEARMAN_LOST_CONNECTION or warmup_ret == GEARMAN_COULD_NOT_CONNECT);
+  }
+
   test_compare(GEARMAN_SUCCESS,
                gearman_client_do_background(client_to_both, worker_function, unique, gearman_string_param(value), job_handle));
 
@@ -308,6 +362,7 @@ static bool world_destroy(void *object)
 test_st multi_client_TESTS[] ={
   {"multi_client_test", 0, multi_client_test },
   {"server_selection_by_unique routes consistently", 0, server_selection_by_unique_test },
+  {"server_selection_by_unique falls back for an empty unique", 0, server_selection_by_unique_empty_unique_test },
   {"server_selection_by_unique fails over when primary is down", 0, server_selection_by_unique_failover_test },
   {0, 0, 0}
 };

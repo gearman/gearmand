@@ -434,6 +434,38 @@ static test_return_t server_selection_by_unique_option_test(void *)
   return TEST_SUCCESS;
 }
 
+// gearman_client_clone() copies this option like the client's other
+// persistent settings (non_blocking, free_tasks, ...), so enabling it and
+// then cloning the client for a task doesn't silently lose it.
+static test_return_t server_selection_by_unique_option_clone_test(void *)
+{
+  gearman_client_st *source= gearman_client_create(NULL);
+  ASSERT_TRUE(source);
+  gearman_client_set_server_selection_by_unique(source, true);
+  ASSERT_TRUE(gearman_client_server_selection_by_unique(source));
+
+  gearman_client_st *clone= gearman_client_clone(NULL, source);
+  ASSERT_TRUE(clone);
+  ASSERT_TRUE(gearman_client_server_selection_by_unique(clone));
+
+  gearman_client_free(clone);
+  gearman_client_free(source);
+
+  // And a client that never had it enabled clones as disabled.
+  gearman_client_st *plain_source= gearman_client_create(NULL);
+  ASSERT_TRUE(plain_source);
+  ASSERT_FALSE(gearman_client_server_selection_by_unique(plain_source));
+
+  gearman_client_st *plain_clone= gearman_client_clone(NULL, plain_source);
+  ASSERT_TRUE(plain_clone);
+  ASSERT_FALSE(gearman_client_server_selection_by_unique(plain_clone));
+
+  gearman_client_free(plain_clone);
+  gearman_client_free(plain_source);
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t echo_test(void *object)
 {
   gearman_client_st *client= (gearman_client_st *)object;
@@ -2311,6 +2343,7 @@ test_st gearman_client_st_init_TESTS[] ={
   {"gearman_client_set_log_fn", 0, gearman_client_set_log_fn_TEST },
   {"options", 0, option_test },
   {"gearman_client_set_server_selection_by_unique()", 0, server_selection_by_unique_option_test },
+  {"gearman_client_set_server_selection_by_unique() survives gearman_client_clone()", 0, server_selection_by_unique_option_clone_test },
   {0, 0, 0}
 };
 
