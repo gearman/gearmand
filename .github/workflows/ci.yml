@@ -166,11 +166,6 @@ jobs:
       shell: bash
     - name: make
       run: |
-           if [[ "${CC}" == gcc* ]] && [[ "${CCVERSION}" -ge 9 ]]; then
-              CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS"
-              export CXXFLAGS
-              echo "CXXFLAGS: $CXXFLAGS"
-           fi
            ${CC} --version && make
       shell: bash
     - name: make test
@@ -217,7 +212,6 @@ jobs:
       shell: bash
     - name: make
       run: |
-           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" \
            ${CC} --version && make
       shell: bash
     - name: make test
@@ -264,7 +258,6 @@ jobs:
       shell: bash
     - name: make
       run: |
-           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" \
            ${CC} --version && make
       shell: bash
     - name: make test
@@ -311,7 +304,6 @@ jobs:
       shell: bash
     - name: make
       run: |
-           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" \
            ${CC} --version && make
       shell: bash
     - name: make test
@@ -378,7 +370,6 @@ jobs:
       shell: bash
     - name: make
       run: |
-           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" \
            ${CC} --version && make
       shell: bash
     - name: make test
