@@ -106,7 +106,7 @@ gearman_command_info_st gearmand_command_info_list[GEARMAN_COMMAND_MAX]=
 
 const char *gearman_strcommand(gearman_command_t command)
 {
-  if ((command >= GEARMAN_COMMAND_TEXT) and (command <= GEARMAN_COMMAND_STATUS_RES_UNIQUE))
+  if ((command >= GEARMAN_COMMAND_TEXT) and (command < GEARMAN_COMMAND_MAX))
   {
     const char* str=  gearmand_command_info_list[command].name;
 
@@ -120,7 +120,7 @@ const char *gearman_strcommand(gearman_command_t command)
 
 const char *gearman_enum_strcommand(gearman_command_t command)
 {
-  if ((command >= GEARMAN_COMMAND_TEXT) and (command <= GEARMAN_COMMAND_STATUS_RES_UNIQUE))
+  if ((command >= GEARMAN_COMMAND_TEXT) and (command < GEARMAN_COMMAND_MAX))
   {
     return gearmand_command_info_list[command].name;
   }
