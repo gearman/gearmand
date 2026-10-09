@@ -40,10 +40,26 @@
 #include <libgearman/common.h>
 
 #include "libgearman/assert.hpp"
+#include "libgearman/server_selection.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+namespace {
+
+// Only job submissions carry a unique meant to identify the job itself;
+// hashing anything else (GET_STATUS, admin/echo commands, ...) would just
+// scatter unrelated requests across servers by whatever bytes happen to be
+// in task->unique for that command.
+bool use_hash_server_selection(Task* task)
+{
+  return task->client->options.server_selection_hash_unique and
+         task->unique_length > 0 and
+         gearman_command_expects_job_created(task->send.command);
+}
+
+} // namespace
 
 #if __GNUC__ >= 7
   #pragma GCC diagnostic warning "-Wimplicit-fallthrough"
@@ -71,12 +87,21 @@ gearman_return_t _client_run_task(Task *task)
       return gearman_universal_set_error(task->client->universal, GEARMAN_NO_SERVERS, GEARMAN_AT, "no servers provided");
     }
 
-    for (task->con= task->client->universal.con_list; task->con;
-         task->con= task->con->next_connection())
+    if (use_hash_server_selection(task))
     {
-      if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+      task->con= client_select_connection_by_key(task->client->universal,
+                                                  task->unique, task->unique_length,
+                                                  NULL);
+    }
+    else
+    {
+      for (task->con= task->client->universal.con_list; task->con;
+           task->con= task->con->next_connection())
       {
-        break;
+        if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+        {
+          break;
+        }
       }
     }
 
@@ -120,13 +145,22 @@ gearman_return_t _client_run_task(Task *task)
 
         if (ret == GEARMAN_COULD_NOT_CONNECT)
         {
-          for (task->con= task->con->next_connection();
-               task->con;
-               task->con= task->con->next_connection())
+          if (use_hash_server_selection(task))
           {
-            if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+            task->con= client_select_connection_by_key(task->client->universal,
+                                                        task->unique, task->unique_length,
+                                                        task->con);
+          }
+          else
+          {
+            for (task->con= task->con->next_connection();
+                 task->con;
+                 task->con= task->con->next_connection())
             {
-              break;
+              if (task->con->send_state == GEARMAN_CON_SEND_STATE_NONE)
+              {
+                break;
+              }
             }
           }
         }

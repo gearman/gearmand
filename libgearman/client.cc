@@ -295,6 +295,7 @@ gearman_client_st *gearman_client_clone(gearman_client_st *destination,
   destination->impl()->options.no_new= source->impl()->options.no_new;
   destination->impl()->options.free_tasks= source->impl()->options.free_tasks;
   destination->impl()->options.generate_unique= source->impl()->options.generate_unique;
+  destination->impl()->options.server_selection_hash_unique= source->impl()->options.server_selection_hash_unique;
   destination->impl()->ssl(source->impl()->ssl());
   destination->impl()->actions= source->impl()->actions;
   destination->impl()->_do_handle[0]= 0;
@@ -508,6 +509,24 @@ void gearman_client_add_options(gearman_client_st *client_shell,
       client->ssl(true);
     }
   }
+}
+
+void gearman_client_set_server_selection_by_unique(gearman_client_st *client_shell, bool enable)
+{
+  if (client_shell and client_shell->impl())
+  {
+    client_shell->impl()->options.server_selection_hash_unique= enable;
+  }
+}
+
+bool gearman_client_server_selection_by_unique(const gearman_client_st *client_shell)
+{
+  if (client_shell and client_shell->impl())
+  {
+    return client_shell->impl()->options.server_selection_hash_unique;
+  }
+
+  return false;
 }
 
 void gearman_client_remove_options(gearman_client_st *client_shell,

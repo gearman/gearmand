@@ -121,6 +121,7 @@ libgearman_libgearman_la_SOURCES+= \
 				  libgearman/protocol/work_exception.cc \
 				  libgearman/result.cc \
 				  libgearman/run.cc \
+				  libgearman/server_selection.cc \
 				  libgearman/status.cc \
 				  libgearman/strerror.cc \
 				  libgearman/string.cc \

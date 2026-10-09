@@ -5,8 +5,10 @@ Libgearman
 `libgearman` is a small, thread-safe client library for the
 gearman protocol. The code has all been written with an eye to allow
 for both web and embedded usage. It handles the work behind routing
-particular keys to specific servers that you specify (and values are
-matched based on server order as supplied by you). It implements both
+particular keys to specific servers that you specify. By default jobs go to
+the first idle server in the order you added them; a client can opt into
+routing by the job's unique instead, see
+:c:func:`gearman_client_set_server_selection_by_unique`. It implements both
 the :term:`client` and :term:`worker` interfaces.
 
 ***************
@@ -37,6 +39,7 @@ Client Functions
    gearman_client
    gearman_client_add_server
    gearman_client_options
+   gearman_client_set_server_selection_by_unique
    gearman_client_do
    gearman_client_do_background
    gearman_execute
