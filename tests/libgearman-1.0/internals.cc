@@ -66,7 +66,7 @@ struct internal_test_st
 
   internal_test_st() :
     gearmand_pid(-1)
-  { 
+  {
   }
 
   ~internal_test_st()
@@ -440,6 +440,68 @@ test_st packet_st_test[] ={
   {0, 0, 0}
 };
 
+static test_return_t command_info_table_test(void *)
+{
+  // Verify that the code for every entry in gearmand_command_info_list[]
+  // matches its index.
+  for (int cmd= 0; cmd < int(GEARMAN_COMMAND_MAX); ++cmd)
+  {
+    ASSERT_EQ(cmd, int(gearman_command_info(gearman_command_t(cmd))->code));
+  }
+
+  // Verify the argc value for every entry in gearmand_command_info_list[].
+  ASSERT_EQ(5, gearman_command_info(GEARMAN_COMMAND_TEXT)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_CAN_DO)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_CANT_DO)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_RESET_ABILITIES)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_PRE_SLEEP)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_UNUSED)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_NOOP)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_JOB_CREATED)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_GRAB_JOB)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_NO_JOB)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_JOB_ASSIGN)->argc);
+  ASSERT_EQ(3, gearman_command_info(GEARMAN_COMMAND_WORK_STATUS)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_WORK_COMPLETE)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_WORK_FAIL)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_GET_STATUS)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_ECHO_REQ)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_ECHO_RES)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_BG)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_ERROR)->argc);
+  ASSERT_EQ(5, gearman_command_info(GEARMAN_COMMAND_STATUS_RES)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_HIGH)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_SET_CLIENT_ID)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_CAN_DO_TIMEOUT)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_ALL_YOURS)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_WORK_EXCEPTION)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_OPTION_REQ)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_OPTION_RES)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_WORK_DATA)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_WORK_WARNING)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_GRAB_JOB_UNIQ)->argc);
+  ASSERT_EQ(3, gearman_command_info(GEARMAN_COMMAND_JOB_ASSIGN_UNIQ)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_HIGH_BG)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_LOW)->argc);
+  ASSERT_EQ(2, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_LOW_BG)->argc);
+  ASSERT_EQ(7, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_SCHED)->argc);
+  ASSERT_EQ(3, gearman_command_info(GEARMAN_COMMAND_SUBMIT_JOB_EPOCH)->argc);
+  ASSERT_EQ(4, gearman_command_info(GEARMAN_COMMAND_SUBMIT_REDUCE_JOB)->argc);
+  ASSERT_EQ(4, gearman_command_info(GEARMAN_COMMAND_SUBMIT_REDUCE_JOB_BACKGROUND)->argc);
+  ASSERT_EQ(0, gearman_command_info(GEARMAN_COMMAND_GRAB_JOB_ALL)->argc);
+  ASSERT_EQ(4, gearman_command_info(GEARMAN_COMMAND_JOB_ASSIGN_ALL)->argc);
+  ASSERT_EQ(1, gearman_command_info(GEARMAN_COMMAND_GET_STATUS_UNIQUE)->argc);
+  ASSERT_EQ(6, gearman_command_info(GEARMAN_COMMAND_STATUS_RES_UNIQUE)->argc);
+
+  return TEST_SUCCESS;
+}
+
+test_st command_info_tests[] ={
+  {"gearmand_command_info_list table", 0, command_info_table_test },
+  {0, 0, 0}
+};
+
 test_st regression_tests[] ={
   {"lp:783141, multiple calls for bad host", 0, regression_bug_783141_test },
   {"lp:372074", 0, regression_bug_372074_test },
@@ -450,6 +512,7 @@ collection_st collection[] ={
   {"gearman_universal_st", 0, 0, universal_st_test},
   {"gearman_connection_st", 0, 0, connection_st_test},
   {"gearman_packet_st", 0, 0, packet_st_test},
+  {"gearmand_command_info_list", 0, 0, command_info_tests},
   {"regression", 0, 0, regression_tests},
   {0, 0, 0, 0}
 };
