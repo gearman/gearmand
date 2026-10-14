@@ -24,7 +24,9 @@ The following list represents the current list of commands supported. You can is
 
 .. describe:: show unique jobs
 
-   List all of the unique job ids that the server currently is processesing or waiting to process.
+   List all of the jobs that the server currently is processing or waiting
+   to process, one per line, as the job handle followed by a tab and the
+   unique job id. The handle can be passed to ``cancel job``.
 
 .. describe:: create
 

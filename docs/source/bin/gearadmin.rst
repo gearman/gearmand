@@ -52,7 +52,7 @@ SYNOPSIS
 
 .. option:: --show-unique-jobs
 
-   Show unique IDs of jobs on the server.
+   Show the job handle and unique ID of each job on the server.
 
 .. option:: --show-jobs
 

@@ -285,6 +285,72 @@ static test_return_t gearadmin_show_unique_jobs_TEST(void* object)
   return TEST_SUCCESS;
 }
 
+// issue #81: each line of --show-unique-jobs is "<job handle>\t<unique>", so
+// the handle can be passed to --cancel-job.
+static test_return_t gearadmin_show_unique_jobs_handle_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  // No worker is registered for this function, so the job stays queued.
+  gearman_job_handle_t job_handle;
+  {
+    libgearman::Client client(context->port());
+    ASSERT_EQ(GEARMAN_SUCCESS,
+              gearman_client_do_background(&client,
+                                           __func__, // function
+                                           __func__, // unique
+                                           NULL, 0, // workload
+                                           job_handle));
+  }
+
+  std::string expected(job_handle);
+  expected+= "\t";
+  expected+= __func__;
+  expected+= "\n";
+
+  char port_arg[1024];
+  snprintf(port_arg, sizeof(port_arg), "--port=%d", int(context->port()));
+
+  {
+    Application app("bin/gearadmin", true);
+    app.add_option(port_arg);
+    app.add_option("--show-unique-jobs");
+    ASSERT_EQ(Application::SUCCESS, app.run());
+    ASSERT_EQ(Application::SUCCESS, app.join());
+
+    libtest::vchar_t stdout_result= app.stdout_result();
+    std::string output(stdout_result.begin(), stdout_result.end());
+    ASSERT_TRUE_(output.find(expected) != std::string::npos,
+                 "expected `%s' in `%s'", expected.c_str(), output.c_str());
+  }
+
+  std::string cancel_arg("--cancel-job=");
+  cancel_arg+= job_handle;
+  const char *cancel_args[]= { port_arg, cancel_arg.c_str(), 0 };
+  ASSERT_EQ(EXIT_SUCCESS, exec_cmdline("bin/gearadmin", cancel_args, true));
+
+  // Cancellation is lazy: the job is only marked as ignored (and freed once
+  // a worker would take it), which --show-jobs reports as
+  // "<handle>\t<retries>\t<ignore_job>\t<job_queued>".
+  std::string cancelled(job_handle);
+  cancelled+= "\t0\t1\t0\n";
+
+  {
+    Application app("bin/gearadmin", true);
+    app.add_option(port_arg);
+    app.add_option("--show-jobs");
+    ASSERT_EQ(Application::SUCCESS, app.run());
+    ASSERT_EQ(Application::SUCCESS, app.join());
+
+    libtest::vchar_t stdout_result= app.stdout_result();
+    std::string output(stdout_result.begin(), stdout_result.end());
+    ASSERT_TRUE_(output.find(cancelled) != std::string::npos,
+                 "expected `%s' in `%s'", cancelled.c_str(), output.c_str());
+  }
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t gearadmin_cancel_job_TEST(void* object)
 {
   cli::Context *context= (cli::Context*)object;
@@ -441,6 +507,7 @@ test_st gearadmin_tests[] ={
   {"--cancel-job", 0, gearadmin_cancel_job_TEST},
   {"--show-jobs", 0, gearadmin_show_jobs_TEST},
   {"--show-unique-jobs", 0, gearadmin_show_unique_jobs_TEST},
+  {"gearman_client_do_background() --show-unique-jobs --cancel-job", 0, gearadmin_show_unique_jobs_handle_TEST},
   {"--status", 0, gearadmin_status_TEST},
   {"--priority-status", 0, gearadmin_priority_status_TEST},
   {"gearman_client_do_background(100) --status", 0, gearadmin_status_with_jobs_TEST},

@@ -204,7 +204,8 @@ gearmand_error_t server_run_text(gearman_server_con_st *server_con,
              server_job != NULL;
              server_job= server_job->unique_next)
         {
-          data.vec_append_printf("%.*s\n", int(server_job->unique_length), server_job->unique);
+          data.vec_append_printf("%s\t%.*s\n", server_job->job_handle,
+                                 int(server_job->unique_length), server_job->unique);
         }
       }
 
