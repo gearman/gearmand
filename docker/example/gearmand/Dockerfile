@@ -1,6 +1,6 @@
 FROM gearmand/supervisord:1.0
 
-ARG version=2.1.0
+ARG version=2.2.0
 
 LABEL description="Gearman Job Server Image"
 LABEL maintainer="Gearmand Developers https://github.com/gearman/gearmand"
