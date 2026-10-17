@@ -386,3 +386,60 @@ jobs:
            else
               echo "No test-suite.log file found."
            fi
+
+  build-from-dist-tarball:
+
+    name: 'ubuntu-latest gcc +tarball'
+    runs-on: ubuntu-latest
+
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: install dependencies
+      shell: bash
+      run: |
+           for i in 1 2 3 4 5; do sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test && break || sleep 15; done
+           sudo apt-get update && sudo apt-get -o Acquire::Retries=3 install -y \
+             libboost-all-dev gperf libevent-dev uuid-dev sphinx-doc sphinx-common \
+             libhiredis-dev redis-server curl \
+             ${CC} ${CXX}
+    - name: bootstrap
+      run: ./bootstrap.sh -a
+    - name: configure
+      run: |
+           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" \
+           ./configure --enable-ssl
+      shell: bash
+    - name: make dist
+      run: make dist
+      shell: bash
+    - name: extract and build tarball
+      shell: bash
+      run: |
+           set -euo pipefail
+           TARBALL=$(ls -1 gearmand-*.tar.gz | head -1)
+           echo "Testing tarball: $TARBALL"
+           # Sanity-check that the previously missing header is present
+           mkdir dist-build
+           tar xzf "$TARBALL" -C dist-build --strip-components=1
+           cd dist-build
+           CXXFLAGS="-Wp,-D_GLIBCXX_ASSERTIONS" ./configure --enable-ssl
+           ${CC} --version
+           make
+    - name: make test
+      uses: nick-fields/retry@v4
+      with:
+        timeout_minutes: 10
+        max_attempts: 4
+        command: make -C dist-build test
+    - name: check test-suite.log
+      if: success() || failure()
+      run: |
+           if [ -f "./dist-build/test-suite.log" ]; then
+              cat ./dist-build/test-suite.log
+           else
+              echo "No test-suite.log file found."
+           fi
