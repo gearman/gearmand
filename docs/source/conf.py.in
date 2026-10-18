@@ -274,6 +274,8 @@ man_pages = [
   ('libgearman/gearman_client_options', 'gearman_client_options', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
   ('libgearman/gearman_client_options', 'gearman_client_remove_options', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
   ('libgearman/gearman_client_options', 'gearman_client_set_options', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
+  ('libgearman/gearman_client_set_server_selection_by_unique', 'gearman_client_set_server_selection_by_unique', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
+  ('libgearman/gearman_client_set_server_selection_by_unique', 'gearman_client_server_selection_by_unique', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
   ('libgearman/gearman_client_run_tasks', 'gearman_client_run_tasks', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
   ('libgearman/gearman_client_set_log_fn', 'gearman_client_set_log_fn', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
   ('libgearman/gearman_worker_set_log_fn', 'gearman_worker_set_log_fn', u'Gearmand Documentation, https://gearman.org/gearmand/', [u'Data Differential http://www.datadifferential.com/'], 3),
