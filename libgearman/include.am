@@ -68,6 +68,7 @@ noinst_HEADERS+= \
 		 libgearman/task_attr.h \
 		 libgearman/unique.hpp \
 		 libgearman/server_options.hpp \
+		 libgearman/server_selection.hpp \
 		 libgearman/universal.hpp \
 		 libgearman/vector.hpp
 
