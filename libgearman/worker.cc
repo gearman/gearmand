@@ -865,7 +865,14 @@ gearman_job_st *gearman_worker_grab_job(gearman_worker_st *worker_shell,
                   {
                     worker->job(NULL);
 
-                    if (*ret_ptr == GEARMAN_LOST_CONNECTION)
+                    if (*ret_ptr == GEARMAN_TIMEOUT)
+                    {
+                      /* The GRAB_JOB is still unanswered. Its reply would be
+                         read as the answer to the next GRAB_JOB, so drop the
+                         connection; the next call reconnects and re-registers. */
+                      worker->con->close_socket();
+                    }
+                    else if (*ret_ptr == GEARMAN_LOST_CONNECTION)
                     {
                       break;
                     }
