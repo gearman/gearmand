@@ -25,10 +25,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . /src
 WORKDIR /src
 
-ARG CONFIGURE_FLAGS="--enable-ssl --with-sqlite3 --enable-libtokyocabinet"
+# configure enables the queue backends (sqlite3, tokyocabinet, hiredis,
+# libmemcached) on its own when their headers are installed.
+ARG CONFIGURE_FLAGS="--enable-ssl"
 
+# /src-asan and /src are two separate trees, each configured and built once.
 RUN ./bootstrap.sh -a && cp -a /src /src-asan
 
+# AddressSanitizer build
 RUN cd /src-asan \
     && ./configure ${CONFIGURE_FLAGS} \
          CFLAGS="-g -O1 -fno-omit-frame-pointer -fsanitize=address" \
@@ -36,6 +40,7 @@ RUN cd /src-asan \
          LDFLAGS="-fsanitize=address" \
     && make -j"$(nproc)"
 
+# normal build
 RUN ./configure ${CONFIGURE_FLAGS} \
       CFLAGS="-g -O2 -fno-omit-frame-pointer" \
       CXXFLAGS="-g -O2 -fno-omit-frame-pointer -Wp,-D_GLIBCXX_ASSERTIONS" \
@@ -43,6 +48,6 @@ RUN ./configure ${CONFIGURE_FLAGS} \
 
 ENV ASAN_OPTIONS=abort_on_error=1:symbolize=1:detect_leaks=0
 
-# Some tests are timing sensitive and the suite expects "localhost" to resolve
-# to 127.0.0.1 only, so failures here are reported but do not fail the build.
+# Test failures are reported but do not fail the build, so the scanner still
+# gets an image to work with.
 RUN timeout 1800 make test || echo "WARNING: make test reported failures"
