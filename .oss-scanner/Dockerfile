@@ -27,7 +27,12 @@ WORKDIR /src
 
 # configure enables the queue backends (sqlite3, tokyocabinet, hiredis,
 # libmemcached) on its own when their headers are installed.
-ARG CONFIGURE_FLAGS="--enable-ssl"
+#
+# The scanner builds from a git clone, and in a git checkout configure also
+# builds docs/ (needs Sphinx), adds -Werror and enables assertions.
+# ac_cv_vcs_checkout=no builds it like a release tarball instead, which is
+# what users deploy.
+ARG CONFIGURE_FLAGS="--enable-ssl ac_cv_vcs_checkout=no"
 
 # /src-asan and /src are two separate trees, each configured and built once.
 RUN ./bootstrap.sh -a && cp -a /src /src-asan
