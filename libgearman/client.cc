@@ -1597,13 +1597,25 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
             {
               /* Read the next packet, without buffering the data part. */
               client->task= NULL;
+              PUSH_NON_BLOCKING(client->universal); // See below
               (void)client->con->receiving(client->con->_packet, ret, false);
             }
           }
           else
           {
-            /* Read the next packet, buffering the data part. */
+            /*
+              Read the next packet, buffering the data part.
+
+              This loop drains the connection until GEARMAN_IO_WAIT and leaves
+              the waiting to gearman_wait() at the bottom of the outer loop,
+              which watches every connection. So the read must not block, even
+              when the caller is gearman_client_run_block_tasks(): a blocking
+              read would wait for one more packet on this connection, which
+              may never come, while the reply the caller is waiting for sits
+              unread on another connection.
+            */
             client->task= NULL;
+            PUSH_NON_BLOCKING(client->universal);
             (void)client->con->receiving(client->con->_packet, ret, true);
           }
 
