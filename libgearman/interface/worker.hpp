@@ -136,12 +136,12 @@ struct Worker
 
   bool ssl() const
   {
-    return universal.options._ssl;
+    return universal.ssl();
   }
 
   void ssl(bool ssl_)
   {
-    universal.options._ssl= ssl_;
+    universal.ssl(ssl_);
   }
 
   bool in_work() const

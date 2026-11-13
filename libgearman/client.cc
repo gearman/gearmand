@@ -454,8 +454,8 @@ void gearman_client_set_options(gearman_client_st *client_shell,
       GEARMAN_CLIENT_UNBUFFERED_RESULT,
       GEARMAN_CLIENT_FREE_TASKS,
       GEARMAN_CLIENT_GENERATE_UNIQUE,
+      GEARMAN_CLIENT_SSL, // Before GEARMAN_CLIENT_EXCEPTION, which talks to the servers
       GEARMAN_CLIENT_EXCEPTION,
-      GEARMAN_CLIENT_SSL,
       GEARMAN_CLIENT_SERVER_SELECTION_BY_UNIQUE,
       GEARMAN_CLIENT_MAX
     };
@@ -506,14 +506,16 @@ void gearman_client_add_options(gearman_client_st *client_shell,
       client->options.generate_unique= true;
     }
 
-    if (options & GEARMAN_CLIENT_EXCEPTION)
-    {
-      client->options.exceptions= gearman_client_set_server_option(client_shell, gearman_literal_param("exceptions"));
-    }
-
+    // GEARMAN_CLIENT_EXCEPTION connects to the servers, and a connection only
+    // uses TLS if it has been asked for by the time it is made.
     if (options & GEARMAN_CLIENT_SSL)
     {
       client->ssl(true);
+    }
+
+    if (options & GEARMAN_CLIENT_EXCEPTION)
+    {
+      client->options.exceptions= gearman_client_set_server_option(client_shell, gearman_literal_param("exceptions"));
     }
 
     if (options & GEARMAN_CLIENT_SERVER_SELECTION_BY_UNIQUE)

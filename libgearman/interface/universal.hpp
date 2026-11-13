@@ -113,7 +113,13 @@ struct gearman_universal_st : public error_st
 
   void ssl(bool ssl_)
   {
-    options._ssl= ssl_;
+    if (options._ssl != ssl_)
+    {
+      options._ssl= ssl_;
+      // Whether a connection uses TLS is decided when it is made, do not
+      // keep the ones that were made under the other setting.
+      reset();
+    }
   }
 
   private:

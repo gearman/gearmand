@@ -141,12 +141,79 @@ static test_return_t SSL_BAD_CERT_NO_ABORT_TEST(void *)
 
   return TEST_SUCCESS;
 }
+
+// GEARMAN_CLIENT_EXCEPTION sends OPTION_REQ to the servers at once. Passed
+// together with GEARMAN_CLIENT_SSL it used to be handled first, so the
+// connection was made without TLS. The server started for this test only
+// speaks TLS, it answers the request only if the client does too.
+static test_return_t SSL_AND_EXCEPTION_OPTIONS_TEST(void *)
+{
+  gearman_client_options_t options= gearman_client_options_t(GEARMAN_CLIENT_SSL | GEARMAN_CLIENT_EXCEPTION);
+
+  gearman_client_st *client= gearman_client_create(NULL);
+  ASSERT_TRUE(client);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(client, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+  gearman_client_add_options(client, options);
+  ASSERT_TRUE(gearman_client_has_option(client, GEARMAN_CLIENT_SSL));
+  ASSERT_TRUE(gearman_client_has_option(client, GEARMAN_CLIENT_EXCEPTION));
+  gearman_client_free(client);
+
+  client= gearman_client_create(NULL);
+  ASSERT_TRUE(client);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(client, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+  gearman_client_set_options(client, options);
+  ASSERT_TRUE(gearman_client_has_option(client, GEARMAN_CLIENT_SSL));
+  ASSERT_TRUE(gearman_client_has_option(client, GEARMAN_CLIENT_EXCEPTION));
+  gearman_client_free(client);
+
+  return TEST_SUCCESS;
+}
+
+// Whether a connection uses TLS is decided when it is made. One that was made
+// before TLS was asked for must not be kept, it would carry on in cleartext.
+static test_return_t SSL_AFTER_CONNECT_TEST(void *)
+{
+  gearman_universal_st universal;
+  gearman_set_log_fn(universal, error_logger, NULL, GEARMAN_VERBOSE_ERROR);
+
+  gearman_packet_st message;
+  gearman_string_t workload= { test_literal_param("ssl after connect") };
+
+  ASSERT_EQ(GEARMAN_SUCCESS, libgearman::protocol::echo(universal, message, workload));
+
+  gearman_connection_st *connection;
+  ASSERT_TRUE(connection= gearman_connection_create(universal, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+
+  // Connects, and sends the request, without TLS
+  ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(message, true));
+
+  universal.ssl(true);
+
+  ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(message, true));
+
+  size_t length;
+  gearman_return_t ret;
+  gearman_packet_st recv_message;
+  ASSERT_TRUE(connection->receiving(recv_message, ret, true));
+  ASSERT_EQ(GEARMAN_SUCCESS, ret);
+  ASSERT_TRUE(recv_message.value(length));
+  ASSERT_EQ(length, gearman_size(workload));
+
+  delete connection;
+  gearman_packet_free(&recv_message);
+  gearman_packet_free(&message);
+  gearman_universal_free(universal);
+
+  return TEST_SUCCESS;
+}
 #endif // defined(HAVE_SSL) && HAVE_SSL
 
 test_st SSL_TESTS[] ={
   {"SSL echo request/response round-trip over TLS", 0, SSL_ECHO_TEST },
 #if defined(HAVE_SSL) && HAVE_SSL
   {"ctx_ssl() returns error instead of abort() on bad cert/key path (#503)", 0, SSL_BAD_CERT_NO_ABORT_TEST },
+  {"GEARMAN_CLIENT_SSL | GEARMAN_CLIENT_EXCEPTION connects with TLS", 0, SSL_AND_EXCEPTION_OPTIONS_TEST },
+  {"enabling SSL drops connections made without it", 0, SSL_AFTER_CONNECT_TEST },
 #endif
   {0, 0, 0}
 };
