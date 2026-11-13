@@ -657,5 +657,18 @@ static void _clear_events(gearmand_thread_st *thread)
   {
     gearmand_con_free(thread->dcon_list);
   }
+
+  /*
+    Do not count on the event base running empty to end the loop: the job
+    timeout timers of the connections dropped above can still be pending on
+    it (gearman_server_con_attempt_free() leaves them alone once the
+    processing thread has been shut down). They are deleted by
+    gearman_server_thread_free(), which only runs after this thread has been
+    joined.
+  */
+  if (event_base_loopexit(thread->base, nullptr) == -1)
+  {
+    gearmand_perror(errno, "event_base_loopexit");
+  }
 }
 #pragma GCC diagnostic pop
