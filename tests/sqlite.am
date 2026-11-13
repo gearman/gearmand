@@ -24,6 +24,7 @@ t_sqlite_LDADD+= @SQLITE3_LDFLAGS@
 t_sqlite_SOURCES+= tests/basic.cc
 t_sqlite_SOURCES+= tests/sqlite_test.cc
 t_sqlite_LDADD+= $(CLIENT_LDADD)
+t_sqlite_LDADD+= libgearman/libgearmancore.la
 check_PROGRAMS+= t/sqlite
 noinst_PROGRAMS+= t/sqlite
 

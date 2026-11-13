@@ -51,6 +51,11 @@ using namespace libtest;
 
 #include <libgearman/gearman.h>
 
+#define GEARMAN_CORE
+#include "libgearman/universal.hpp"
+#include "libgearman/connection.hpp"
+#include "libgearman/packet.hpp"
+
 #define GEARMAN_QUEUE_SQLITE_DEFAULT_TABLE "gearman_queue"
 
 #include <tests/basic.h>
@@ -226,6 +231,90 @@ static test_return_t gearmand_basic_option_shutdown_queue_TEST(void *)
 
   test_compare(EXIT_SUCCESS, exec_cmdline(gearmand_binary(), args, true));
   test_compare(-1, access(sql_file.c_str(), R_OK | W_OK ));
+
+  return TEST_SUCCESS;
+}
+
+static void error_logger(const char* message, gearman_verbose_t, void*)
+{
+  Error << message;
+}
+
+/* Background jobs submitted without a unique ID are separate jobs to the
+   server, so each needs its own row in the queue, and finishing one must
+   only remove that row. libgearman always fills in a unique ID for a
+   background job, so the submissions are made with the protocol directly. */
+static test_return_t queue_add_without_unique_TEST(void *object)
+{
+  Context *test= (Context *)object;
+  ASSERT_TRUE(test);
+  ASSERT_TRUE(test->_extra_files.size());
+
+  Sqlite sql_handle(test->_extra_files[0]);
+  const int inserted_jobs= 3;
+  const int rows_before= sql_handle.vcount();
+  ASSERT_TRUE(rows_before >= 0);
+
+  gearman_universal_st universal;
+  gearman_set_log_fn(universal, error_logger, NULL, GEARMAN_VERBOSE_ERROR);
+
+  gearman_connection_st *connection;
+  ASSERT_TRUE(connection= gearman_connection_create(universal, GEARMAN_DEFAULT_TCP_HOST, test->port()));
+
+  for (int x= 0; x < inserted_jobs; ++x)
+  {
+    char workload[32];
+    int workload_length= snprintf(workload, sizeof(workload), "workload %d", x);
+
+    const void *args[3]= { test->worker_function_name(), "", workload };
+    const size_t args_size[3]= { strlen(test->worker_function_name()) +1, 1, size_t(workload_length) };
+
+    gearman_packet_st message;
+    ASSERT_EQ(GEARMAN_SUCCESS, gearman_packet_create_args(universal, message,
+                                                          GEARMAN_MAGIC_REQUEST,
+                                                          GEARMAN_COMMAND_SUBMIT_JOB_BG,
+                                                          args, args_size, 3));
+    ASSERT_EQ(GEARMAN_SUCCESS, connection->send_packet(message, true));
+
+    gearman_return_t ret;
+    gearman_packet_st recv_message;
+    ASSERT_TRUE(connection->receiving(recv_message, ret, true));
+    ASSERT_EQ(GEARMAN_SUCCESS, ret);
+    ASSERT_EQ(GEARMAN_COMMAND_JOB_CREATED, recv_message.command);
+
+    gearman_packet_free(&recv_message);
+    gearman_packet_free(&message);
+
+    ASSERT_EQ(rows_before +x +1, sql_handle.vcount());
+  }
+
+  delete connection;
+  gearman_universal_free(universal);
+
+  {
+    libgearman::Worker worker(test->port());
+    gearman_worker_set_timeout(&worker, 3000);
+
+    Called called;
+    gearman_function_t counter_function= gearman_function_create(called_worker);
+    ASSERT_EQ(gearman_worker_define_function(&worker,
+                                             test->worker_function_name(), strlen(test->worker_function_name()),
+                                             counter_function,
+                                             0, &called), GEARMAN_SUCCESS);
+
+    for (int x= 0; x < inserted_jobs; ++x)
+    {
+      ASSERT_EQ(GEARMAN_SUCCESS, gearman_worker_work(&worker));
+    }
+    ASSERT_EQ(inserted_jobs, called.count());
+  }
+
+  // The server removes a job from the queue once it has seen the worker's WORK_COMPLETE.
+  for (int x= 0; x < 50 and sql_handle.vcount() != rows_before; ++x)
+  {
+    libtest::dream(0, 100000);
+  }
+  ASSERT_EQ(rows_before, sql_handle.vcount());
 
   return TEST_SUCCESS;
 }
@@ -641,6 +730,7 @@ test_st tests[] ={
   {"clean", 0, queue_clean },
   {"add", 0, queue_add },
   {"worker", 0, queue_worker },
+  {"add without unique", 0, queue_add_without_unique_TEST },
   {0, 0, 0}
 };
 
