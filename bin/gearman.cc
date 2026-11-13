@@ -316,7 +316,13 @@ void _client(Args &args)
 
   if (args.use_ssl())
   {
+#if defined(HAVE_SSL) && HAVE_SSL
     gearman_client_add_options(&client, GEARMAN_CLIENT_SSL);
+#else
+    error::message("SSL (-S) was requested, but this gearman executable was not built with SSL support");
+    args.set_error();
+    return;
+#endif
   }
 
   gearman_client_set_created_fn(&client, _client_created);
@@ -620,7 +626,12 @@ void _worker(Args &args)
 
   if (args.use_ssl())
   {
+#if defined(HAVE_SSL) && HAVE_SSL
     gearman_worker_add_options(&worker, GEARMAN_WORKER_SSL);
+#else
+    error::message("SSL (-S) was requested, but this gearman executable was not built with SSL support");
+    _exit(EXIT_FAILURE);
+#endif
   }
 
   gearman_worker_set_workload_free_fn(&worker, _worker_free, NULL);

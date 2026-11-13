@@ -1615,6 +1615,21 @@ static test_return_t gearman_client_add_server_empty_quote_TEST(void*)
   return TEST_SUCCESS;
 }
 
+#if !defined(HAVE_SSL) || !HAVE_SSL
+// A libgearman built without SSL support must fail the connection instead of
+// talking cleartext to the server when the application asked for SSL.
+static test_return_t gearman_client_options_SSL_without_SSL_support_TEST(void*)
+{
+  libgearman::Client client;
+
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(&client, "localhost", libtest::default_port()));
+  gearman_client_add_options(&client, GEARMAN_CLIENT_SSL);
+  ASSERT_EQ(GEARMAN_INVALID_ARGUMENT, gearman_client_echo(&client, test_literal_param(__func__)));
+
+  return TEST_SUCCESS;
+}
+#endif // !defined(HAVE_SSL) || !HAVE_SSL
+
 static test_return_t gearman_client_create_GEARMAN_INVALID_ARGUMENT_TEST(void*)
 {
   gearman_client_st* clone;
@@ -2304,6 +2319,9 @@ test_st client_fork_TESTS[] ={
 test_st gearman_client_add_server_TESTS[] ={
   {"gearman_client_add_server(localhost)", 0, gearman_client_add_server_localhost_TEST },
   {"gearman_client_add_server(empty quote)", 0, gearman_client_add_server_empty_quote_TEST },
+#if !defined(HAVE_SSL) || !HAVE_SSL
+  {"gearman_client_add_options(GEARMAN_CLIENT_SSL) without SSL support", 0, gearman_client_options_SSL_without_SSL_support_TEST },
+#endif
   {0, 0, 0}
 };
 

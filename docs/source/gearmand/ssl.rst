@@ -55,7 +55,7 @@ Specifying Subject Alternative Names (SAN) is not needed for clients/workers sin
 
 Caveats:
 
-  1. Make sure your gearmand was configured with ``--enable-ssl``. You will likely need to compile from source as packagers tend to not enable that option. Passing ``--ssl`` to a gearmand executable that wasn't built with SSL support causes it to refuse to start rather than silently falling back to accepting unencrypted connections.
+  1. Make sure your gearmand was configured with ``--enable-ssl``. You will likely need to compile from source as packagers tend to not enable that option. Passing ``--ssl`` to a gearmand executable that wasn't built with SSL support causes it to refuse to start rather than silently falling back to accepting unencrypted connections. The same holds for libgearman, ``gearman -S`` and ``gearadmin --ssl``: when built without SSL support, a request for SSL fails with an error instead of connecting unencrypted.
 
   2. The commands above generate server and client certificates valid for 730 days (2 years). If you want a different lifetime, adjust the ``-days`` parameters in the commands accordingly. The lifetimes of the server and client certificates should be less than or equal to the number of days until the CA certificate expires (3650 in the commands above).
 

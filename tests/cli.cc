@@ -195,6 +195,22 @@ static test_return_t gearman_client_status_zero_denominator_TEST(void* object)
   return TEST_SUCCESS;
 }
 
+#if !defined(HAVE_SSL) || !HAVE_SSL
+static test_return_t gearman_client_ssl_without_ssl_support_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char buffer[1024];
+  snprintf(buffer, sizeof(buffer), "-p %d", int(context->port()));
+  const char *args[]= { buffer, "-S", "-f", WORKER_FUNCTION_NAME, "-b", "payload", 0 };
+
+  // Must refuse instead of submitting the job in cleartext.
+  ASSERT_EQ(EXIT_FAILURE, exec_cmdline("bin/gearman", args, true));
+
+  return TEST_SUCCESS;
+}
+#endif // !defined(HAVE_SSL) || !HAVE_SSL
+
 #define REGRESSION_FUNCTION_833394 "55_char_function_name_________________________________"
 
 static test_return_t regression_833394_test(void* object)
@@ -476,6 +492,22 @@ static test_return_t gearadmin_getpid_test(void* object)
   return TEST_SUCCESS;
 }
 
+#if !defined(HAVE_SSL) || !HAVE_SSL
+static test_return_t gearadmin_ssl_without_ssl_support_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char buffer[1024];
+  snprintf(buffer, sizeof(buffer), "--port=%d", int(context->port()));
+  const char *args[]= { buffer, "--ssl", "--getpid", 0 };
+
+  // Must refuse instead of sending the command in cleartext.
+  ASSERT_EQ(EXIT_FAILURE, exec_cmdline("bin/gearadmin", args, true));
+
+  return TEST_SUCCESS;
+}
+#endif // !defined(HAVE_SSL) || !HAVE_SSL
+
 static test_return_t gearadmin_unknown_test(void* object)
 {
   cli::Context *context= (cli::Context*)object;
@@ -536,6 +568,9 @@ test_st gearman_tests[] ={
   { "-v", 0, gearman_verbose_TEST },
   { "--unknown", 0, gearman_unknown_test },
   { "-f echo -b payload", 0, gearman_client_background_test },
+#if !defined(HAVE_SSL) || !HAVE_SSL
+  { "-S -f echo -b payload without SSL support", 0, gearman_client_ssl_without_ssl_support_TEST },
+#endif
   { "lp:833394", 0, regression_833394_test },
   { "-f status_zero_denominator", 0, gearman_client_status_zero_denominator_TEST },
   { 0, 0, 0 }
@@ -556,6 +591,9 @@ test_st gearadmin_tests[] ={
   {"--getpid", 0, gearadmin_getpid_test},
   {"--workers", 0, gearadmin_workers_test},
   {"--create-function and --drop-function", 0, gearadmin_create_drop_test},
+#if !defined(HAVE_SSL) || !HAVE_SSL
+  {"--ssl --getpid without SSL support", 0, gearadmin_ssl_without_ssl_support_TEST},
+#endif
   {"--unknown", 0, gearadmin_unknown_test},
   {0, 0, 0}
 };
