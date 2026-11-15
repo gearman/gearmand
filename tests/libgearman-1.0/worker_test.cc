@@ -2229,6 +2229,82 @@ static test_return_t issue_368_recv_timeout_clears_recv_packet_TEST(void *)
   return TEST_SUCCESS;
 }
 
+/* Regression test: a pending job timeout must not keep gearmand from stopping.
+ *
+ * gearman_server_con_add_job_timeout() puts the timeout of a job handed to a
+ * CAN_DO_TIMEOUT worker on the event base of the connection's IO thread. An
+ * IO thread used to end only once its SHUTDOWN wakeup had left that base
+ * empty, and for every IO thread but the first one to be stopped nothing
+ * removed the timer before that. With a worker still holding such a job,
+ * SIGTERM closed the listening sockets and then waited for the timer to
+ * fire; after 300 seconds gearmand_thread_free() gave up and killed the
+ * whole process with SIGQUIT.
+ */
+static gearman_return_t shutdown_job_timeout_worker(gearman_job_st*, void*)
+{
+  return GEARMAN_SUCCESS;
+}
+
+static test_return_t shutdown_with_pending_job_timeout_TEST(void *object)
+{
+  server_startup_st *servers= (server_startup_st*)object;
+  ASSERT_TRUE(servers);
+
+  /* A gearmand of our own to stop, the other tests keep using theirs. */
+  in_port_t port= libtest::get_free_port();
+  ASSERT_TRUE(server_startup(*servers, "gearmand", port, NULL));
+  uint32_t server_index= servers->count() -1;
+
+  char fn[GEARMAN_FUNCTION_MAX_SIZE];
+  snprintf(fn, sizeof(fn), "_%s%d", __func__, int(random()));
+
+  /* Connections are handed to the IO threads round-robin and the IO thread
+     that is stopped first was not affected, so hold a job on two of them. */
+  libgearman::Worker worker1(port);
+  libgearman::Worker worker2(port);
+  gearman_worker_st *workers[]= { &worker1, &worker2 };
+  gearman_job_st *jobs[]= { NULL, NULL };
+
+  {
+    libgearman::Client client(port);
+    for (size_t x= 0; x < 2; ++x)
+    {
+      ASSERT_EQ(GEARMAN_SUCCESS,
+                gearman_client_do_background(&client, fn, NULL, NULL, 0, NULL));
+    }
+  }
+
+  gearman_function_t worker_fn= gearman_function_create(shutdown_job_timeout_worker);
+  for (size_t x= 0; x < 2; ++x)
+  {
+    ASSERT_EQ(GEARMAN_SUCCESS,
+              gearman_worker_define_function(workers[x], fn, strlen(fn),
+                                            worker_fn,
+                                            60000, /* CAN_DO_TIMEOUT ms */
+                                            NULL));
+    gearman_worker_set_timeout(workers[x], 4000);
+
+    /* Take a job and keep it, this arms the server-side timeout. */
+    gearman_return_t ret;
+    jobs[x]= gearman_worker_grab_job(workers[x], NULL, &ret);
+    ASSERT_EQ(GEARMAN_SUCCESS, ret);
+    ASSERT_TRUE(jobs[x]);
+  }
+
+  /* Stop gearmand while both connections are open and both timeouts are
+     pending. If the bug is present this does not return before they fire. */
+  time_t begin= time(NULL);
+  ASSERT_TRUE(servers->shutdown(server_index));
+  ASSERT_TRUE(time(NULL) -begin < 30);
+
+  for (size_t x= 0; x < 2; ++x)
+  {
+    gearman_job_free(jobs[x]);
+  }
+
+  return TEST_SUCCESS;
+}
+
 /*********************** World functions **************************************/
 
 static void *world_create(server_startup_st& servers, test_return_t&)
@@ -2286,6 +2362,7 @@ test_st worker_TESTS[] ={
   {"issue#301: server job timeout stale pointer", 0, issue_301_server_job_timeout_stale_ptr_TEST },
   {"issue#119: completed job's stale timeout corrupts job_count", 0, issue_119_stale_job_timeout_corrupts_job_count_TEST },
   {"issue#368: recv timeout clears borrowed recv_packet", 0, issue_368_recv_timeout_clears_recv_packet_TEST },
+  {"shutdown with a pending job timeout", 0, shutdown_with_pending_job_timeout_TEST },
   {0, 0, 0}
 };
 

@@ -56,6 +56,7 @@ noinst_HEADERS+= \
 
 libgearman_server_libgearman_server_la_SOURCES+= libgearman/backtrace.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman/pipe.cc
+libgearman_server_libgearman_server_la_SOURCES+= libgearman/uuid.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman/vector.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman-server/text.cc
 libgearman_server_libgearman_server_la_SOURCES+= libgearman-server/config.cc
@@ -93,6 +94,7 @@ libgearman_server_libgearman_server_la_LIBADD+= @BOOST_PROGRAM_OPTIONS_LIB@
 libgearman_server_libgearman_server_la_LIBADD+= @LIBM@
 libgearman_server_libgearman_server_la_LIBADD+= @lt_cv_dlopen_libs@
 libgearman_server_libgearman_server_la_LIBADD+= @RT_LIB@
+libgearman_server_libgearman_server_la_LIBADD+= @LIBUUID_LIB@
 if ENABLE_SSL
 if ENABLE_WOLFSSL
 libgearman_server_libgearman_server_la_LIBADD+= @WOLFSSL_LIB@

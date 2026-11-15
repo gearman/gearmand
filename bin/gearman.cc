@@ -316,7 +316,13 @@ void _client(Args &args)
 
   if (args.use_ssl())
   {
+#if defined(HAVE_SSL) && HAVE_SSL
     gearman_client_add_options(&client, GEARMAN_CLIENT_SSL);
+#else
+    error::message("SSL (-S) was requested, but this gearman executable was not built with SSL support");
+    args.set_error();
+    return;
+#endif
   }
 
   gearman_client_set_created_fn(&client, _client_created);
@@ -560,8 +566,19 @@ static gearman_return_t _client_status(gearman_task_st *task)
   if (args->prefix())
     printf("%s: ", gearman_task_function_name(task));
 
-  printf("%u%% Complete\n", (gearman_task_numerator(task) * 100) /
-         gearman_task_denominator(task));
+  // The numerator and denominator are whatever the worker sent. A denominator
+  // of zero is valid in the protocol, but it cannot be shown as a percentage.
+  const uint32_t numerator= gearman_task_numerator(task);
+  const uint32_t denominator= gearman_task_denominator(task);
+  if (denominator == 0)
+  {
+    printf("%u/%u Complete\n", numerator, denominator);
+  }
+  else
+  {
+    printf("%llu%% Complete\n",
+           static_cast<unsigned long long>(numerator) * 100 / denominator);
+  }
 
   return GEARMAN_SUCCESS;
 }
@@ -609,7 +626,12 @@ void _worker(Args &args)
 
   if (args.use_ssl())
   {
+#if defined(HAVE_SSL) && HAVE_SSL
     gearman_worker_add_options(&worker, GEARMAN_WORKER_SSL);
+#else
+    error::message("SSL (-S) was requested, but this gearman executable was not built with SSL support");
+    _exit(EXIT_FAILURE);
+#endif
   }
 
   gearman_worker_set_workload_free_fn(&worker, _worker_free, NULL);

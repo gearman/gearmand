@@ -701,6 +701,13 @@ gearman_return_t gearman_connection_st::enable_ssl()
 
     SSL_set_connect_state(_ssl);
   }
+#else
+  if (universal.ssl())
+  {
+    // Never fall back to cleartext on a connection that was asked to use SSL.
+    close_socket();
+    return gearman_error(universal, GEARMAN_INVALID_ARGUMENT, "SSL was requested, but libgearman was not built with SSL support");
+  }
 #endif
 
   return GEARMAN_SUCCESS;
@@ -783,6 +790,13 @@ gearman_return_t gearman_connection_st::flush()
 #if 0
           addrinfo_next= NULL;
 #endif
+          // connect() completed at once, so the GEARMAN_CON_UNIVERSAL_CONNECTING
+          // case, which would call enable_ssl(), is skipped.
+          gearman_return_t ssl_ret;
+          if ((ssl_ret= enable_ssl()) != GEARMAN_SUCCESS)
+          {
+            return ssl_ret;
+          }
 
           break;
         }

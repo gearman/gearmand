@@ -377,6 +377,93 @@ static test_return_t server_selection_by_unique_failover_test(void *object)
   return TEST_SUCCESS;
 }
 
+static void *stale_packet_worker(gearman_job_st*, void*, size_t *result_size, gearman_return_t *ret_ptr)
+{
+  *result_size= 0;
+  *ret_ptr= GEARMAN_SUCCESS;
+
+  return NULL;
+}
+
+// A blocking call (gearman_client_do_background() here) has to return once
+// its reply has arrived, whatever shows up on the client's other connection.
+// _client_run_tasks() used to read a ready connection with a blocking
+// universal, so after a packet that belongs to no task it waited for one
+// more packet on that same connection while the JOB_CREATED it was after sat
+// unread on the other one. With the 1000 ms timeout of this collection that
+// showed up as GEARMAN_TIMEOUT; without a timeout the call never returned.
+//
+// The packet that belongs to no task is the WORK_COMPLETE of a foreground
+// job whose task the client gave up before a worker picked the job up.
+static test_return_t blocking_call_stale_packet_on_other_connection_test(void *object)
+{
+  multi_client_test_st *test_client= (multi_client_test_st*)object;
+  ASSERT_TRUE(test_client);
+
+  test_client->reset_connected_to_both_clone();
+  gearman_client_st *client_to_both= test_client->connected_to_both_client();
+  ASSERT_TRUE(client_to_both);
+
+  const char *worker_function= "nothing";
+  const char *stale_function= "stale_packet_on_other_connection";
+  const char *large_unique= "stale_packet_large_unique";
+  const char *stale_unique= "stale_packet_stale_unique";
+  gearman_string_t value= { test_literal_param("background_test") };
+
+  // The first workload does not fit the send buffer, which keeps the
+  // connection it is sent on (the head of the list) busy while the next task
+  // is started: that one goes to the other server.
+  std::vector<char> large_workload(2 * 1024 * 1024, 'x');
+
+  gearman_return_t ret;
+  ASSERT_TRUE(gearman_client_add_task_background(client_to_both, NULL, NULL, worker_function, large_unique,
+                                                 &large_workload[0], large_workload.size(), &ret));
+  test_compare(GEARMAN_SUCCESS, ret);
+  ASSERT_TRUE(gearman_client_add_task(client_to_both, NULL, NULL, stale_function, stale_unique,
+                                      gearman_string_param(value), &ret));
+  test_compare(GEARMAN_SUCCESS, ret);
+
+  // Nobody works on stale_function yet, the client gives the batch up.
+  test_compare(GEARMAN_TIMEOUT, gearman_client_run_tasks(client_to_both));
+  gearman_client_task_free_all(client_to_both);
+
+  // Confirm that the two jobs are on different servers, and find the one
+  // that has the abandoned job.
+  test_client->reset_connected_to_1_clone();
+  gearman_client_st *client_to_1= test_client->connected_to_1_client();
+  ASSERT_TRUE(client_to_1);
+  gearman_status_t large_status= gearman_client_unique_status(client_to_1, large_unique, strlen(large_unique));
+  test_compare(GEARMAN_SUCCESS, gearman_status_return(large_status));
+  gearman_status_t stale_status= gearman_client_unique_status(client_to_1, stale_unique, strlen(stale_unique));
+  test_compare(GEARMAN_SUCCESS, gearman_status_return(stale_status));
+  ASSERT_TRUE_(gearman_status_is_known(large_status) != gearman_status_is_known(stale_status),
+               "both tasks were sent to the %s server", gearman_status_is_known(stale_status) ? "first" : "second");
+  in_port_t stale_port= gearman_status_is_known(stale_status) ? test_client->port(0) : test_client->port(1);
+
+  // Complete the abandoned job.
+  gearman_worker_st *worker= gearman_worker_create(NULL);
+  ASSERT_TRUE(worker);
+  gearman_worker_set_timeout(worker, 1000);
+  test_compare(GEARMAN_SUCCESS, gearman_worker_add_server(worker, "127.0.0.1", stale_port));
+  test_compare(GEARMAN_SUCCESS, gearman_worker_add_function(worker, stale_function, 0, stale_packet_worker, NULL));
+  test_compare(GEARMAN_SUCCESS, gearman_worker_work(worker));
+  // Answered after the server has passed the WORK_COMPLETE on to the client.
+  test_compare(GEARMAN_SUCCESS, gearman_worker_echo(worker, test_literal_param("sync")));
+  gearman_worker_free(worker);
+
+  // These are submitted on the connection that is not the one with the stale
+  // packet. More than one, since the JOB_CREATED of the first can still win
+  // the race against the stale packet.
+  for (size_t x= 0; x < 3; ++x)
+  {
+    gearman_job_handle_t job_handle;
+    test_compare(GEARMAN_SUCCESS,
+                 gearman_client_do_background(client_to_both, worker_function, NULL, gearman_string_param(value), job_handle));
+  }
+
+  return TEST_SUCCESS;
+}
+
 static void *world_create(server_startup_st& servers, test_return_t&)
 {
   multi_client_test_st *test= new multi_client_test_st(servers, 1000); // setting a default timeout
@@ -408,6 +495,7 @@ test_st multi_client_TESTS[] ={
   {"server_selection_by_unique routes consistently", 0, server_selection_by_unique_test },
   {"server_selection_by_unique falls back for an empty unique", 0, server_selection_by_unique_empty_unique_test },
   {"server_selection_by_unique fails over when primary is down", 0, server_selection_by_unique_failover_test },
+  {"blocking call with a stale packet on the other connection", 0, blocking_call_stale_packet_on_other_connection_test },
   {0, 0, 0}
 };
 

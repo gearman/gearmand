@@ -454,8 +454,8 @@ void gearman_client_set_options(gearman_client_st *client_shell,
       GEARMAN_CLIENT_UNBUFFERED_RESULT,
       GEARMAN_CLIENT_FREE_TASKS,
       GEARMAN_CLIENT_GENERATE_UNIQUE,
+      GEARMAN_CLIENT_SSL, // Before GEARMAN_CLIENT_EXCEPTION, which talks to the servers
       GEARMAN_CLIENT_EXCEPTION,
-      GEARMAN_CLIENT_SSL,
       GEARMAN_CLIENT_SERVER_SELECTION_BY_UNIQUE,
       GEARMAN_CLIENT_MAX
     };
@@ -506,14 +506,16 @@ void gearman_client_add_options(gearman_client_st *client_shell,
       client->options.generate_unique= true;
     }
 
-    if (options & GEARMAN_CLIENT_EXCEPTION)
-    {
-      client->options.exceptions= gearman_client_set_server_option(client_shell, gearman_literal_param("exceptions"));
-    }
-
+    // GEARMAN_CLIENT_EXCEPTION connects to the servers, and a connection only
+    // uses TLS if it has been asked for by the time it is made.
     if (options & GEARMAN_CLIENT_SSL)
     {
       client->ssl(true);
+    }
+
+    if (options & GEARMAN_CLIENT_EXCEPTION)
+    {
+      client->options.exceptions= gearman_client_set_server_option(client_shell, gearman_literal_param("exceptions"));
     }
 
     if (options & GEARMAN_CLIENT_SERVER_SELECTION_BY_UNIQUE)
@@ -1597,13 +1599,25 @@ static inline gearman_return_t _client_run_tasks(gearman_client_st *client_shell
             {
               /* Read the next packet, without buffering the data part. */
               client->task= NULL;
+              PUSH_NON_BLOCKING(client->universal); // See below
               (void)client->con->receiving(client->con->_packet, ret, false);
             }
           }
           else
           {
-            /* Read the next packet, buffering the data part. */
+            /*
+              Read the next packet, buffering the data part.
+
+              This loop drains the connection until GEARMAN_IO_WAIT and leaves
+              the waiting to gearman_wait() at the bottom of the outer loop,
+              which watches every connection. So the read must not block, even
+              when the caller is gearman_client_run_block_tasks(): a blocking
+              read would wait for one more packet on this connection, which
+              may never come, while the reply the caller is waiting for sits
+              unread on another connection.
+            */
             client->task= NULL;
+            PUSH_NON_BLOCKING(client->universal);
             (void)client->con->receiving(client->con->_packet, ret, true);
           }
 

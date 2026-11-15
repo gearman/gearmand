@@ -49,6 +49,8 @@
 #include <time.h>
 
 #include <libgearman-server/queue.h>
+#include "libgearman/vector.hpp"
+#include "libgearman/uuid.hpp"
 
 /*
  * Private declarations
@@ -278,6 +280,29 @@ gearman_server_job_add_reducer(gearman_server_st *server,
   {
     *ret_ptr= GEARMAND_MEMORY_ALLOCATION_FAILURE;
     return NULL;
+  }
+
+  /* A background job is handed to the persistent queue, which stores it
+     under (unique, function_name). A job submitted without a unique ID is
+     still its own job here, but it would share that key with every other
+     such job of the function: the next one replaces its row, and finishing
+     either one deletes the row of both. Give it a server generated unique
+     ID, as libgearman does for background jobs submitted without one. Jobs
+     replayed from the queue keep the unique ID they were stored under. */
+  char generated_unique[GEARMAN_MAX_UNIQUE_SIZE];
+  if (unique_size == 0 && server_client == NULL && server->state.queue_startup == false)
+  {
+    size_t generated_unique_size= 0;
+    safe_uuid_generate(generated_unique, generated_unique_size);
+    if (generated_unique_size)
+    {
+      unique= generated_unique;
+      unique_size= generated_unique_size;
+    }
+    else
+    {
+      gearmand_log_error(GEARMAN_DEFAULT_LOG_PARAM, "Unable to generate a unique ID for a background job of %.*s", (int)function_name_size, function_name);
+    }
   }
 
   uint32_t key;

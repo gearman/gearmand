@@ -158,6 +158,59 @@ static test_return_t gearman_client_background_test(void* object)
   return TEST_SUCCESS;
 }
 
+#define STATUS_ZERO_DENOMINATOR_FUNCTION_NAME "status_zero_denominator_function"
+
+static gearman_return_t status_zero_denominator_worker(gearman_job_st *job, void *)
+{
+  if (gearman_failed(gearman_job_send_status(job, 1, 0)))
+  {
+    return GEARMAN_ERROR;
+  }
+
+  return GEARMAN_SUCCESS;
+}
+
+// A worker may report its status against a denominator of zero, the client
+// has to print it without dividing by it.
+static test_return_t gearman_client_status_zero_denominator_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char port_arg[1024];
+  snprintf(port_arg, sizeof(port_arg), "-p %d", int(context->port()));
+
+  Application app("bin/gearman", true);
+  app.add_option(port_arg);
+  app.add_option("-f");
+  app.add_option(STATUS_ZERO_DENOMINATOR_FUNCTION_NAME);
+  app.add_option("payload");
+  ASSERT_EQ(Application::SUCCESS, app.run());
+  ASSERT_EQ(Application::SUCCESS, app.join());
+
+  libtest::vchar_t stdout_result= app.stdout_result();
+  std::string output(stdout_result.begin(), stdout_result.end());
+  ASSERT_TRUE_(output.find("1/0 Complete\n") != std::string::npos,
+               "expected `1/0 Complete' in `%s'", output.c_str());
+
+  return TEST_SUCCESS;
+}
+
+#if !defined(HAVE_SSL) || !HAVE_SSL
+static test_return_t gearman_client_ssl_without_ssl_support_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char buffer[1024];
+  snprintf(buffer, sizeof(buffer), "-p %d", int(context->port()));
+  const char *args[]= { buffer, "-S", "-f", WORKER_FUNCTION_NAME, "-b", "payload", 0 };
+
+  // Must refuse instead of submitting the job in cleartext.
+  ASSERT_EQ(EXIT_FAILURE, exec_cmdline("bin/gearman", args, true));
+
+  return TEST_SUCCESS;
+}
+#endif // !defined(HAVE_SSL) || !HAVE_SSL
+
 #define REGRESSION_FUNCTION_833394 "55_char_function_name_________________________________"
 
 static test_return_t regression_833394_test(void* object)
@@ -439,6 +492,22 @@ static test_return_t gearadmin_getpid_test(void* object)
   return TEST_SUCCESS;
 }
 
+#if !defined(HAVE_SSL) || !HAVE_SSL
+static test_return_t gearadmin_ssl_without_ssl_support_TEST(void* object)
+{
+  cli::Context *context= (cli::Context*)object;
+
+  char buffer[1024];
+  snprintf(buffer, sizeof(buffer), "--port=%d", int(context->port()));
+  const char *args[]= { buffer, "--ssl", "--getpid", 0 };
+
+  // Must refuse instead of sending the command in cleartext.
+  ASSERT_EQ(EXIT_FAILURE, exec_cmdline("bin/gearadmin", args, true));
+
+  return TEST_SUCCESS;
+}
+#endif // !defined(HAVE_SSL) || !HAVE_SSL
+
 static test_return_t gearadmin_unknown_test(void* object)
 {
   cli::Context *context= (cli::Context*)object;
@@ -464,6 +533,10 @@ static test_return_t init_SETUP(void* object)
   gearman_function_t echo_react_fn_v2= gearman_function_create(echo_or_react_worker_v2);
   context->push(test_worker_start(context->port(), NULL, WORKER_FUNCTION_NAME, echo_react_fn_v2, NULL, gearman_worker_options_t()));
   context->push(test_worker_start(context->port(), NULL, REGRESSION_FUNCTION_833394, echo_react_fn_v2, NULL, gearman_worker_options_t()));
+
+  // Reports a status of 1/0 before completing
+  gearman_function_t status_zero_denominator_fn= gearman_function_create(status_zero_denominator_worker);
+  context->push(test_worker_start(context->port(), NULL, STATUS_ZERO_DENOMINATOR_FUNCTION_NAME, status_zero_denominator_fn, NULL, gearman_worker_options_t()));
 
   return TEST_SUCCESS;
 }
@@ -495,7 +568,11 @@ test_st gearman_tests[] ={
   { "-v", 0, gearman_verbose_TEST },
   { "--unknown", 0, gearman_unknown_test },
   { "-f echo -b payload", 0, gearman_client_background_test },
+#if !defined(HAVE_SSL) || !HAVE_SSL
+  { "-S -f echo -b payload without SSL support", 0, gearman_client_ssl_without_ssl_support_TEST },
+#endif
   { "lp:833394", 0, regression_833394_test },
+  { "-f status_zero_denominator", 0, gearman_client_status_zero_denominator_TEST },
   { 0, 0, 0 }
 };
 
@@ -514,6 +591,9 @@ test_st gearadmin_tests[] ={
   {"--getpid", 0, gearadmin_getpid_test},
   {"--workers", 0, gearadmin_workers_test},
   {"--create-function and --drop-function", 0, gearadmin_create_drop_test},
+#if !defined(HAVE_SSL) || !HAVE_SSL
+  {"--ssl --getpid without SSL support", 0, gearadmin_ssl_without_ssl_support_TEST},
+#endif
   {"--unknown", 0, gearadmin_unknown_test},
   {0, 0, 0}
 };

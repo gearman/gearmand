@@ -166,8 +166,12 @@ bool Instance::init_ssl()
     _last_error = message.str();
     return false;
   }
-#endif // defined(HAVE_SSL) && HAVE_SSL
   return true;
+#else
+  // Never fall back to cleartext on a connection that was asked to use SSL.
+  _last_error= "SSL was requested, but this executable was not built with SSL support";
+  return false;
+#endif // defined(HAVE_SSL) && HAVE_SSL
 }
 
 #if __GNUC__ >= 7
