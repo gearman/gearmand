@@ -58,6 +58,8 @@ using namespace libtest;
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <string>
 #include <sys/stat.h>
 
 #define GEARMAN_CORE
@@ -66,6 +68,9 @@ using namespace libtest;
 
 #include "libgearman/universal.hpp"
 #include "libgearman/protocol/echo.h"
+
+#include "tests/start_worker.h"
+#include "tests/workers/v2/echo_or_react.h"
 
 #ifndef __INTEL_COMPILER
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -206,6 +211,84 @@ static test_return_t SSL_AFTER_CONNECT_TEST(void *)
 
   return TEST_SUCCESS;
 }
+
+// What the PHP extension's setSSL() calls, with CA, certificate and key.
+static void set_ssl(gearman_client_st *client)
+{
+  gearman_client_set_ssl(client, true, YATL_CA_CERT_PEM, YATL_CERT_PEM, YATL_CERT_KEY_PEM);
+}
+
+static int client_socket(gearman_client_st *client)
+{
+  return client->impl()->universal.con_list->socket_descriptor();
+}
+
+static test_return_t ssl_do(gearman_client_st *client, const char *workload)
+{
+  size_t result_size;
+  gearman_return_t ret;
+  void *result= gearman_client_do(client, "ssl_echo", NULL,
+                                  workload, strlen(workload), &result_size, &ret);
+  ASSERT_EQ_(GEARMAN_SUCCESS, ret, "%s", gearman_client_error(client));
+  ASSERT_TRUE(result);
+  std::string value(static_cast<char*>(result), result_size);
+  free(result);
+  ASSERT_EQ(std::string(workload), value);
+
+  return TEST_SUCCESS;
+}
+
+// The server started for these tests only speaks TLS, a client that does not
+// gets no answer.
+static test_return_t SSL_CLIENT_WITHOUT_SSL_TEST(void *)
+{
+  gearman_client_st *client= gearman_client_create(NULL);
+  ASSERT_TRUE(client);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(client, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+  gearman_client_set_timeout(client, 1000);
+  ASSERT_TRUE(gearman_client_echo(client, test_literal_param("cleartext")) != GEARMAN_SUCCESS);
+  gearman_client_free(client);
+
+  return TEST_SUCCESS;
+}
+
+// gearman_client_set_ssl() works whether it is called before or after
+// gearman_client_add_server(), and calling it again with the same setting
+// keeps the connection.
+static test_return_t SSL_CLIENT_SET_SSL_ORDER_TEST(void *)
+{
+  gearman_function_t echo_fn= gearman_function_create(echo_or_react_worker_v2);
+  std::unique_ptr<worker_handle_st> worker(test_worker_start(libtest::default_port(), NULL, "ssl_echo",
+                                                             echo_fn, NULL, gearman_worker_options_t()));
+  ASSERT_TRUE(worker.get());
+
+  // add_server() first, as the PHP examples do
+  gearman_client_st *client= gearman_client_create(NULL);
+  ASSERT_TRUE(client);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(client, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+  set_ssl(client);
+  gearman_client_set_timeout(client, 5000);
+  ASSERT_EQ(TEST_SUCCESS, ssl_do(client, "add_server() first"));
+
+  const int fd= client_socket(client);
+  ASSERT_TRUE(fd != INVALID_SOCKET);
+  set_ssl(client);
+  ASSERT_EQ(fd, client_socket(client));
+  ASSERT_EQ(TEST_SUCCESS, ssl_do(client, "same setting again"));
+  ASSERT_EQ(fd, client_socket(client));
+  gearman_client_free(client);
+
+  // set_ssl() first
+  client= gearman_client_create(NULL);
+  ASSERT_TRUE(client);
+  set_ssl(client);
+  ASSERT_EQ(GEARMAN_SUCCESS, gearman_client_add_server(client, GEARMAN_DEFAULT_TCP_HOST, libtest::default_port()));
+  gearman_client_set_timeout(client, 5000);
+  ASSERT_EQ(TEST_SUCCESS, ssl_do(client, "set_ssl() first"));
+  gearman_client_free(client);
+
+  return TEST_SUCCESS;
+}
 #endif // defined(HAVE_SSL) && HAVE_SSL
 
 test_st SSL_TESTS[] ={
@@ -214,6 +297,8 @@ test_st SSL_TESTS[] ={
   {"ctx_ssl() returns error instead of abort() on bad cert/key path (#503)", 0, SSL_BAD_CERT_NO_ABORT_TEST },
   {"GEARMAN_CLIENT_SSL | GEARMAN_CLIENT_EXCEPTION connects with TLS", 0, SSL_AND_EXCEPTION_OPTIONS_TEST },
   {"enabling SSL drops connections made without it", 0, SSL_AFTER_CONNECT_TEST },
+  {"the server refuses clients without TLS", 0, SSL_CLIENT_WITHOUT_SSL_TEST },
+  {"gearman_client_set_ssl() before or after gearman_client_add_server()", 0, SSL_CLIENT_SET_SSL_ORDER_TEST },
 #endif
   {0, 0, 0}
 };
